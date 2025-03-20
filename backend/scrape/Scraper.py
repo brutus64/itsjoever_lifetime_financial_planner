@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 #           min_income <= x < max_income, given income x
 # AKA: on taxable income from {min_income} UP TO {max_income}
 # - Applies to federal, state, and capital gains
-class TaxScraper:
+class Scraper:
     '''
         RETURNS:
             { 
@@ -15,7 +15,7 @@ class TaxScraper:
                 married: [{min_income: Float, max_income: Float, rate: Float}]
             } 
 
-        Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
+        Note: A value of -1.0 is used to represent "And above" for the last bracket's maxIncome 
     '''
     def scrape_federal_income(self):
         url = 'https://www.irs.gov/filing/federal-income-tax-rates-and-brackets'
@@ -202,9 +202,41 @@ class TaxScraper:
         
         return {'single': standard_deductions[0], 'married': standard_deductions[1]}
 
+    '''
+        RETURNS:
+            [{age: Integer, distribution_period: Float}], 
 
-test = TaxScraper()
+        Note: The very last age, 120, represents ages 120+
+    '''
+    def scrape_rmd_tables(self):
+        url = 'https://www.irs.gov/publications/p590b' # search for "Appendix B. Uniform Lifetime Table"
+        response = requests.get(url)
+
+        soup = BeautifulSoup(response.content, 'lxml')
+        div_table = soup.find_all('div', class_='table-contents')[22] #8th table-contents table
+        rmd_table = div_table.find_all('table', class_='table table-condensed')
+
+        table = rmd_table[0]
+        rows = table.find_all('tr')
+
+        table_iii = []
+        for row in rows[5:]:
+            cells = row.find_all('td')
+
+            for i in range(0, 4, 2):
+                if len(cells[i].text) > 1:
+                    table_iii.append({
+                        'age': 120 if cells[i].text == '120 and over' else int(cells[i].text), 
+                        'distribution_period': float(cells[i+1].text)
+                    })
+
+        table_iii.sort(key = lambda x: x['age'])
+
+        return table_iii
+
+test = Scraper()
 # print(test.scrape_federal_income())
 # print(test.scrape_state_income('NY'))
 # print(test.scrape_capital_gains())
-print(test.scrape_standard_deductions())
+# print(test.scrape_standard_deductions())
+print(test.scrape_rmd_tables())
