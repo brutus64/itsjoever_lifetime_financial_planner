@@ -1,0 +1,228 @@
+states:
+  # url: https://www.tax.ny.gov/forms/current-forms/it/it201i.htm
+  # keywords: "New York State standard deduction table", "New York state tax rate schedule"
+  NY:
+    base_add: True
+    single:
+      brackets:
+        - min_income: 0
+          max_income: 8500
+          base: 0
+          rate: 4
+        - min_income: 8500
+          max_income: 11700
+          base: 340
+          rate: 4.5
+        - min_income: 11700
+          max_income: 13900
+          base:  484
+          rate:  5.25
+        - min_income: 13900
+          max_income: 80650
+          base: 600
+          rate: 5.5
+        - min_income: 80650
+          max_income: 215400
+          base: 4271
+          rate: 6
+        - min_income: 215400
+          max_income: 1077550
+          base: 12356
+          rate: 6.85
+        - min_income: 1077550
+          max_income: 5000000
+          base: 71413
+          rate: 9.65
+        - min_income: 5000000
+          max_income: 25000000
+          base: 449929
+          rate: 10.3
+        - min_income: 25000000
+          max_income: -1
+          base: 2509929
+          rate: 10.9
+      standard_deductions: 3100
+
+    married:
+      brackets:
+        - min_income: 0
+          max_income: 17150
+          base: 0 
+          rate: 4
+        - min_income: 17150
+          max_income: 23600
+          base: 686
+          rate: 4.5
+        - min_income: 23600 
+          max_income:  27900
+          base: 976
+          rate: 5.25
+        - min_income: 27900
+          max_income: 161550
+          base: 1202
+          rate: 5.5
+        - min_income: 161550
+          max_income: 323200
+          base: 8553
+          rate: 6
+        - min_income: 323200
+          max_income: 2155350
+          base: 18252
+          rate: 6.85
+        - min_income: 2155350
+          max_income: 5000000
+          base: 143754
+          rate: 9.65
+        - min_income: 5000000
+          max_income: 25000000
+          base: 418263
+          rate: 10.3
+        - min_income: 25000000
+          max_income: -1
+          base: 2478263
+          rate: 10.9
+      standard_deductions: 8000
+    
+
+  # url: https://www.nj.gov/treasury/taxation/taxtables.shtml
+  NJ:
+    base_add: False
+
+    single:
+      brackets:
+        - min_income: 0
+          max_income: 20000
+          base: 0
+          rate: 1.4
+        - min_income: 20000
+          max_income: 35000
+          base: 70
+          rate: 1.75
+        - min_income: 35000
+          max_income: 40000
+          base: 682.50
+          rate: 3.5
+        - min_income: 40000
+          max_income: 75000
+          base: 1492.50
+          rate: 5.525
+        - min_income: 75000
+          max_income: 500000
+          base: 2126.25
+          rate: 6.37
+        - min_income: 500000
+          max_income: 1000000
+          base: 15126.25
+          rate: 8.97
+        - min_income: 1000000
+          max_income: -1
+          base: 32926.25
+          rate: 10.75
+
+      standard_deductions: 0
+
+    married:
+      brackets:
+        - min_income: 0
+          max_income: 20000
+          base: 0
+          rate: 1.4
+        - min_income: 20000
+          max_income: 50000
+          base: 70
+          rate: 1.75
+        - min_income: 50000
+          max_income: 70000
+          base: 420
+          rate: 2.45
+        - min_income: 70000
+          max_income: 80000
+          base: 1154.50
+          rate: 3.5
+        - min_income: 80000
+          max_income: 150000
+          base: 2775
+          rate: 5.525
+        - min_income: 150000
+          max_income: 500000
+          base: 4042.50
+          rate: 6.37
+        - min_income: 500000
+          max_income: 1000000
+          base: 17042.50
+          rate: 8.97
+        - min_income: 1000000
+          max_income: -1
+          base: 10.75
+          rate: 34842.50
+
+      standard_deductions: 0
+
+  # url: https://www.cga.ct.gov/2024/rpt/pdf/2024-R-0130.pdf
+  CT:
+    base_add: True
+    single:
+      brackets:
+        - min_income: 0
+          max_income: 10000
+          base: 0
+          rate: 2
+        - min_income: 10000
+          max_income: 50000
+          base: 0
+          rate: 4.5
+        - min_income: 50000
+          max_income: 100000
+          base: 0
+          rate: 5.5
+        - min_income: 100000
+          max_income: 200000
+          base: 0
+          rate: 6
+        - min_income: 200000
+          max_income: 250000
+          base: 0
+          rate: 6.5
+        - min_income: 250000
+          max_income: 500000
+          base: 0
+          rate: 6.9
+        - min_income: 500000
+          max_income: -1
+          base: 0
+          rate: 6.99
+
+      standard_deductions: 0
+
+    married:
+      brackets:
+        - min_income: 0
+          max_income: 20000
+          base: 0
+          rate: 2
+        - min_income: 20000
+          max_income: 100000
+          base: 0
+          rate: 4.5
+        - min_income: 100000
+          max_income: 200000
+          base: 0
+          rate: 5.5
+        - min_income: 200000
+          max_income: 400000
+          base: 0
+          rate: 6
+        - min_income: 400000
+          max_income: 500000
+          base: 0
+          rate: 6.5
+        - min_income: 500000
+          max_income: 1000000
+          base: 0
+          rate: 6.9
+        - min_income: 1000000
+          max_income: -1
+          base: 0
+          rate: 6.99
+
+      standard_deductions: 0
