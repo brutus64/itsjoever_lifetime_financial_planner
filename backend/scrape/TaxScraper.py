@@ -1,15 +1,19 @@
 import requests
+import yaml
 from bs4 import BeautifulSoup
 
+# IMPORTANT: 
+# Ranges for min_income and max_income goes as:
+#           min_income <= x < max_income, given income x
+# AKA: on taxable income from {min_income} UP TO {max_income}
+# - Applies to federal, state, and capital gains
 class TaxScraper:
     '''
-        Returns:
+        RETURNS:
             { 
-                'single': single, 
-                'married': married
+                single: [{min_income: Float, max_income: Float, rate: Float}], 
+                married: [{min_income: Float, max_income: Float, rate: Float}]
             } 
-                - where single/married are lists whose elements take the form:
-            (minIncome: Float, maxIncome: Float, rate: Float)
 
         Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
     '''
@@ -29,21 +33,74 @@ class TaxScraper:
                 
                 if len(cells) > 1:
                     tax_rate = float(cells[0].text.strip()[:-1])
-                    tax_bracket_start = float(cells[1].text.strip().replace('$', '').replace(',', ''))  
-                    tax_bracket_end = -1.0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', '')) 
-                    info.append((tax_bracket_start, tax_bracket_end, tax_rate))
+                    tax_bracket_start = float(cells[1].text.strip().replace('$', '').replace(',', ''))
+                    tax_bracket_end = -1.0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', ''))+1 
+                    info.append({
+                        'min_income': tax_bracket_start, 
+                        'max_income': tax_bracket_end, 
+                        'rate': tax_rate
+                        })
             return info
 
-        return [parse_single_married(tax_table[0]), parse_single_married(tax_table[1])]
+        return {'single': parse_single_married(tax_table[0]), 'married': parse_single_married(tax_table[1])}
 
     '''
-        Returns:
+        PARAMETERS:
+            state: String (eg: 'NY', 'NJ', 'CT')
+
+        RETURNS:
+            None IF state doesn't exist in state_tax.yaml OR the dictionary: 
+            {
+                base_add: Boolean (whether to add or subtract {base} value after calculating rate),
+                single: 
+                {
+                    brackets: [{min_income: Float, max_income: Float, base: Float, rate: Float}],
+                    standard_deductions: Float
+                },
+                married:
+                {
+                    brackets: [{min_income: Float, max_income: Float, base: Float, rate: Float}],
+                    standard_deductions: Float
+                }
+            }
+
+    '''
+    def scrape_state_income(self, state):
+        with open('./state_tax.yaml', 'r') as file:
+            data = yaml.safe_load(file)
+        
+        state_tax_info = {}
+        if state not in data['states']:
+            return None
+        
+        single, married = {}, {}
+        state_data = data['states'][state]
+        state_tax_info['base_add'] = state_data['base_add']
+
+        single['standard_deductions'] = state_data['single']['standard_deductions']
+        married['standard_deductions'] = state_data['married']['standard_deductions'] 
+
+        single_brackets, married_brackets = state_data['single']['brackets'], state_data['married']['brackets']
+        def scrape_helper(brackets): 
+            res = []
+            for bracket in brackets:
+                res.append({
+                    'min_income': bracket.get('min_income'), 
+                    'max_income': bracket.get('max_income'), 
+                    'base': bracket.get('base'), 
+                    'rate': bracket.get('rate')})
+            return res
+
+        single['brackets'], married['brackets'] = scrape_helper(single_brackets), scrape_helper(married_brackets)
+        state_tax_info['single'], state_tax_info['married'] = single, married 
+        return state_tax_info
+    
+    '''
+        RETURNS:
             { 
-                'single': single, 
-                'married': married
+                'single': [{min_income: Float, max_income: Float, rate: Float}], 
+                'married': [{min_income: Float, max_income: Float, rate: Float}]
             } 
-                - where single/married are lists whose elements take the form:
-            (minIncome: Float, maxIncome: Float, rate: Float)
 
         Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
     '''
@@ -54,6 +111,7 @@ class TaxScraper:
         soup = BeautifulSoup(response.content, 'lxml')
         p_tags = soup.find_all('p')
 
+        # Find percentages
         percentages = []
         for p_tag in p_tags:
             if 'capital gains rate of' in p_tag.text:
@@ -63,45 +121,57 @@ class TaxScraper:
                 percent = float(percent_string[:percent_index].strip())
                 percentages.append(percent)
 
+        # Extract min/max value given a string
         def find_capital_gains(text):
             space_index = text.find(' ')
             val = float(text[:space_index].replace('$', '').replace(',', ''))
             return val
 
-        single_range = []
-        married_range = []
+        single_range, married_range = [], []
+        # Find ranges and store in {single_range} and {married_range}
         def scrape_helper(ul_tag, zero_or_fifteen):
             li_tags = ul_tag.find_all('li')
             single_tax_rate = li_tags[0].text
-            married_tax_rate = li_tags[1].text
             if zero_or_fifteen == 0:
-                single_range.append([0, find_capital_gains(single_tax_rate)])
-                married_range.append([0, find_capital_gains(married_tax_rate)])
+                married_tax_rate = li_tags[1].text
+                single_range.append([0, find_capital_gains(single_tax_rate)+0.01])
+                married_range.append([0, find_capital_gains(married_tax_rate)+0.01])
             elif zero_or_fifteen == 15:
+                married_tax_rate = li_tags[2].text
                 split_single = single_tax_rate.split("$")
                 split_married = married_tax_rate.split("$")
 
-                single_range.append([find_capital_gains(split_single[1])+1, find_capital_gains(split_single[2])])
-                married_range.append([find_capital_gains(split_married[1])+1, find_capital_gains(split_married[2])])
+                single_range.append([find_capital_gains(split_single[1])+0.01, find_capital_gains(split_single[2])+0.01])
+                married_range.append([find_capital_gains(split_married[1])+0.01, find_capital_gains(split_married[2])+0.01])
 
-
-                single_range.append([find_capital_gains(split_single[2])+1, -1])
-                married_range.append([find_capital_gains(split_married[2])+1, -1])
+                single_range.append([find_capital_gains(split_single[2])+0.01, -1])
+                married_range.append([find_capital_gains(split_married[2])+0.01, -1])
 
         ul_container = soup.find_all('div', class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
         ul_tags = ul_container[1].find_all('ul')
         scrape_helper(ul_tags[0], 0)
         scrape_helper(ul_tags[1], 15)
 
-        single = list(zip(*zip(*single_range), percentages))
-        married = list(zip(*zip(*married_range), percentages))
+        labels = ['min_income', 'max_income', 'rate']
+        single_list, married_list = list(zip(*zip(*single_range), percentages)), list(zip(*zip(*married_range), percentages))
+
+        single, married = [], []
+        for i in range(len(single_list)):
+            single.append({
+                labels[0]: single_list[i][0],
+                labels[1]: single_list[i][1],
+                labels[2]: single_list[i][2] 
+            })
+            married.append({
+                labels[0]: married_list[i][0],
+                labels[1]: married_list[i][1],
+                labels[2]: married_list[i][2] 
+            })
 
         return {'single': single, 'married': married}
 
-
-
     '''
-        Returns:
+        RETURNS:
             {
                 'single': Float, 
                 'married': Float
@@ -134,6 +204,7 @@ class TaxScraper:
 
 
 test = TaxScraper()
-# print(test.scrape_standard_deductions())
 # print(test.scrape_federal_income())
-print(test.scrape_capital_gains())
+# print(test.scrape_state_income('NY'))
+# print(test.scrape_capital_gains())
+print(test.scrape_standard_deductions())
