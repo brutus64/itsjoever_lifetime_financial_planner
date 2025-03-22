@@ -37,7 +37,10 @@ const Logout: React.FC = () => {
     }, [isLoggedin, navigate]);
 
     return (
-        <button onClick={handleLogout}>Logout</button>
+        <div className="flex items-center gap-2 p-2 hover:bg-red-300 cursor-pointer" onClick={handleLogout}>
+            <img className="w-6 h-6" src="./menu_icons/logout.png" alt="logout icon" />
+            <span>Logout</span>
+        </div>
     );
 };
 
