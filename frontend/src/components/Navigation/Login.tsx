@@ -56,7 +56,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isLoggedin) {
-        navigate('/home');
+        navigate('/scenario');
     }
   }, [isLoggedin, navigate]);
 

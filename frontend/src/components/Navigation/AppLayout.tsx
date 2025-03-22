@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { Outlet } from 'react-router-dom';
 import Menu from "./Menu";
 import Cookies from "js-cookie";
 import Header from "./Header";
 
-function HomePage() {
+function AppLayout() {
   const [userInfo, setUserInfo] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(Cookies.get("menu_open") === "true");
   
@@ -39,38 +40,25 @@ function HomePage() {
     <div className="flex flex-col h-screen">
         <Header userInfo={userInfo} toggleMenu={toggleMenu} />
         <div className="flex flex-1 overflow-hidden">
-          {/* TODO: AI-ed transition */}
             <div
-              className={`transition-all duration-500 ease-in-out ${
-              isMenuOpen ? "w-64 overflow-visible" : "w-0 overflow-hidden"
+              className={`h-full transition-all duration-500 ease-in-out ${
+              isMenuOpen ? "w-50 overflow-visible" : "w-0 overflow-hidden"
               }`}
             >
+              <div
+              className={`h-full transition-opacity duration-500 ${
+                isMenuOpen ? "opacity-100 delay-300" : "opacity-0"
+              }`}
+              >
               {isMenuOpen && <Menu />}
+              </div>
             </div>
-          <div className="flex-1 p-4">
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-            <h1>My Scenarios </h1>
-          </div>
+            <div className="flex-1 px-10 py-8 overflow-auto">
+              <Outlet />
+            </div>
         </div>
     </div>
   );
 }
 
-export default HomePage;
+export default AppLayout;

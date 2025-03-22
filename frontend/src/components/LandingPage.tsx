@@ -1,5 +1,5 @@
 import React from 'react';
-import Login from './Login'
+import Login from './Navigation/Login'
 
 // basic react component for the landing page
 const LandingPage: React.FC = () => {    
