@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from app.api import user
-from app.db.database import init_db
+from backend.app.db.db import init_db
 
 app = FastAPI()
 
