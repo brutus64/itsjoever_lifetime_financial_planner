@@ -6,6 +6,7 @@ from app.models.event_series import EventSeries, Invest, Expense, Income, Rebala
 from app.models.investment import Investment, InvestmentType
 from app.models.scenario import Scenario
 from app.models.user import User
+from app.models.tax import StateTax, FederalTax, RMDTable, CapitalGains, StandardDeduct
 load_dotenv()
 
 Scenario.model_rebuild()
@@ -21,4 +22,4 @@ async def init_db():
     conn_string = os.getenv("MONGODB_URL")
     print(conn_string)
     client = motor.motor_asyncio.AsyncIOMotorClient(conn_string)
-    await init_beanie(database=client.db_name, document_models=[EventSeries, Invest, Expense, Income, Rebalance, Investment, InvestmentType, Scenario, User])
+    await init_beanie(database=client.db_name, document_models=[EventSeries, Invest, Expense, Income, Rebalance, Investment, InvestmentType, Scenario, User, StateTax, FederalTax, RMDTable, CapitalGains, StandardDeduct])
