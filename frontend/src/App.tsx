@@ -1,4 +1,5 @@
 import LandingPage from './components/LandingPage';
+import ProfilePage from './components/ProfilePage';
 import ScenarioPage from './components/ScenarioPage';
 import AppLayout from './components/Navigation/AppLayout';
 import { BrowserRouter as Router, Route, Routes, BrowserRouter } from "react-router-dom";
@@ -11,6 +12,7 @@ function App() {
         
         <Route path="/" element={<AppLayout />}>
           <Route path="scenario" element={<ScenarioPage />} />
+          <Route path="/profile" element={<ProfilePage/>}/>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>
