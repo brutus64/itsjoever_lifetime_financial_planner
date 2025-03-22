@@ -2,7 +2,7 @@ import React from 'react';
 
 const Header: React.FC<{ userInfo: any, toggleMenu: () => void }> = ({ userInfo, toggleMenu }) => {
     return (
-        <div className='flex justify-between  bg-white shadow-md'>
+        <div className='flex justify-between bg-white shadow-md'>
             <div className="flex items-center w-50 gap-5 p-4 hover:bg-gray-300 cursor-pointer" onClick={toggleMenu}>
                 <img className="w-6 h-6" src='./menu_icons/menu.png' alt='menu icon' />
                 <div className="flex-1 flex items-center">

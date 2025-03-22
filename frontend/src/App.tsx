@@ -1,6 +1,9 @@
 import LandingPage from './components/LandingPage';
 import ProfilePage from './components/ProfilePage';
 import ScenarioPage from './components/ScenarioPage';
+import SharedPage from './components/SharedPage';
+import ExplorationPage from './components/ExplorationPage';
+import SimulationLogPage from './components/SimulationLogPage';
 import AppLayout from './components/Navigation/AppLayout';
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 
@@ -12,6 +15,9 @@ function App() {
         
         <Route path="/" element={<AppLayout />}>
           <Route path="scenario" element={<ScenarioPage />} />
+          <Route path="/exploration" element={<ExplorationPage/>}/>
+          <Route path="/simulation" element={<SimulationLogPage/>}/>
+          <Route path="/shared" element={<SharedPage/>}/>
           <Route path="/profile" element={<ProfilePage/>}/>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>

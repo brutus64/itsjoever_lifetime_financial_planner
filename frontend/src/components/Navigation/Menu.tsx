@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Menu: React.FC = () => {
     return (
-        <div className="w-50 h-full flex flex-col transition-all duration-2000 ease-in-out border-r-2 border-black">
+        <div className="w-50 h-full flex flex-col transition-all duration-2000 ease-in-out shadow-lg">
             <h1 className="text-center font-bold pt-4">Discover</h1>
             <div className="flex flex-col justify-between flex-1 p-4 pt-2">
             <div className="flex flex-col">
