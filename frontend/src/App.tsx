@@ -1,21 +1,23 @@
 import LandingPage from './components/LandingPage';
-import HomePage from './components/HomePage';
 import ProfilePage from './components/ProfilePage';
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import ScenarioPage from './components/ScenarioPage';
+import AppLayout from './components/Navigation/AppLayout';
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 
 function App() {
-
   return (
-    <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/home" element={<HomePage />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        
+        <Route path="/" element={<AppLayout />}>
+          <Route path="scenario" element={<ScenarioPage />} />
           <Route path="/profile" element={<ProfilePage/>}/>
-        </Routes>
-      </Router>
-    </>
-  )
+          {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App

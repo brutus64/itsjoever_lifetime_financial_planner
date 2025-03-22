@@ -56,26 +56,9 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white px-6 py-8">
-      {/* Header */}
-      <nav className="flex items-center justify-between px-4 py-2 bg-white shadow-md">
-        <div className="flex items-center gap-2">
-          <div className="text-2xl cursor-pointer">☰</div>
-          <span className="font-bold">{user.name}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="cursor-pointer">⋮</div>
-          <button className="bg-black text-white px-4 py-1 rounded-md">Share</button>
-          <img
-            src={user.profileImage}
-            alt="Profile"
-            className="w-8 h-8 rounded-full border"
-          />
-        </div>
-      </nav>
-
+    <div className="min-h-screen bg-white px-6">
       {/* Profile Section */}
-      <div className="flex flex-col items-center mt-8">
+      <div className="flex gap-4 items-center mt-8">
         <img
           src={user.profileImage}
           alt="Profile"
