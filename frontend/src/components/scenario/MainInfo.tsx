@@ -26,7 +26,6 @@ const MainInfo = ({formData,setFormData}:any) => {
                             <div className="">Fixed:</div>
                             <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1"/> 
                         </div>
-                        
                         <div className="flex gap-2 align-middle">
                             <input className="ml-1" type="radio" name="user-exp"/>
                             <div className="">Normal: &nbsp; Mean</div>
