@@ -52,13 +52,11 @@ class Scraper:
             None IF state doesn't exist in state_tax.yaml OR the dictionary: 
             {
                 base_add: Boolean (whether to add or subtract {base} value after calculating rate),
-                single: 
-                {
+                single: {
                     brackets: [{min_income: Float, max_income: Float, base: Float, rate: Float}],
                     standard_deductions: Float
                 },
-                married:
-                {
+                married:{
                     brackets: [{min_income: Float, max_income: Float, base: Float, rate: Float}],
                     standard_deductions: Float
                 }
