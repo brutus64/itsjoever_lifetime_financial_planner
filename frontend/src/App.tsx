@@ -2,7 +2,7 @@ import LandingPage from './components/LandingPage';
 import ProfilePage from './components/ProfilePage';
 import ScenarioPage from './components/ScenarioPage';
 import AppLayout from './components/Navigation/AppLayout';
-import { BrowserRouter as Router, Route, Routes, BrowserRouter } from "react-router-dom";
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 
 function App() {
   return (

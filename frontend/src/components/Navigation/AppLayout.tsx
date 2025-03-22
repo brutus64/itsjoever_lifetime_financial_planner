@@ -53,7 +53,7 @@ function AppLayout() {
               {isMenuOpen && <Menu />}
               </div>
             </div>
-            <div className="flex-1 px-10 py-8 overflow-auto">
+            <div className="flex-1 px-10 py-4 overflow-auto">
               <Outlet />
             </div>
         </div>

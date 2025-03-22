@@ -1,5 +1,6 @@
 import React from 'react';
-import Logout from '../Logout';
+import Logout from './Logout';
+import { useNavigate } from 'react-router-dom';
 
 const Menu: React.FC = () => {
     return (
@@ -7,11 +8,11 @@ const Menu: React.FC = () => {
             <h1 className="text-center font-bold pt-4">Discover</h1>
             <div className="flex flex-col justify-between flex-1 p-4 pt-2">
             <div className="flex flex-col">
-                <MenuItem imagePath="./menu_icons/scenario.png" text="Scenarios" />
-                <MenuItem imagePath="./menu_icons/explore.png" text="Exploration" />
-                <MenuItem imagePath="./menu_icons/simulation.png" text="Simulation Logs" />
-                <MenuItem imagePath="./menu_icons/share.png" text="Shared" />
-                <MenuItem imagePath="./menu_icons/user.png" text="Personal" />
+                <MenuItem imagePath="./menu_icons/scenario.png" text="Scenarios" router='scenario'/>
+                <MenuItem imagePath="./menu_icons/explore.png" text="Exploration" router='exploration'/>
+                <MenuItem imagePath="./menu_icons/simulation.png" text="Simulation Logs" router='simulation'/>
+                <MenuItem imagePath="./menu_icons/share.png" text="Shared" router='shared'/>
+                <MenuItem imagePath="./menu_icons/user.png" text="Personal" router='profile' />
             </div>
             
             <Logout />
@@ -20,9 +21,18 @@ const Menu: React.FC = () => {
     );
 };
 
-const MenuItem: React.FC<{ imagePath: string; text: string }> = ({ imagePath, text }) => {
+const MenuItem: React.FC<{ imagePath: string; text: string, router: string }> = ({ imagePath, text, router }) => {
+    const navigate = useNavigate();
+
+    const handleNavigation = () => {
+        navigate(router);
+    };
+
     return (
-        <div className="flex items-center gap-2 p-2 hover:bg-gray-300 cursor-pointer">
+        <div
+            className="flex items-center gap-2 p-2 hover:bg-gray-300 cursor-pointer"
+            onClick={handleNavigation}
+        >
             <img className="w-6 h-6" src={imagePath} alt={text} />
             <span>{text}</span>
         </div>
