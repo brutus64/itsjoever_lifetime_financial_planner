@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom"; // Import the useNavigate hook
 import Cookies from "js-cookie";
 
@@ -7,7 +8,7 @@ export default function Login() {
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
-
+  const calledOnce = useRef(false);
   const handleClick = () => {
     const accessToken = Cookies.get("access_token");
     if (accessToken) {
@@ -27,10 +28,11 @@ export default function Login() {
     window.location.href = targetUrl;
   };
 
+  // useEffect is being called twice for some reason?
   useEffect(() => {
     const accessTokenRegex = /access_token=([^&]+)/;
     const isMatch = window.location.href.match(accessTokenRegex);
-
+   
     if (isMatch) {
       const accessToken = isMatch[1];
       Cookies.set("access_token", accessToken);
@@ -69,7 +71,7 @@ export default function Login() {
 
   const foundUser = async (email: string) => {
     try{
-      const response = await fetch(`http://localhost:8000/api/users?email=${email}`);
+      const response = await fetch(`http://localhost:8000/api/get_user?email=${email}`);
       const user = await response.json();
       return user.exists;
     }
@@ -82,6 +84,10 @@ export default function Login() {
 
   const createUser = async (data: any) => {
     try {
+      
+      if (calledOnce.current) return; // Prevent multiple runs
+      calledOnce.current = true;
+      console.log("createUser called")
       // let bd = new Date();
       // const today = new Date();
       // let age = 0;
@@ -100,7 +106,7 @@ export default function Login() {
       //       age--;
       //   }
       // }
-      const response = await fetch('http://localhost:8000/api/users', {
+      const response = await fetch('http://localhost:8000/api/add_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +118,7 @@ export default function Login() {
           session: '',  
           scenarios: [],
           age: 0,  
-          birthday: new Date(),
+          birthday: new Date( ),
           shared_r_scenarios: [],
           shared_rw_scenarios: [],
         }),

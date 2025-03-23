@@ -21,10 +21,10 @@ async def delete_user(user_id: PydanticObjectId) -> bool:
 
 # search for a user with email
 async def find_user_email(email: str) -> User | None:
-    return await User.find_one(User.email==email)
+        return await User.find_one(User.email==email)
 
 
 # search for user with username
-# async def find_user_name(username: str) -> User  | None:
-#     return await User.find_one(name == username)
+async def find_user_name(username: str) -> User  | None:
+    return await User.find_one(User.name == username)
 
