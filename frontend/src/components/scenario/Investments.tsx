@@ -32,22 +32,34 @@ const Investments = ({formData,setFormData}:any) => {
 }
 
 const InvestmentTypePopup = ({formData,setFormData}) => {
+    const [ open, setOpen ] = useState(false);
     const [ investmentTypeData, setInvestmentTypeData ] = useState({
         name: "",
         description: "",
         expectedAnnualReturn: {
-            type: "",
+            isPercent: false, // percent change (true) or amount change (false) 
+            isFixed: false, // fixed (true) or random (false)
             fixed: 0,
             normal: {
                 mean:0,
-                stddev:0,
+                stddev:1,
             }
-        }
-        
+        },
+        expectedAnnualIncome: {
+            isPercent: false, // percent change (true) or amount change (false) 
+            isFixed: false, // fixed (true) or random (false)
+            fixed: 0,
+            normal: {
+                mean:0,
+                stddev:1,
+            }
+        },
+        expenseRatio: 0.0,
+        isTaxExempt: true
     });
 
     const handleAddInvestmentType = () => {
-
+        
     }
 
     return (
@@ -56,101 +68,101 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             <div className="flex flex-col">
                 {/* todo: list of investment types */}
             </div>
-            <Popup trigger={<div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer">
+            <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(true)}>
                 + Add an Investment Type
-            </div>} position="right center" modal contentStyle={investmentTypeModalStyling}>
-                {close => (
-                    <div className="rounded-lg m-10 flex flex-col gap-2">
-                        <h1 className="text-2xl font-bold">New Investment Type</h1>
-                        <div className="flex gap-4">
-                            <h2 className="font-medium">Name:</h2>
-                            <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" />
-                        </div>
-                        <h2 className="font-medium">Description:</h2>
-                        <textarea className="px-1 border-2 border-gray-200 rounded-md w-150 h-25 resize-none " maxLength={1000}/>
-                        <h2 className="font-medium">Expected Annual Return:</h2>
-                        <div className="flex gap-5">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-ret-type"/>
-                                    <div className="">Amount</div>
-                                </div>
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-ret-type"/>
-                                    <div className="">Percent</div>
-                                </div>
+            </div>
+            <Popup open={open} position="right center" modal contentStyle={investmentTypeModalStyling}>
+                <div className="rounded-lg m-10 flex flex-col gap-2">
+                    <h1 className="text-2xl font-bold">New Investment Type</h1>
+                    <div className="flex gap-4">
+                        <h2 className="font-medium">Name:</h2>
+                        <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" />
+                    </div>
+                    <h2 className="font-medium">Description:</h2>
+                    <textarea className="px-1 border-2 border-gray-200 rounded-md w-150 h-25 resize-none " maxLength={1000}/>
+                    <h2 className="font-medium">Expected Annual Return:</h2>
+                    <div className="flex gap-5">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-ret-type"/>
+                                <div className="">Amount</div>
                             </div>
-                            <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-ret-amt"/>
-                                    <div className="">Fixed:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                </div>
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-ret-amt"/>
-                                    <div className="">Normal: &nbsp; Mean:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                    <div className="">Variance:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                </div>
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-ret-type"/>
+                                <div className="">Percent</div>
                             </div>
                         </div>
-                        <h2 className="font-medium">Expected Annual Income:</h2>
-                        <div className="flex gap-5">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-inc-type"/>
-                                    <div className="">Amount</div>
-                                </div>
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-inc-type"/>
-                                    <div className="">Percent</div>
-                                </div>
+                        <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-ret-amt"/>
+                                <div className="">Fixed:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
                             </div>
-                            <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-inc-amt"/>
-                                    <div className="">Fixed:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                </div>
-                                <div className="flex gap-2 align-middle">
-                                    <input className="ml-1" type="radio" name="ann-inc-amt"/>
-                                    <div className="">Normal: &nbsp; Mean:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                    <div className="">Variance:</div>
-                                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
-                                </div>
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-ret-amt"/>
+                                <div className="">Normal: &nbsp; Mean:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
+                                <div className="">Variance:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
                             </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <h2 className="font-medium">Expense Ratio:</h2>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-20" type="number" min="0"/> %
-                        </div>
-                        <div className="flex gap-2 align-middle">
-                            <h2 className="font-medium">Taxability:</h2>
-                            <div className="flex gap-1">
-                                <input className="ml-1" type="radio" name="taxability"/>
-                                <div className="">Tax-exempt</div>
-                            </div>
-                            <div className="flex gap-1">
-                                <input className="ml-1" type="radio" name="taxability"/>
-                                <div className="">Taxable</div>
-                            </div>
-                        </div>
-                        <div className="flex justify-center gap-20">
-                            <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={close}>Cancel</button>
-                            <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestmentType}>Add</button>
                         </div>
                     </div>
-                )}
+                    <h2 className="font-medium">Expected Annual Income:</h2>
+                    <div className="flex gap-5">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-inc-type"/>
+                                <div className="">Amount</div>
+                            </div>
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-inc-type"/>
+                                <div className="">Percent</div>
+                            </div>
+                        </div>
+                        <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-inc-amt"/>
+                                <div className="">Fixed:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
+                            </div>
+                            <div className="flex gap-2 align-middle">
+                                <input className="ml-1" type="radio" name="ann-inc-amt"/>
+                                <div className="">Normal: &nbsp; Mean:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
+                                <div className="">Variance:</div>
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/> 
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <h2 className="font-medium">Expense Ratio:</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-20" type="number" min="0"/> %
+                    </div>
+                    <div className="flex gap-2 align-middle">
+                        <h2 className="font-medium">Taxability:</h2>
+                        <div className="flex gap-1">
+                            <input className="ml-1" type="radio" name="taxability"/>
+                            <div className="">Tax-exempt</div>
+                        </div>
+                        <div className="flex gap-1">
+                            <input className="ml-1" type="radio" name="taxability"/>
+                            <div className="">Taxable</div>
+                        </div>
+                    </div>
+                    <div className="flex justify-center gap-20">
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestmentType}>Add</button>
+                    </div>
+                </div>
             </Popup>
         </div>
     )
 }
 
 const InvestmentPopup = ({formData,setFormData}) => {
+    const [ open, setOpen ] = useState(false);
     const [ investmentData, setInvestmentData ] = useState({
-        
+        value: 0.0
     });
     
 
@@ -163,26 +175,26 @@ const InvestmentPopup = ({formData,setFormData}) => {
             <div className="flex flex-col">
                 {/* todo: list of investments */}
             </div>
-            <Popup trigger={<div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer">
+            <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(true)}>
                 + Add an Investment
-            </div>} position="right center" closeOnDocumentClick modal contentStyle={investmentModalStyling}>
-                {close => (
-                    <div className="rounded-lg m-10 flex flex-col gap-7">
-                        <h1 className="text-2xl font-bold">New Investment</h1>
-                        <div className="flex gap-4">
-                            <h2 className="font-medium">Investment Type:</h2>
-                            Todo: Put dropdown here
-                        </div>
-                        <div className="flex gap-4">
-                            <h2 className="font-medium">Initial Value:</h2>
-                            $<input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/>
-                        </div>
-                        <div className="flex justify-center gap-20">
-                            <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={close}>Cancel</button>
-                            <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestment}>Add</button>
-                        </div>
+            </div>
+            <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={investmentModalStyling}>
+                
+                <div className="rounded-lg m-10 flex flex-col gap-7">
+                    <h1 className="text-2xl font-bold">New Investment</h1>
+                    <div className="flex gap-4">
+                        <h2 className="font-medium">Investment Type:</h2>
+                        Todo: Put dropdown here
                     </div>
-                )}
+                    <div className="flex gap-4">
+                        <h2 className="font-medium">Initial Value:</h2>
+                        $<input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0"/>
+                    </div>
+                    <div className="flex justify-center gap-20">
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestment}>Add</button>
+                    </div>
+                </div>
             </Popup>
         </div>
     )
