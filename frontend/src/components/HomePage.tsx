@@ -1,11 +1,14 @@
 import React from "react";
 import Logout from "./Logout";
+import MainInfo from "./scenario/MainInfo";
+import EventSeries from "./scenario/EventSeries";
+import Investments from "./scenario/Investments";
+import ScenarioForm from "./scenario/ScenarioForm";
 
 function HomePage() {
   return (
     <div>
-      <h1>Welcome to the Home Page!</h1>
-      <Logout />
+      <ScenarioForm/>
     </div>
   );
 }
