@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import user
-from backend.app.db.db import init_db
+from app.api import user, scrape_yaml
+from app.db.db import init_db
 
 app = FastAPI()
 
@@ -19,11 +19,12 @@ app.add_middleware(
     allow_headers=['*']
 )
 
-app.include_router(user.router, prefix='')
+app.include_router(user.router, prefix='/api')
 
 @app.on_event("startup")
 async def startup_event():
     await init_db()
+    await scrape_yaml.scraped_db_check()
     print("HELLO!")
 
 if __name__ == '__main__':

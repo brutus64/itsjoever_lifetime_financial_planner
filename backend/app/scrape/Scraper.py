@@ -64,7 +64,7 @@ class Scraper:
 
     '''
     def scrape_state_income(self, state):
-        with open('./state_tax.yaml', 'r') as file:
+        with open('app/scrape/state_tax.yaml', 'r') as file: #switched to relative to where root is running (root is backend)
             data = yaml.safe_load(file)
         
         state_tax_info = {}
@@ -235,6 +235,8 @@ class Scraper:
 test = Scraper()
 # print(test.scrape_federal_income())
 # print(test.scrape_state_income('NY'))
+# print(test.scrape_state_income('CT'))
+# print(test.scrape_state_income('NJ'))
 # print(test.scrape_capital_gains())
 # print(test.scrape_standard_deductions())
-print(test.scrape_rmd_tables())
+# print(test.scrape_rmd_tables())
