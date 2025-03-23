@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import Investments from "./Investments";
 import EventSeries from "./EventSeries";
-import Miscellaneous from "./Miscellaneous";
+import RMDRoth from "./RMDRoth/RMDRoth";
+import SpendingWithdrawal from "./SpendingWithdrawalStrategy/SpendingWithdrawal";
 import Summary from "./Summary";
 import MainInfo from "./MainInfo";
 
@@ -27,7 +28,8 @@ const ScenarioForm = ({scenario}:any) => {
         <MainInfo formData={formData} setFormData={setFormData} />,
         <Investments formData={formData} setFormData={setFormData} />,
         <EventSeries formData={formData} setFormData={setFormData} />,
-        <Miscellaneous formData={formData} setFormData={setFormData} />,
+        <RMDRoth formData={formData} setFormData={setFormData} />,
+        <SpendingWithdrawal formData={formData} setFormData={setFormData} />,
         <Summary formData={formData} setFormData={setFormData} />,
     ];
     
