@@ -10,11 +10,45 @@ import MainInfo from "./MainInfo";
 // so that the user doesn't have to start over if they
 // accidentally leave the form?
 // Solution: "incomplete" scenarios?
-const ScenarioForm = ({scenario}:any) => { 
+const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to edit, use parameter
     const [formData, setFormData] = useState({
-        scenarioName: "",
-        // fill in scenario schema stuff here
-        // todo
+        name: "",
+        is_married: false,
+        birth_year: null,
+        spouse_birth_year: null,
+        life_expectancy: {
+            type: "",
+            fixed: 0,
+            mean: 0,
+            stddev: 1,
+        },
+        spouse_life_expectancy: {
+            type: "",
+            fixed: 0,
+            mean: 0,
+            stddev: 1,
+        },
+        investment_types: [],
+        investment: [],
+        event_series: [],
+        inflation_assume: {
+            type: "",
+            fixed: 0,
+            mean: 0,
+            stddev: 1,
+        },
+        init_limit_posttax: 0.0, // I do not think the user has to fill this in
+        spending_strat: [],
+        expense_withdraw: [],
+        rmd_strat: [],
+        roth_conversion_strat: [],
+        roth_optimizer: {
+            is_enable: false,
+            start_year: null,
+            end_year: null
+        },
+        fin_goal: 0,
+        state: ""
     });
     const [currentPage, setCurrentPage] = useState(1)
 
