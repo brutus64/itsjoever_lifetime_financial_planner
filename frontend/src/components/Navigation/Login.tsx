@@ -44,9 +44,16 @@ export default function Login() {
         },
       })
         .then((response) => response.json())
-        .then((data) => {
+        .then(async (data) => {
           // Set user info from the response
+          // console.log(data)
           setUserInfo(data);
+
+          const userExists = await foundUser(data.email);
+          if (!userExists){
+            await createUser(data);
+          }
+
         })
         .catch((error) => {
           console.error("Error fetching user info", error);
@@ -59,6 +66,65 @@ export default function Login() {
         navigate('/scenario');
     }
   }, [isLoggedin, navigate]);
+
+  const foundUser = async (email: string) => {
+    try{
+      const response = await fetch(`http://localhost:8000/api/users?email=${email}`);
+      const user = await response.json();
+      return user.exists;
+    }
+
+    catch(error) {
+      console.error("Error checking for user existence: ", error);
+      return false;
+    }
+  };
+
+  const createUser = async (data: any) => {
+    try {
+      // let bd = new Date();
+      // const today = new Date();
+      // let age = 0;
+      // if (data.birthday){
+      //   bd = new Date(data.birthday)
+                
+      //   age = today.getFullYear() - bd.getFullYear(); 
+
+      //   // Adjust age if the birthday hasn't occurred yet this year
+      //   const hasBirthdayPassed = (
+      //       today.getMonth() > bd.getMonth() ||
+      //       (today.getMonth() === bd.getMonth() && today.getDate() >= bd.getDate())
+      //   );
+
+      //   if (!hasBirthdayPassed) {
+      //       age--;
+      //   }
+      // }
+      const response = await fetch('http://localhost:8000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          hashed_password: '',  
+          session: '',  
+          scenarios: [],
+          age: 0,  
+          birthday: new Date(),
+          shared_r_scenarios: [],
+          shared_rw_scenarios: [],
+        }),
+      });
+
+      const newUser = await response.json();
+      console.log("New user created:", newUser);
+    } catch (error) {
+      console.error("Error creating user", error);
+    }
+  };
+  
 
   // TODO: REMOVE
   function test() {
