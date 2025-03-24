@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration } from './EventSeries'
+import InvestmentCard from './InvestmentCard';
 
 const defaultRebalanceEventForm = {
     type: "rebalance",
@@ -23,7 +24,10 @@ const defaultRebalanceEventForm = {
         stddev: 1,
 
     },
-    maximum_cash: 0.0,
+    is_glide: false, // IMPORTANT; if is_glide is false, final_allocation has the "fixed" percentages
+    tax_status: "non-retirement",
+    initial_allocation: {}, //key = "investment_type|tax_status", value = percentage
+    final_allocation: {}, //key = "investment_type|tax_status", value = percentage
 }
 
 const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formData:any, setFormData:any}) => {
@@ -71,6 +75,43 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
         console.log(`${name} is ${value}`)
     }
 
+    const handleGlide = (e:any) => {
+        setRebalanceEventData({
+            ...rebalanceEventData,
+            "is_glide":e.target.checked,
+        })
+
+        console.log(rebalanceEventData.is_glide)
+    }
+
+    const handleAssetAllocation = (e:any) => {
+        let { name, value } = e.target;
+        let split = name.split(':');
+        let initial_or_final = split[0];
+        name = split[1];
+        if(initial_or_final == 'initial') {
+            setRebalanceEventData({
+                ...rebalanceEventData,
+                initial_allocation: {
+                    ...rebalanceEventData.initial_allocation,
+                    [name]: parseFloat(value),  
+                }
+            });
+            console.log(rebalanceEventData.initial_allocation);
+        }
+        else { // initial_or_final == 'final'
+            setRebalanceEventData({
+                ...rebalanceEventData,
+                final_allocation: {
+                    ...rebalanceEventData.final_allocation,  
+                    [name]: parseFloat(value),  
+                }
+            });
+
+            console.log(rebalanceEventData.final_allocation);
+        }
+    };
+
     const handleChange = (e: any) => {
         const { name, value } = e.target;
         setRebalanceEventData({
@@ -89,14 +130,87 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
             <Duration handleDurationChange={handleDurationChange} eventData={rebalanceEventData} />
 
             
-            <div className="text-2xl font-bold">
-                SAME AS INVEST SERIES... (fixed/glide)
+            <div>
+                <h1 className="font-medium">Asset Allocation</h1>
+                <div className='flex gap-4'>
+                    <h2 className="font-medium">Tax-status is</h2>
+                    <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
+                        name="tax_status"
+                        value={rebalanceEventData.tax_status}
+                        onChange={handleChange}>
+                        <option value="non-retirement">Non-retirement</option>
+                        <option value="pre-tax-retirement">Pre-tax retirement</option>
+                        <option value="after-tax-retirement">After-tax retirement</option>
+                    </select>
+                </div>
+                <div className="flex gap-5 align-middle">
+                    <h2 className="font-medium self-cener">Glide Path:</h2>
+                    <input type="checkbox" name="is_glide" onChange={handleGlide} checked={rebalanceEventData.is_glide}/>  
+                </div>
+
+                <div className="flex gap-4">
+                    {formData.investment.filter(investment => investment.tax_status === rebalanceEventData.tax_status).length == 0 && (
+                        <h1 className="text-center">No investments to allocate</h1>
+                    )}
+
+                    {rebalanceEventData.is_glide && (
+                        <div className="flex flex-col">
+                            {formData.investment.filter(investment => investment.tax_status ==  rebalanceEventData.tax_status).length > 0 && (
+                                <h1 className="text-center">Initial Percentages</h1>
+                            )}
+                            
+                            <div className="flex flex-col gap-3">
+                            {formData.investment
+                                .filter(investment => investment.tax_status ==  rebalanceEventData.tax_status)
+                                .map(investment => (
+                                    <div className="flex flex-col gap-1 w-60" key={investment.name}>
+                                        <InvestmentCard investment={investment} />
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="number"
+                                                className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
+                                                name={"initial:"+investment.investment_type+'|'+investment.tax_status}
+                                                value={rebalanceEventData.initial_allocation["initial:"+investment.investment_type+'|'+investment.tax_status]}
+                                                onChange={handleAssetAllocation}
+                                                min="0"
+                                                max="100"
+                                            /> %
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col">
+                        {formData.investment.filter(investment => investment.tax_status ===  rebalanceEventData.tax_status).length > 0 && (
+                            <h1 className="text-center">Final Percentages</h1>
+                        )}
+                        <div className="flex flex-col gap-3">
+                            {formData.investment
+                            .filter(investment => investment.tax_status ===  rebalanceEventData.tax_status)
+                            .map(investment =>
+                                <div className="flex flex-col gap-1 w-60">
+                                    <InvestmentCard investment={investment}/>
+                                    <div className='flex gap-3'>
+                                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
+                                            name={"final:"+investment.investment_type+'|'+investment.tax_status} 
+                                            value={(rebalanceEventData.final_allocation["final:"+investment.investment_type+'|'+investment.tax_status])} 
+                                            onChange={handleAssetAllocation} 
+                                            min="0" max="100"/> %
+                                    </div>
+                                </div> 
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="flex justify-center gap-20">
                 <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
                 <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleRebalanceEvent}>Add</button>
             </div>
+            
         </div>
     );
 };
