@@ -1,5 +1,3 @@
-from typing import Type, List
-from beanie import Document
 from app.scrape.Scraper import Scraper
 from app.models.tax import FederalTax, StateTax, StandardDeduct, CapitalGains, RMDTable, Bracket, StateBracket, Distribution
 
