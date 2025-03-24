@@ -12,7 +12,7 @@ const investmentTypeModalStyling = {
 const investmentModalStyling = { 
     "border": "none",
     "borderRadius":"8px",
-    "width":"500px",
+    "width":"600px",
     "height":"300px"
 };
 
@@ -242,6 +242,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
             ...investmentData,
             [name]:value,
         })
+        console.log(e.target)
     }
     // console.log(investmentData)
 
@@ -250,26 +251,36 @@ const InvestmentPopup = ({formData,setFormData}) => {
     const handleAddInvestment = () => {
         setFormData({
             ...formData,
-            investment: [...formData.investment_types,investmentData] // do i have to deepcopy?
+            investment: [...formData.investment,investmentData] // do i have to deepcopy?
         })
         handleClose(true)
     }
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3">
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 h-130">
             <h1 className="text-2xl font-bold">My Investments</h1>
-            <div className="flex flex-col">
-                {/* todo: list of investments */}
-            </div>
             <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(true)}>
                 + Add an Investment
+            </div>
+            <div className="flex flex-col gap-3 overflow-y-scroll h-100">
+                {formData.investment.map(inv =>
+                    <InvestmentItem investment_type={inv.investment_type} value={inv.value}/>
+                )}
+                
             </div>
             <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={investmentModalStyling} onClose={() => handleClose(false)}>
                 
                 <div className="rounded-lg m-10 flex flex-col gap-7">
                     <h1 className="text-2xl font-bold">New Investment</h1>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 items-center">
                         <h2 className="font-medium">Investment Type:</h2>
-                        Todo: Put dropdown here
+                        <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="investment_type" onChange={handleChange}>
+                            <option value=""></option>
+                            {formData.investment_types.map((inv_type) => (
+                                <option className="flex flex-col w-100 h-23" key={inv_type.name} value={inv_type.name}>
+                                    {inv_type.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="flex gap-4">
                         <h2 className="font-medium">Initial Value:</h2>
@@ -288,9 +299,19 @@ const InvestmentPopup = ({formData,setFormData}) => {
 // click to edit
 const InvestmentTypeItem = ({name, description}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100 hover:bg-sky-100 cursor-pointer">
-            <h2 className="text-xl font-medium">{name}</h2>
-            <p className="overflow-ellipsis">{description}</p>
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer">
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{name}</h2>
+            <p className="overflow-ellipsis w-85 overflow-hidden">{description}</p>
+            {/* <button>Edit</button> */}
+        </div>
+    )
+}
+
+const InvestmentItem = ({investment_type, value}) => {
+    return (
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer">
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment_type}</h2>
+            <p className="overflow-ellipsis w-85 overflow-hidden">${value}</p>
             {/* <button>Edit</button> */}
         </div>
     )
