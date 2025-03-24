@@ -4,6 +4,7 @@ from app.models.investment import Investment, InvestmentType
 from app.models.event_series import EventSeries
 from app.api.yaml_helper import *
 from beanie.operators import Set
+from app.db.db_utils import *
 
 import yaml
 
@@ -54,59 +55,118 @@ async def import_scenario(file: UploadFile = File(...)):
         #THEN INVESTMENTS
         #THEN EVENT SERIES
         #THEN SCENARIO ITSELF
-        
+        investtype_ids = []
+        invest_ids = []
+        event_ids = []
         for investment_type in data.get('investmentTypes'):
             invest_type = create_investment_type_from_yaml(investment_type)
             print("INVEST TYPE")
             print(invest_type)
             print("MODEL DUMP: ", invest_type.model_dump(exclude={"id", "name"}))
-            res = await InvestmentType.find_one(InvestmentType.name == invest_type.name).upsert(
-                Set(invest_type.model_dump(exclude={"id", "name"})),
-                on_insert=invest_type
-            )
+            exists = await InvestmentType.find_one(InvestmentType.name == invest_type.name)
+            if exists:
+                update_data = invest_type.model_dump(exclude={"id"})
+                for key, value in update_data.items():
+                    setattr(exists, key, value)
+                await exists.save()
+                investtype_ids.append(exists.id)
+            else:
+                await invest_type.save()
+                investtype_ids.append(invest_type.id)    
+            # res = await InvestmentType.find_one(InvestmentType.name == invest_type.name).upsert(
+            #     Set(invest_type.model_dump(exclude={"id", "name"})),
+            #     on_insert=invest_type
+            # )
+            # investtype_ids.append(res.id)
             # print(f"Post insert/update: {res}")
-
+        
         for investment in data.get('investments'):
             print(investment)
             invest = create_investment_from_yaml(investment)
             print("INVEST", invest)
-            res = await Investment.find_one(Investment.invest_id == invest.invest_id).upsert(
-                Set(invest.model_dump(exclude={'id'})),
-                on_insert=invest
-            )
-            print("result:", res)
             
-            # print("INVESTMENT")
-            # print(invest)
+            exists = await Investment.find_one(Investment.invest_id == invest.invest_id)
+            
+            if exists:
+                # Update fields manually
+                update_data = invest.model_dump(exclude={"id"})
+                for key, value in update_data.items():
+                    setattr(exists, key, value)
+                
+                await exists.save()
+                invest_ids.append(exists.id)
+            else:
+                # Save new
+                await invest.save()
+                invest_ids.append(invest.id)
+                
+        event_series = []
         for event in data.get('eventSeries'):
             print(event)
+            #NEED FIX SHOULD BE FIXED WITH NAME
             e = await create_event_from_yaml(event)
-            res = await EventSeries.find_one(e.id == EventSeries.id).upsert(
-                Set(e.model_dump(exclude={'id'})),
-                on_insert=e
-            )
-            print("event result:", res)
+            exists = await EventSeries.find_one(EventSeries.name == e.name)
+            
+            if exists:
+                # Update fields manually
+                update_data = e.model_dump(exclude={"id"})
+                for key, value in update_data.items():
+                    setattr(exists, key, value)
+                
+                await exists.save()
+                event_series.append(exists)
+                event_ids.append(exists.id)
+            else:
+                # Save new
+                await e.save()
+                event_series.append(e)
+                event_ids.append(e.id)
         
-        # scenario = Scenario(
-        #     name=data.get('name'),
-        #     martial=data.get('martialStatus'),
-        #     birth_year=data.get('birthYears'),
-        #     life_expectancy=data.get('lifeExpectancy'),
-        #     investment_types=,
-        #     investment,
-        #     event_series,
-        #     inflation_assume,
-        #     limit_posttax,
-        #     spending_strat,
-        #     expense_withdraw,
-        #     rmd_strat,
-        #     roth_conversion_strat,
-        #     roth_optimizer,
-        #     ignore_state_tax,
-        #     fin_goal,
-        #     state  
-        # )
-        return
+        
+        print("INVESTTYPE ID", investtype_ids)
+        print("INVEST ID", invest_ids)
+        print("EVENT ID", event_ids)
+        investments = await Investment.find_all().to_list()
+        print(investments)
+        spending_strat = await eventnames_to_id(data.get('spendingStrategy'), event_series)
+        expense_withdraw = await investmentnames_to_id(data.get('expenseWithdrawalStrategy'),investments)
+        rmd_strat = await investmentnames_to_id(data.get('RMDStrategy'), investments)
+        roth_conversion_strat = await investmentnames_to_id(data.get('RothConversionStrategy'), investments)
+        
+        scenario = Scenario(
+            name=data.get('name'),
+            marital=data.get('maritalStatus'),
+            birth_year=data.get('birthYears'),
+            life_expectancy=parse_life(data),
+            # GRAB ID FROM PREVIOUS RUNS
+            investment_types= investtype_ids,
+            investment=invest_ids,
+            event_series=event_ids,
+            inflation_assume=parse_inflation_assumption(data),
+            limit_posttax=data.get('afterTaxContributionLimit'),
+        #REQUIRES MAPPING NAME -> OBJECT ID REF
+            spending_strat= spending_strat,
+            expense_withdraw= expense_withdraw,
+            rmd_strat= rmd_strat,
+            roth_conversion_strat= roth_conversion_strat,
+        #NEED TO PARSE with true and dates
+            roth_optimizer=parse_roth_opt(data),
+            fin_goal=data.get('financialGoal'),
+            state=data.get('residenceState')
+        )
+        scenario_exists = await Scenario.find_one(Scenario.name == scenario.name)
+        if scenario_exists:
+            scenario_data = scenario.model_dump(exclude={"id", "name"})
+            for key, value in scenario_data.items():
+                setattr(scenario_exists, key, value)
+            await scenario_exists.save()
+        else:
+            await scenario.save()
+        return {
+            "name": scenario.name,
+            "id": str(scenario.id),
+            "message": "Scenario imported successfully"
+        }
         
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail="yaml file cannot be parsed for some reason")
