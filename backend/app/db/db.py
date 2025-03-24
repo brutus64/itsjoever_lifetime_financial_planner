@@ -22,4 +22,12 @@ async def init_db():
     conn_string = os.getenv("MONGODB_URL")
     print(conn_string)
     client = motor.motor_asyncio.AsyncIOMotorClient(conn_string)
-    await init_beanie(database=client.db_name, document_models=[EventSeries, Invest, Expense, Income, Rebalance, Investment, InvestmentType, Scenario, User, StateTax, FederalTax, RMDTable, CapitalGains, StandardDeduct])
+    db = client.db_name
+    await init_beanie(database=db, document_models=[EventSeries, Invest, Expense, Income, Rebalance, Investment, InvestmentType, Scenario, User, StateTax, FederalTax, RMDTable, CapitalGains, StandardDeduct])
+    # creates collection if not existed
+    
+    for model in [EventSeries, Invest, Expense, Income, Rebalance, Investment, InvestmentType, Scenario, User, StateTax, FederalTax, RMDTable, CapitalGains, StandardDeduct]:
+        collection_name = model.get_collection_name()
+        if collection_name not in await db.list_collection_names():
+            await db.create_collection(collection_name)
+            print(f"Created collection: {collection_name}")

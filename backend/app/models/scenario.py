@@ -22,11 +22,9 @@ class RothOptimizer(BaseModel):
 class Scenario(Document):
     user: Link['User']
     name: str
-    is_married: Literal['couple', 'individual']
-    birth_year: int #CONSIDER ARRAY OF SIZE 1 OR 2
-    spouse_birth_year: Optional[int]
-    life_expectancy: LifeExpectancy
-    spouse_life_expectancy: Optional["LifeExpectancy"]
+    martial: Literal['couple', 'individual']
+    birth_year: List[int]
+    life_expectancy: List[LifeExpectancy]
     investment_types: List[Link["InvestmentType"]]
     investment: List[Link["Investment"]]
     event_series: List[Link["EventSeries"]]
