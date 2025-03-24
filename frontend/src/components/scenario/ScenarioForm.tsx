@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Investments from "./Investments";
-import EventSeries from "./EventSeries";
+import EventSeries from "./EventSeries/EventSeries";
 import RMDRoth from "./RMDRoth/RMDRoth";
 import SpendingWithdrawal from "./SpendingWithdrawalStrategy/SpendingWithdrawal";
 import Summary from "./Summary";
