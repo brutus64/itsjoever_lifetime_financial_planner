@@ -110,7 +110,7 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             <h1 className="text-2xl font-bold">New Income Event Series</h1>
             <Name handleChange={handleChange} eventData={incomeEventData} />
             <Description handleChange={handleChange} eventData={incomeEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={incomeEventData} />
+            <StartYear handleStartYearChange={handleStartYearChange} eventData={incomeEventData} formData={formData}/>
             <Duration handleDurationChange={handleDurationChange} eventData={incomeEventData} />
             <div className='flex gap-4'>
                 <h2 className="font-medium">Initial Amount</h2>

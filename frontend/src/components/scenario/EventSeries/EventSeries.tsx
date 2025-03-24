@@ -139,7 +139,7 @@ const Description = ({handleChange, eventData}: {handleChange:any, eventData:any
     )
 };
 
-const StartYear = ({handleStartYearChange, eventData}: {handleStartYearChange:any, eventData:any}) => {
+const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYearChange:any, eventData:any, formData:any}) => {
     return (
         <div>
             <h2 className="font-medium">Start Year:</h2>
@@ -186,23 +186,31 @@ const StartYear = ({handleStartYearChange, eventData}: {handleStartYearChange:an
                     </div>
                     <div className="flex gap-2 align-middle">
                         <input className="ml-1" type="radio" name="type" value="same_year" onChange={handleStartYearChange}/>
-                        <div className="">Same Year that: &nbsp; </div>
-                        <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit">
-                            <option value="option1">Option 1</option>
-                            <option value="option2">Option 2</option>
-                            <option value="option3">Option 3</option>
+                        <div className="">Same year event series</div>
+                        <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
+                            name="event_series"
+                            value={eventData.event_series}>
+                            <option value="">Choose Event</option>
+                            {formData.event_series
+                            .map(event_series => 
+                                <option value={event_series.name}>{event_series.name}</option>
+                            )}
                         </select>
-                        <div className="">Event Series Starts</div> 
+                        <div className=""> starts</div> 
                     </div>
                     <div className="flex gap-2 align-middle">
                         <input className="ml-1" type="radio" name="type" value="year_afater" onChange={handleStartYearChange}/>
-                        <div className="">Year After: &nbsp;</div>
-                        <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit">
-                            <option value="option1">Option 1</option>
-                            <option value="option2">Option 2</option>
-                            <option value="option3">Option 3</option>
+                        <div className="">Year after event series</div>
+                        <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
+                            name="event_series"
+                            value={eventData.event_series}>
+                            <option value="">Choose Event</option>
+                            {formData.event_series
+                            .map(event_series => 
+                                <option value={event_series.name}>{event_series.name}</option>
+                            )}
                         </select>
-                        <div className="">Event Series Ends</div>
+                        <div className=""> ends</div>
                     </div>
                 </div>
             </div>
