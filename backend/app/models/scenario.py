@@ -1,7 +1,7 @@
 from beanie import Document, Link
 from pydantic import BaseModel
-from typing import Literal, Optional, List, TYPE_CHECKING
-from app.models.utils import Normal
+from typing import Literal, Optional, List, TYPE_CHECKING, Union
+from app.models.utils import Normal, Fixed
 
 
 #investment imports users, users import scenarios, scenarios import investment, circular dependency
@@ -20,21 +20,22 @@ class RothOptimizer(BaseModel):
     end_year: int
 
 class Scenario(Document):
+    user: Link['User']
     name: str
-    is_married: bool
-    birth_year: int
+    is_married: Literal['couple', 'individual']
+    birth_year: int #CONSIDER ARRAY OF SIZE 1 OR 2
     spouse_birth_year: Optional[int]
     life_expectancy: LifeExpectancy
     spouse_life_expectancy: Optional["LifeExpectancy"]
     investment_types: List[Link["InvestmentType"]]
     investment: List[Link["Investment"]]
     event_series: List[Link["EventSeries"]]
-    inflation_assume: bool
-    init_limit_posttax: float
-    spending_strat: List[Link["Expense"]]
-    expense_withdraw: List[Link["Investment"]]
-    rmd_strat: List[Link["Investment"]]
-    roth_conversion_strat: List[Link["Investment"]]
+    inflation_assume: Union[Fixed, Normal]
+    limit_posttax: float
+    spending_strat: List[Link["Expense"]] #example uses name rather than link
+    expense_withdraw: List[Link["Investment"]] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
+    rmd_strat: List[Link["Investment"]] #example uses [S&P 500 pre-tax]
+    roth_conversion_strat: List[Link["Investment"]] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
     roth_optimizer: RothOptimizer
     #not sure if this is the intended sharing method
     r_only_share: List[Link["User"]]

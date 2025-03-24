@@ -4,13 +4,13 @@ from typing import Literal, Optional, Union, List
 from app.models.utils import Fixed, Uniform, Normal
 from app.models.investment import Investment
 
-class StartYear(BaseModel):
-    type: Literal['fixed', 'uniform', 'normal', 'start', 'end']
+class Start(BaseModel):
+    type: Literal['fixed', 'uniform', 'normal', 'start_with', 'end_with']
     fixed: Optional[int]
     uniform: Optional[Uniform]
     normal: Optional[Normal]
-    start: Optional[Link["EventSeries"]]
-    end: Optional[Link["EventSeries"]]
+    start_with: Optional[Link["EventSeries"]] #is it supposed to be id or name? Line 83 scenario.yaml
+    end_with: Optional[Link["EventSeries"]] #same tangent, is it supposed to be id or name? Line 83 scenario.yaml
     
 class Duration(BaseModel):
     type: Literal['fixed', 'uniform', 'normal']
@@ -31,21 +31,27 @@ class FixedInvestment(BaseModel):
 
 class GlideInvestment(BaseModel):
     investment: Link["Investment"]
-    initial: float #both percentages
-    final: float
+    initial: float #both percentages apparently this is non-retirement?
+    final: float #apparently this is after tax?
     
 class AssetAlloc(BaseModel):
     type: Literal['fixed', 'glide']
     fixed: Optional[List[FixedInvestment]]
     glide: Optional[List[GlideInvestment]]
+
+class Invest(Document):
+    asset_alloc: AssetAlloc
+    max_cash: float
     
+    class Settings:
+        name="invest_events"
     
 class Income(Document):
     initial_amt: float
     exp_annual_change: EventAnnualChange
-    inflation_adjustment: bool
+    inflation_adjust: bool
     user_split: Optional[float] #split percentage btwn user and spouse
-    is_ss: bool #social security income or not
+    social_security: bool #social security income or not
     
     class Settings:
         name="income_events"
@@ -60,13 +66,6 @@ class Expense(Document):
     class Settings:
         name="expense_events"
 
-class Invest(Document):
-    asset_alloc: AssetAlloc
-    max_cash: float
-    
-    class Settings:
-        name="invest_events"
-
 class Rebalance(Document):
     asset_alloc: AssetAlloc
     max_cash: float
@@ -76,7 +75,7 @@ class Rebalance(Document):
 class EventSeries(Document):
     name: str
     description: Optional[str]
-    start_year: StartYear
+    start: Start
     duration: Duration
     type: Literal['income', 'expense', 'invest', 'rebalance']
     details: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
