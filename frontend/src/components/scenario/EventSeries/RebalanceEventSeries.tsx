@@ -85,7 +85,7 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
             <h1 className="text-2xl font-bold">New Rebalance Event Series</h1>
             <Name handleChange={handleChange} eventData={rebalanceEventData} />
             <Description handleChange={handleChange} eventData={rebalanceEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={rebalanceEventData} />
+            <StartYear handleStartYearChange={handleStartYearChange} eventData={rebalanceEventData} formData={formData}/>
             <Duration handleDurationChange={handleDurationChange} eventData={rebalanceEventData} />
 
             

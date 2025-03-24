@@ -86,12 +86,12 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             <h1 className="text-2xl font-bold">New Invest Event Series</h1>
             <Name handleChange={handleChange} eventData={investEventData} />
             <Description handleChange={handleChange} eventData={investEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} />
+            <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} formData={formData} />
             <Duration handleDurationChange={handleDurationChange} eventData={investEventData} />
+            
+            <div>
+                <h1 className="font-medium">Asset Allocation</h1>
 
-            {/* need to get investments and list them out...? */}
-            <div className="text-2xl font-bold">
-                SOMEHOW SHOW ALL INVESTMENTS NOT IN PRE-TAX ACCOUNTS FOR FIXED %S OR A GLIDE PATH
             </div>
             
             <div className='flex gap-4'>
