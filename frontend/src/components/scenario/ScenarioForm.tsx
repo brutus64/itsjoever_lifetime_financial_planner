@@ -14,8 +14,8 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
     const [formData, setFormData] = useState({
         name: "",
         is_married: false,
-        birth_year: "",
-        spouse_birth_year: "",
+        birth_year: 2000,
+        spouse_birth_year: 2000,
         life_expectancy: {
             type: "",
             fixed: 0,
