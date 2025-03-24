@@ -45,7 +45,7 @@ export default function SpendingStrategy({formData,setFormData}) {
     }
 
     const canAdd = formData.event_series.filter((es) => {
-        return !formData.spending_strat.includes(es.investment_type)
+        return es.type === "expense" && es.details.is_disrectionary && !formData.spending_strat.includes(es.name)
     })
 
     return (
@@ -63,9 +63,9 @@ export default function SpendingStrategy({formData,setFormData}) {
             arrow={false}
             >
                 <div className="max-h-90 overflow-y-scroll">
-                    {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.investment_type} onClick={() => handleAddExpense(inv.investment_type)}>
-                            {inv.investment_type}
+                    {canAdd.length >= 1 && canAdd.map((es) => (   
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={es.name} onClick={() => handleAddExpense(es.name)}>
+                            {es.name}
                             
                         </div>
                     ))}
@@ -80,7 +80,7 @@ export default function SpendingStrategy({formData,setFormData}) {
                     items={formData.spending_strat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.spending_strat.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
+                        {formData.spending_strat.map((es,i) => <SortableItem key={es.name} es={es} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -89,14 +89,14 @@ export default function SpendingStrategy({formData,setFormData}) {
     );
 }
 
-const SortableItem = ({inv,ind}) => {
+const SortableItem = ({es,ind}) => {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: inv});
+    } = useSortable({id: es.name});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -106,7 +106,7 @@ const SortableItem = ({inv,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv}</div>
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{es.name}</div>
             
         </div>
     );
