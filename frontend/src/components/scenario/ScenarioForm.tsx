@@ -14,8 +14,8 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
     const [formData, setFormData] = useState({
         name: "",
         is_married: false,
-        birth_year: null,
-        spouse_birth_year: null,
+        birth_year: "",
+        spouse_birth_year: "",
         life_expectancy: {
             type: "",
             fixed: 0,
@@ -37,7 +37,7 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
             mean: 0,
             stddev: 1,
         },
-        init_limit_posttax: 0.0, // I do not think the user has to fill this in
+        // init_limit_posttax: 0.0, // I do not think the user has to fill this in
         spending_strat: [],
         expense_withdraw: [],
         rmd_strat: [],

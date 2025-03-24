@@ -288,7 +288,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
                     <h1 className="text-2xl font-bold">New Investment</h1>
                     <div className="flex gap-4 items-center">
                         <h2 className="font-medium">Investment Type:</h2>
-                        <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="investment_type" onChange={handleChange}>
+                        <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="investment_type" value={investmentData.investment_type} onChange={handleChange}>
                             <option value=""></option>
                             {formData.investment_types.map((inv_type) => (
                                 <option className="flex flex-col w-100 h-23" key={inv_type.name} value={inv_type.name}>
