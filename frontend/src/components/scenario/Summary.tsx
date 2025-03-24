@@ -10,7 +10,7 @@ const Summary = ({formData,setFormData}:any) => {
 
     }
     return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center mb-2">
             <div className="bg-white shadow-md rounded-lg p-10 m-10 flex flex-col flex-1 gap-3 w-150">
                 <h1 className="text-2xl font-bold">Summary</h1>
                 <div><span className="font-medium">Scenario Name:</span> {formData.name}</div>

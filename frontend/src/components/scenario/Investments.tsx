@@ -41,27 +41,83 @@ const defaultInvestmentTypeForm = {
     name: "",
     description: "",
     exp_annual_return: {
-        is_percent: "",
-        type: "", // either "fixed" or "normal"
+        is_percent: false,
+        type: "fixed", // either "fixed" or "normal"
         fixed: 0,
         mean:0,
         stddev:1,
     },
     exp_annual_income: {
-        is_percent: "",
-        type: "", // either "fixed" or "normal"
+        is_percent: false,
+        type: "fixed", // either "fixed" or "normal"
         fixed: 0,
         mean:0,
         stddev:1,
     },
     expense_ratio: 0.0,
-    is_tax_exempt: ""
+    is_tax_exempt: false
 }
 
 const InvestmentTypePopup = ({formData,setFormData}) => {
     const [ open, setOpen ] = useState(false);
     const [ investmentTypeData, setInvestmentTypeData ] = useState(defaultInvestmentTypeForm);
     const [ error, setError ] = useState("");
+
+    // annoying radio buttons
+    const handleRetPercentRadio = (e) => {
+        const {value} = e.target
+        setInvestmentTypeData({
+            ...investmentTypeData,
+            exp_annual_return: {
+                ...investmentTypeData.exp_annual_return,
+                is_percent:(value==="true"),
+            }
+        })
+    }
+
+    const handleRetTypeRadio = (e) => {
+        const {value} = e.target
+        setInvestmentTypeData({
+            ...investmentTypeData,
+            exp_annual_return: {
+                ...investmentTypeData.exp_annual_return,
+                type:value,
+            }
+        })
+    }
+
+    const handleIncPercentRadio = (e) => {
+        const {value} = e.target
+        setInvestmentTypeData({
+            ...investmentTypeData,
+            exp_annual_income: {
+                ...investmentTypeData.exp_annual_income,
+                is_percent:(value==="true"),
+            }
+        })
+    }
+
+    const handleIncTypeRadio = (e) => {
+        const {value} = e.target
+        setInvestmentTypeData({
+            ...investmentTypeData,
+            exp_annual_income: {
+                ...investmentTypeData.exp_annual_income,
+                type:value,
+            }
+        })
+    }
+
+    const handleTaxRadio = (e) => {
+        const {value} = e.target
+        setInvestmentTypeData({
+            ...investmentTypeData,
+            exp_annual_income: {
+                ...investmentTypeData.exp_annual_income,
+                is_tax_exempt:(value==="true"),
+            }
+        })
+    }
 
     // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
@@ -80,11 +136,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
     }
 
     const handleReturnChange = (e: any) => {
-        let { name, value } = e.target;
-        if (name === "ret_is_percent")
-            name = "is_percent"
-        else if (name === "retType")
-            name = "type"
+        const { name, value } = e.target;
         setInvestmentTypeData({
             ...investmentTypeData,
             exp_annual_return: {
@@ -107,10 +159,22 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
     // need to validate fields
     const handleAddInvestmentType = () => {
         // Check if all fields are filled out
-        const important_fields = [investmentTypeData.name,investmentTypeData.description,investmentTypeData.exp_annual_return.is_percent,investmentTypeData.exp_annual_return.type,investmentTypeData.exp_annual_income.is_percent,investmentTypeData.exp_annual_income.type,investmentTypeData.is_tax_exempt]
+        const important_fields = [investmentTypeData.name,investmentTypeData.description]
+        const numeric_fields = [investmentTypeData.expense_ratio,]
 
         if (important_fields.some((field) => field === "")) {
             setError("Please fill out all fields");
+            return;
+        }
+
+        // should check for duplicate name
+
+        if (investmentTypeData.exp_annual_income.stddev <= 0 || investmentTypeData.exp_annual_return.stddev <= 0) {
+            setError("Only positive values for stddev")
+            return;
+        }
+        if (investmentTypeData.expense_ratio < 0) {
+            setError("Only nonnegative value for expense ratio")
             return;
         }
         setFormData({
@@ -120,8 +184,6 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
         handleClose(true)
         console.log("added")
     }
-
-    console.log(formData.investment_types)
 
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 h-130">
@@ -151,22 +213,22 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     <div className="flex gap-5">
                         <div className="flex flex-col gap-2">
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="ret_is_percent" value={"false"} onChange={handleReturnChange} />
+                                <input className="ml-1" type="radio" value="false" onChange={handleRetPercentRadio} checked={!investmentTypeData.exp_annual_return.is_percent}/>
                                 <div className="">Amount</div>
                             </div>
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="ret_is_percent" value={"true"} onChange={handleReturnChange}/>
+                                <input className="ml-1" type="radio" value="true" onChange={handleRetPercentRadio} checked={investmentTypeData.exp_annual_return.is_percent}/>
                                 <div className="">Percent</div>
                             </div>
                         </div>
                         <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="retType" value={"fixed"} onChange={handleReturnChange}/>
+                                <input className="ml-1" type="radio" value="fixed" onChange={handleRetTypeRadio} checked={investmentTypeData.exp_annual_return.type === "fixed"}/>
                                 <div className="">Fixed:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="fixed" value={investmentTypeData.exp_annual_return.fixed} onChange={handleReturnChange}/> 
                             </div>
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="retType" value={"normal"} onChange={handleReturnChange}/>
+                                <input className="ml-1" type="radio" value="normal" onChange={handleRetTypeRadio} checked={investmentTypeData.exp_annual_return.type === "normal"}/>
                                 <div className="">Normal: &nbsp; Mean:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="mean" value={investmentTypeData.exp_annual_return.mean} onChange={handleReturnChange}/> 
                                 <div className="">Std dev:</div>
@@ -178,22 +240,22 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     <div className="flex gap-5">
                         <div className="flex flex-col gap-2">
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="is_percent" value={"false"} onChange={handleIncomeChange}/>
+                                <input className="ml-1" type="radio" value="false" onChange={handleIncPercentRadio} checked={!investmentTypeData.exp_annual_income.is_percent}/>
                                 <div className="">Amount</div>
                             </div>
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="is_percent" value={"true"} onChange={handleIncomeChange}/>
+                                <input className="ml-1" type="radio" value="true" onChange={handleIncPercentRadio} checked={investmentTypeData.exp_annual_income.is_percent}/>
                                 <div className="">Percent</div>
                             </div>
                         </div>
                         <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="type" value={"fixed"} onChange={handleIncomeChange}/>
+                                <input className="ml-1" type="radio" value="fixed" onChange={handleIncTypeRadio} checked={investmentTypeData.exp_annual_income.type === "fixed"}/>
                                 <div className="">Fixed:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="fixed" value={investmentTypeData.exp_annual_income.fixed} onChange={handleIncomeChange}/> 
                             </div>
                             <div className="flex gap-2 align-middle">
-                                <input className="ml-1" type="radio" name="type" value={"normal"} onChange={handleIncomeChange}/>
+                                <input className="ml-1" type="radio" value="normal" onChange={handleIncTypeRadio} checked={investmentTypeData.exp_annual_income.type === "normal"}/>
                                 <div className="">Normal: &nbsp; Mean:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="mean" value={investmentTypeData.exp_annual_income.mean} onChange={handleIncomeChange}/> 
                                 <div className="">Std dev:</div>
@@ -208,11 +270,11 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     <div className="flex gap-2 align-middle">
                         <h2 className="font-medium">Taxability:</h2>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" name="is_tax_exempt" value={"True"} onChange={handleChange}/>
+                            <input className="ml-1" type="radio" value="true" onChange={handleTaxRadio} checked={investmentTypeData.is_tax_exempt}/>
                             <div className="">Tax-exempt</div>
                         </div>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" name="is_tax_exempt" value={"False"} onChange={handleChange}/>
+                            <input className="ml-1" type="radio" value="false" onChange={handleTaxRadio} checked={!investmentTypeData.is_tax_exempt}/>
                             <div className="">Taxable</div>
                         </div>
                     </div>
@@ -230,13 +292,21 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
 const defaultInvestmentForm = {
     investment_type: "", // are investment types uniquely identified by names?
     value: 0.0,
-    tax_status: "" // is this needed?
+    tax_status: "non-retirement" // is this needed?
 }
 
 const InvestmentPopup = ({formData,setFormData}) => {
     const [ open, setOpen ] = useState(false);
     const [ investmentData, setInvestmentData ] = useState(defaultInvestmentForm);
     const [ error, setError ] = useState("");
+
+    const handleTaxRadio = (e) => {
+        const {value} = e.target
+        setInvestmentData({
+            ...investmentData,
+            tax_status: value
+        })
+    }
 
     // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
@@ -252,9 +322,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
             ...investmentData,
             [name]:value,
         })
-        console.log(e.target)
     }
-    // console.log(investmentData)
 
 
     
@@ -304,15 +372,15 @@ const InvestmentPopup = ({formData,setFormData}) => {
                     <div className="flex flex-col gap-1">
                         <h2 className="font-medium">Tax Status:</h2>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" name="tax_status" value="non-retirement" onChange={handleChange}/>
+                            <input className="ml-1" type="radio" value="non-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "non-retirement"}/>
                             <div className="">Non-retirement</div>
                         </div>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" name="tax_status" value="pre-tax-retirement" onChange={handleChange}/>
+                            <input className="ml-1" type="radio" value="pre-tax-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "pre-tax-retirement"}/>
                             <div className="">Pre-tax retirement</div>
                         </div>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" name="tax_status" value="after-tax-retirement" onChange={handleChange}/>
+                            <input className="ml-1" type="radio" value="after-tax-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "after-tax-retirement"}/>
                             <div className="">After-tax retirement</div>
                         </div>
                     </div>

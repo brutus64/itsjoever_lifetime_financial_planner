@@ -17,13 +17,13 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
         birth_year: 2000,
         spouse_birth_year: 2000,
         life_expectancy: {
-            type: "",
+            type: "fixed",
             fixed: 0,
             mean: 0,
             stddev: 1,
         },
         spouse_life_expectancy: {
-            type: "",
+            type: "fixed",
             fixed: 0,
             mean: 0,
             stddev: 1,
@@ -32,7 +32,7 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
         investment: [],
         event_series: [],
         inflation_assume: {
-            type: "",
+            type: "fixed",
             fixed: 0,
             mean: 0,
             stddev: 1,
@@ -70,7 +70,7 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
     return (
         <div className="flex flex-col justify-center align-middle">
             {/* Progess indicator here */}
-            <div className="h-150">
+            <div className="min-h-150">
                 {pages[currentPage-1]}
             </div>
             
