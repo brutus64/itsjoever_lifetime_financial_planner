@@ -2,6 +2,7 @@ from beanie import Document, Link
 from pydantic import BaseModel
 from typing import Literal, Optional, TYPE_CHECKING
 from app.models.utils import Fixed, Normal
+from app.models.scenario import Scenario
 # from app.models.user import User
 
 #investment imports users, users import scenarios, scenarios import investment, circular dependency
@@ -21,16 +22,19 @@ class InvestmentType(Document):
     exp_annual_return: InvestAnnualChange
     expense_ratio: float
     exp_annual_income: InvestAnnualChange
-    is_tax_exempt: bool
+    taxability: bool
     
     class Settings:
         name="investment_types"
     
 class Investment(Document):
-    investment_type: Link[InvestmentType]
-    user: Link["User"]
+    # user: Link["User"] #not in example but necessary to know who it belongs to?
+    #OR
+    # scenario: Link["Scenario"] #NOT SURE IF NEEDED RIGHT NOW
+    invest_type: str #name to investment_type
+    invest_id: Optional[str] #name to investment + tax status?
     value: float
-    tax_status: Literal['non-retirement','pre-tax-retirement','after-tax-retirement']
+    tax_status: Literal['non-retirement','pre-tax','after-tax']
 
     class Settings:
         name="investments"

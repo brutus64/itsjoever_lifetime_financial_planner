@@ -1,7 +1,7 @@
 from beanie import Document, Link
 from pydantic import BaseModel
-from typing import Literal, Optional, List, TYPE_CHECKING
-from app.models.utils import Normal
+from typing import Literal, Optional, List, TYPE_CHECKING, Union
+from app.models.utils import Normal, Fixed
 
 
 #investment imports users, users import scenarios, scenarios import investment, circular dependency
@@ -20,28 +20,27 @@ class RothOptimizer(BaseModel):
     end_year: int
 
 class Scenario(Document):
+    user: Link['User']
     name: str
-    is_married: bool
-    birth_year: int
-    spouse_birth_year: Optional[int]
-    life_expectancy: LifeExpectancy
-    spouse_life_expectancy: Optional["LifeExpectancy"]
+    martial: Literal['couple', 'individual']
+    birth_year: List[int]
+    life_expectancy: List[LifeExpectancy]
     investment_types: List[Link["InvestmentType"]]
     investment: List[Link["Investment"]]
     event_series: List[Link["EventSeries"]]
-    inflation_assume: bool
-    init_limit_posttax: float
-    spending_strat: List[Link["Expense"]]
-    expense_withdraw: List[Link["Investment"]]
-    rmd_strat: List[Link["Investment"]]
-    roth_conversion_strat: List[Link["Investment"]]
+    inflation_assume: Union[Fixed, Normal]
+    limit_posttax: float
+    spending_strat: List[str] #example uses name rather than link
+    expense_withdraw: List[str] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
+    rmd_strat: List[str] #example uses [S&P 500 pre-tax]
+    roth_conversion_strat: List[str] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
     roth_optimizer: RothOptimizer
     #not sure if this is the intended sharing method
-    r_only_share: List[Link["User"]]
-    wr_only_share: List[Link["User"]]
+    r_only_share: List[Link["User"]] = []
+    wr_only_share: List[Link["User"]] = []
     ignore_state_tax: bool
     fin_goal: float
-    state: str
+    state: str = None
     
     class Settings:
         name="scenarios"
