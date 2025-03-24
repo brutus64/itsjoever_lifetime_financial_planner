@@ -112,7 +112,7 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
             <h1 className="text-2xl font-bold">New Expense Event Series</h1>
             <Name handleChange={handleChange} eventData={expenseEventData} />
             <Description handleChange={handleChange} eventData={expenseEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={expenseEventData} />
+            <StartYear handleStartYearChange={handleStartYearChange} eventData={expenseEventData} formData={formData} />
             <Duration handleDurationChange={handleDurationChange} eventData={expenseEventData} />
             <div className='flex gap-4'>
                 <h2 className="font-medium">Initial Amount</h2>
