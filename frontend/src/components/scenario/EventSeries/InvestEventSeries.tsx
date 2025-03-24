@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration } from './EventSeries'
+import InvestmentCard from './InvestmentCard';
 
 const defaultInvestEventForm = {
     type: "invest",
@@ -24,7 +25,7 @@ const defaultInvestEventForm = {
 
     },
     maximum_cash: 0.0,
-    is_glide: false,
+    is_glide: false, // IMPORTANT; if is_glide is false, final_allocation has the "fixed" percentages
     initial_allocation: {}, //key = "investment_type|tax_status", value = percentage
     final_allocation: {}, //key = "investment_type|tax_status", value = percentage
 }
@@ -212,16 +213,6 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
         </div>
     );
 };
-
-
-const InvestmentCard = ({ investment }) => {
-    return (
-        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full ">            
-            <h1 className="text-md">{investment.investment_type} | {investment.tax_status}</h1>
-            <h2 className="text-sm">${investment.value}</h2>
-        </div>
-    );
-}
 
 
 const InvestEventItem = ({ name, description }) => {
