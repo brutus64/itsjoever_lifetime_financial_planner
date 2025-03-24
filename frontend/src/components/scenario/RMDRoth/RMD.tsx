@@ -6,7 +6,7 @@ const RMD = ({ formData,setFormData }:any) => {
             <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-full h-60">
                 <div className='h-full flex flex-col gap-3'>
                     <h1 className="text-xl font-bold">RMD Strategy</h1>
-                    <p className="text-sm">An RMD strategy is an ordering on investments in pre-tax retirement accounts. When a withdrawal is triggered by a RMD, investments are transferred in-kind, in that order, from pre-tax retirement accounts to non-retirement accounts.</p>    
+                    {/* <p className="text-sm">An RMD strategy is an ordering on investments in pre-tax retirement accounts. When a withdrawal is triggered by a RMD, investments are transferred in-kind, in that order, from pre-tax retirement accounts to non-retirement accounts.</p>     */}
                 </div>
                 <AddButton text="Add RMD Investment Priority" />  
             </div>

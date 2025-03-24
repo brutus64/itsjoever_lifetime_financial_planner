@@ -196,9 +196,6 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                 {formData.investment_types.map(investment_type => 
                     <InvestmentTypeItem key={investment_type.name} name={investment_type.name} description={investment_type.description}/>
                 )}
-                
-
-                {/* todo: list of investment types */}
             </div>
             <Popup open={open} position="right center" modal contentStyle={investmentTypeModalStyling} onClose={() => handleClose(false)}>
                 <div className="rounded-lg m-10 flex flex-col gap-2">
