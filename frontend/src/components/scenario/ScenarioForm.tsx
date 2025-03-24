@@ -44,8 +44,8 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
         roth_conversion_strat: [],
         roth_optimizer: {
             is_enable: false,
-            start_year: null,
-            end_year: null
+            start_year: 2025,
+            end_year: 2025
         },
         fin_goal: 0,
         state: ""

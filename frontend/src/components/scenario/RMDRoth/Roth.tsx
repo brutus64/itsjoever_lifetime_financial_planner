@@ -52,7 +52,7 @@ export default function Roth({formData,setFormData}) {
     console.log(canAdd)
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-full h-110">
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-full h-110" style={{"opacity":formData.roth_optimizer.is_enable ? 1.0 : 0.2}}>
             <h1 className="text-xl font-bold">Roth Conversion Strategy</h1>
 
             <Popup
@@ -79,13 +79,13 @@ export default function Roth({formData,setFormData}) {
                 </div>
             </Popup>
             {formData.roth_optimizer.is_enable &&
-            <div className='flex flex-col gap-3 overflow-y-scroll'>
+            <div className='flex flex-col gap-3 overflow-y-scroll h-70'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
                     items={formData.roth_conversion_strat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.roth_conversion_strat.map(id => <SortableItem key={id} id={id} />)}
+                        {formData.roth_conversion_strat.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>}
@@ -94,14 +94,14 @@ export default function Roth({formData,setFormData}) {
     );
 }
 
-const SortableItem = ({id}) => {
+const SortableItem = ({inv,ind}) => {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: id});
+    } = useSortable({id: inv});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -109,9 +109,9 @@ const SortableItem = ({id}) => {
     };
 
     return (
-        <div className="cursor-pointer bg-white shadow-md rounded-lg p-6 w-120 h-30 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{id}</div>
+        <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv}</div>
             
         </div>
     );

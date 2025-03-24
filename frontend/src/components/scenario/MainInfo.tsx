@@ -135,7 +135,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                     </div>
                     
                     <div className="flex gap-5 align-middle">
-                        <h2 className="font-medium">Date of birth:</h2>
+                        <h2 className="font-medium">Birth year:</h2>
                         <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="birth_year" value={formData.birth_year} onChange={handleChange} min="1900" max="2025"/>
                     </div>
                     <div className="flex flex-col gap-3">
@@ -159,7 +159,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3" style={{opacity: (formData.is_married ? 1.0 : 0.2)}}>
                     <h1 className="text-2xl font-bold">Spouse</h1>
                     <div className="flex gap-5 align-middle">
-                        <h2 className="font-medium">Date of birth:</h2>
+                        <h2 className="font-medium">Birth year:</h2>
                         <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="spouse_birth_year" value={formData.spouse_birth_year} onChange={handleChange} disabled={!formData.is_married} min="1900" max="2025"/>
                     </div>
                     <div className="flex flex-col gap-3">
