@@ -1,9 +1,20 @@
 from fastapi.testclient import TestClient
 from app.main import app  # Import the FastAPI app
+import pytest
+import asyncio
+from app.db.db import init_db
 
-client = TestClient(app)
+@pytest.fixture(scope="module")
+def client():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(init_db())
+    
+    with TestClient(app) as test_client:
+        yield test_client
 
-def test_import_scenario():
+# client = TestClient(app)
+
+def test_import_scenario(client):
     file_path = "tests/scenario.yaml"
 
     with open(file_path, "rb") as file:

@@ -30,17 +30,17 @@ class Scenario(Document):
     event_series: List[Link["EventSeries"]]
     inflation_assume: Union[Fixed, Normal]
     limit_posttax: float
-    spending_strat: List[Link["Expense"]] #example uses name rather than link
-    expense_withdraw: List[Link["Investment"]] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
-    rmd_strat: List[Link["Investment"]] #example uses [S&P 500 pre-tax]
-    roth_conversion_strat: List[Link["Investment"]] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
+    spending_strat: List[str] #example uses name rather than link
+    expense_withdraw: List[str] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
+    rmd_strat: List[str] #example uses [S&P 500 pre-tax]
+    roth_conversion_strat: List[str] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
     roth_optimizer: RothOptimizer
     #not sure if this is the intended sharing method
-    r_only_share: List[Link["User"]]
-    wr_only_share: List[Link["User"]]
+    r_only_share: List[Link["User"]] = []
+    wr_only_share: List[Link["User"]] = []
     ignore_state_tax: bool
     fin_goal: float
-    state: str
+    state: str = None
     
     class Settings:
         name="scenarios"

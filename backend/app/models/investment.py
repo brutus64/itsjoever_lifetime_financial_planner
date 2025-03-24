@@ -30,8 +30,9 @@ class InvestmentType(Document):
 class Investment(Document):
     # user: Link["User"] #not in example but necessary to know who it belongs to?
     #OR
-    scenario: Link["Scenario"]
-    invest_type_id: Link[InvestmentType]
+    # scenario: Link["Scenario"] #NOT SURE IF NEEDED RIGHT NOW
+    invest_type: str #name to investment_type
+    invest_id: Optional[str] #name to investment + tax status?
     value: float
     tax_status: Literal['non-retirement','pre-tax','after-tax']
 
