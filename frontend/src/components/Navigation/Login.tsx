@@ -50,7 +50,7 @@ export default function Login() {
           // Set user info from the response
           // console.log(data)
           setUserInfo(data);
-
+          
           const userExists = await foundUser(data.email);
           if (!userExists){
             await createUser(data);
@@ -113,8 +113,7 @@ export default function Login() {
         },
         body: JSON.stringify({
           name: data.name,
-          email: data.email,
-          hashed_password: '',  
+          email: data.email,  
           session: '',  
           scenarios: [],
           age: 0,  

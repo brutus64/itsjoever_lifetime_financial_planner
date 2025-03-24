@@ -7,7 +7,7 @@ from app.models.scenario import Scenario
 class User(Document):
     name: str
     email: str
-    hashed_password: str
+    # hashed_password: str
     session: str
     scenarios: List[Link["Scenario"]]
     age: int
