@@ -44,15 +44,12 @@ export default function Roth({formData,setFormData}) {
         })
     }
 
-    console.log(formData.roth_conversion_strat)
-
     const canAdd = formData.investment.filter((inv) => {
         return (inv.tax_status === "pre-tax-retirement" && !formData.roth_conversion_strat.includes(inv.investment_type))
     })
-    console.log(canAdd)
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-full h-110" style={{"opacity":formData.roth_optimizer.is_enable ? 1.0 : 0.2}}>
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 w-full h-110" style={{"opacity":formData.roth_optimizer.is_enable ? 1.0 : 0.2}}>
             <h1 className="text-xl font-bold">Roth Conversion Strategy</h1>
 
             <Popup

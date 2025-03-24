@@ -44,15 +44,12 @@ export default function RMD({formData,setFormData}) {
         })
     }
 
-    console.log(formData.rmd_strat)
-
     const canAdd = formData.investment.filter((inv) => {
         return (inv.tax_status === "pre-tax-retirement" && !formData.rmd_strat.includes(inv.investment_type))
     })
-    console.log(canAdd)
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-full h-110">
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 w-full h-110">
             <h1 className="text-xl font-bold">RMD Strategy</h1>
 
             <Popup

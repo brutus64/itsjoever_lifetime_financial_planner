@@ -23,7 +23,7 @@ const RMDRoth = ({formData,setFormData}:any) => {
         })
     }
     return (
-        <div className='flex flex-col w-[90vw] m-10 gap-1'>
+        <div className='flex flex-col m-10 gap-1'>
             <div className="shadow-md rounded-lg justify-between flex flex-col gap-2 w-130 p-4">
                 <h1 className="text-2xl font-bold">Roth Conversion Optimizer</h1>
                 {/* <p className='mb-2'>An in-kind transfer of assets from pre-tax retirement accounts to after-tax retirement accounts</p> */}
