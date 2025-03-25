@@ -81,7 +81,9 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
 
     const handleStartYearChange = (e: any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setRebalanceEventData({
             ...rebalanceEventData,
@@ -96,7 +98,9 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
 
     const handleDurationChange = (e:any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setRebalanceEventData({
             ...rebalanceEventData,
