@@ -28,10 +28,13 @@ async def create_investment():
 @router.post("/create_scenario")
 async def create_scenario(scenario: Scenario):
     try:
+        
+        scenario.user = scenario.user.user.id
         created_scenario = await scenario.insert()
         return {"message": "success"}
     except Exception as e:
-        pass
+        print(f"Error in create_scenario: {e}")  # Actually print the exception
+        raise 
 
 @router.get("/{scenario_id}")
 async def fetch_scenario(scenario_id: str):
