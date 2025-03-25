@@ -12,8 +12,12 @@ if TYPE_CHECKING:
 #capital gain/loss or dividends/interest, tied to value of investment, not to be confused with annual change in event series
 class InvestAnnualChange(BaseModel):
     type: Literal['fixed', 'normal']
-    fixed: Optional[Fixed]
-    normal: Optional[Normal]
+    # fixed: Optional[Fixed]
+    # normal: Optional[Normal]
+    value: Optional[float] = None
+    mean: Optional[float] = None
+    stdev: Optional[float] = None
+    is_percent: bool = False
     #may need to enforce either-or relationship
 
 class InvestmentType(Document):
