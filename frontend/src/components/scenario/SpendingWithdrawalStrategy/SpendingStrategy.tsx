@@ -43,9 +43,10 @@ export default function SpendingStrategy({formData,setFormData}) {
             spending_strat: [...formData.spending_strat,expense]
         })
     }
+    console.log(formData.event_series)
 
     const canAdd = formData.event_series.filter((es) => {
-        return es.type === "expense" && es.details.is_disrectionary && !formData.spending_strat.includes(es.name)
+        return es.type === "expense" && es.expense === "Discretionary" && !formData.spending_strat.includes(es.name)
     })
 
     return (
@@ -80,7 +81,7 @@ export default function SpendingStrategy({formData,setFormData}) {
                     items={formData.spending_strat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.spending_strat.map((es,i) => <SortableItem key={es.name} es={es} ind={i}/>)}
+                        {formData.spending_strat.map((es,i) => <SortableItem key={es} es={es} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -96,7 +97,7 @@ const SortableItem = ({es,ind}) => {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: es.name});
+    } = useSortable({id: es});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -106,7 +107,7 @@ const SortableItem = ({es,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{es.name}</div>
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{es}</div>
             
         </div>
     );

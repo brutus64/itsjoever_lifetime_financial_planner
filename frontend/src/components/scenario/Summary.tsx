@@ -130,8 +130,6 @@ const Summary = ({formData,setFormData}:any) => {
                     <div className="font-medium">Roth Conversion Strategy:</div>
                 </div>}
                 
-
-
             </div>
             
             <button className="text-white font-bold text-xl px-7 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-40 h-10" onClick={handleSubmit}>Save</button>
