@@ -1,10 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
+import { Description } from "./EventSeries/EventSeries";
 
 const Scenario = ({}) => {
     const [ collapse, setCollapse ] = useState({ //need to set the lengths to array sizes
-        investment_types: [false],
-        event_series: [false],
+        investment_types: [false,false],
+        event_series: [false,false],
     })
     const params = useParams();
     // can either pass scenario data in or query database given scenario id
@@ -20,22 +21,42 @@ const Scenario = ({}) => {
         })
     }
 
-    const handlePercent = (type,percent,amt,mean,stdev) => {
+    const handlePercent = ({type,is_percent,value,mean,stdev,lower,upper}) => {
         let string_amt = ""
         let string_mean = ""
         let string_stdev = ""
-        if (percent) {
-            string_amt = amt + "%";
+        let string_lower = ""
+        let string_upper = ""
+        if (is_percent) {
+            string_amt = value + "%";
             string_mean = mean + "%";
             string_stdev = stdev + "%";
+            string_lower = lower + "%";
+            string_upper = upper + "%"
         }
         else {
-            string_amt = "$" + amt;
+            string_amt = "$" + value;
             string_mean = "$" + mean;
             string_stdev = "$" + stdev;
+            string_lower = "$" + lower;
+            string_upper = "$" + upper;
         }
+        switch (type) {
+            case "fixed": return string_amt;
+            case "normal": return `Normal(mean=${string_mean},stddev=${string_stdev})`;
+            case "uniform": return `Uniform(lower=${string_lower},upper=${string_upper})`
+        }
+        return ""
+    }
 
-        return type === "fixed" ? string_amt : `Normal(mean=${string_mean},stddev=${string_stdev})`
+    const handleYear = ({type,value,lower,upper,mean,stdev,event_series}) => {
+        switch(type) {
+            case "fixed": return value
+            case "normal": return `Normal(mean=${mean},stddev=${stdev})`
+            case "uniform": return `Uniform(lower=${lower},upper=${upper})`
+            case "start_with": return "With " + event_series
+            default: return "After " + event_series
+        }
     }
 
     //sample
@@ -56,7 +77,7 @@ const Scenario = ({}) => {
             description:"moneyyyy",
             exp_annual_return: {
                 type:"normal",
-                amt:0,
+                value:0,
                 is_percent:true,
                 mean:5,
                 stdev:3
@@ -64,7 +85,7 @@ const Scenario = ({}) => {
             expense_ratio: 0.2,
             exp_annual_income: {
                 type:"fixed",
-                amt:1000,
+                value:1000,
                 is_percent:false,
                 mean:0,
                 stdev:1
@@ -78,6 +99,79 @@ const Scenario = ({}) => {
             tax_status:"pre-tax"
         }],
         event_series: [{
+            name:"job",
+            description:"my job",
+            start: {
+                type: "fixed",
+                value: 2020,
+                lower:2019,
+                upper:2022,
+                mean:0,
+                stdev:1,
+                event_series:""
+            },
+            duration: {
+                type: "uniform",
+                value: 0,
+                lower:20,
+                upper:30,
+                mean:0,
+                stdev:1,
+                event_series:""
+            },
+            type: "income",
+            details: {
+                initial_amt: 95000,
+                exp_annual_change: {
+                    type: "fixed",
+                    is_percent: false,
+                    value: 7000,
+                    lower: 0,
+                    upper:0,
+                    mean:0,
+                    stdev:1
+                },
+                inflation_adjust: true,
+                user_split: [100],
+                social_security: true
+            }
+        },{
+            name:"eating out",
+            description:"yum yum",
+            start: {
+                type: "normal",
+                value: 2020,
+                lower:2019,
+                upper:2022,
+                mean:2019,
+                stdev:3,
+                event_series:""
+            },
+            duration: {
+                type: "uniform",
+                value: 0,
+                lower:20,
+                upper:30,
+                mean:0,
+                stdev:1,
+                event_series:""
+            },
+            type: "expense",
+            details: {
+                initial_amt: 6000,
+                exp_annual_change: {
+                    type: "normal",
+                    is_percent: true,
+                    value: 0,
+                    lower: 10,
+                    upper: 90,
+                    mean: 3,
+                    stdev:0.5
+                },
+                inflation_adjust: true,
+                user_split: [100],
+                is_discretionary: true
+            }
 
         }],
         inflation_assume: {
@@ -131,15 +225,14 @@ const Scenario = ({}) => {
                             {collapse.investment_types[i] && 
                             <div className="p-4 gap-3 w-140">
                                 <div><b>Description:</b> {investment.description}</div>
-                                <div><b>Expected Annual Return:</b> {handlePercent(investment.exp_annual_return.type,investment.exp_annual_return.is_percent,investment.exp_annual_return.amt,investment.exp_annual_return.mean,investment.exp_annual_return.stdev)}</div>
-                                <div><b>Expected Annual Income:</b> {handlePercent(investment.exp_annual_income.type,investment.exp_annual_income.is_percent,investment.exp_annual_income.amt,investment.exp_annual_income.mean,investment.exp_annual_income.stdev)}</div>
+                                <div><b>Expected Annual Return:</b> {handlePercent(investment.exp_annual_return)}</div>
+                                <div><b>Expected Annual Income:</b> {handlePercent(investment.exp_annual_income)}</div>
                                 <div><b>Expense Ratio:</b> {investment.expense_ratio}</div>
-                                <div><b>Taxability:</b> {investment.taxability}</div>
+                                <div><b>Taxability:</b> {investment.taxability ? "yes" : "no"}</div>
                             </div>}
                         </div>
                     )}
                 </div>
-                
             </div>
 
             <div className="flex flex-col gap-3">
@@ -149,11 +242,50 @@ const Scenario = ({}) => {
                         <div className="font-medium bg-white shadow-md rounded-lg flex flex-col pl-4 py-4 gap-1 w-140 h-30">
                             <div><b>Invest Type:</b> {investment.invest_type}</div>
                             <div><b>Value:</b> ${investment.value}</div>
-                            <div><b>Tax Status:</b> ${investment.tax_status}</div>
+                            <div><b>Tax Status:</b> {investment.tax_status}</div>
                         </div>
                     )}
                 </div>
-                
+            </div>
+
+            <div className="flex flex-col gap-3">
+                <h1 className="text-3xl font-medium">Event Series</h1>
+                <div className="flex flex-col gap-2">
+                    {scenario.event_series.map((es,i) =>
+                        <div >
+                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("investment_types",i)}>{es.name}</div>
+                            {collapse.investment_types[i] && 
+                            <div className="flex flex-col p-4 gap-1 w-140">
+                                <div><b>Description:</b> {es.description}</div>
+                                <div><b>Start year:</b> {handleYear(es.start)}</div>
+                                <div><b>Duration:</b> {handleYear(es.duration)} years</div>
+                                <div><b>Type:</b> {es.type}</div>
+                                {es.type === "income" && <div className="flex flex-col gap-1">
+                                    <div><b>Initial Amount:</b> ${es.details.initial_amt}</div>
+                                    <div><b>Annual Change:</b> {handlePercent(es.details.exp_annual_change)}</div>
+                                    <div><b>Adjusted for Inflation:</b> {es.details.inflation_adjust ? "yes" : "no"}</div>
+                                    <div><b>Percentage associated with user:</b> {es.details.user_split}%</div>
+                                    <div><b>Social Security:</b> {es.details.social_security ? "yes" : "no"}</div>
+                                </div>}
+                                {es.type === "expense" && <div className="flex flex-col gap-1">
+                                    <div><b>Initial Amount:</b> ${es.details.initial_amt}</div>
+                                    <div><b>Annual Change:</b> {handlePercent(es.details.exp_annual_change)}</div>
+                                    <div><b>Adjusted for Inflation:</b> {es.details.inflation_adjust}</div>
+                                    <div><b>Percentage associated with user:</b> {es.details.user_split}%</div>
+                                    <div><b>Discretionary:</b> {es.details.is_discretionary ? "yes" : "no"}</div>
+                                </div>}
+                                {es.type === "invest" && <div className="flex flex-col gap-1">
+                                    <div><b>Glide path:</b> {es.details.is_glide ? "yes" : "no"}</div>
+                                    
+                                    <div><b>Initial Amount:</b> ${es.details.initial_amt}</div>
+                                </div>}
+                                {es.type === "rebalance" && <div className="flex flex-col gap-1">
+                                    
+                                </div>}
+                            </div>}
+                        </div>
+                    )}
+                </div>
             </div>
 
             
