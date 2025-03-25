@@ -24,22 +24,53 @@ const defaultRebalanceEventForm = {
         stddev: 1,
 
     },
-    is_glide: false, // IMPORTANT; if is_glide is false, final_allocation has the "fixed" percentages
+    is_glide: false, 
     tax_status: "non-retirement",
-    initial_allocation: {}, //key = "investment_type|tax_status", value = percentage
-    final_allocation: {}, //key = "investment_type|tax_status", value = percentage
+    initial_allocation: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation1
+    final_allocation: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation2
 }
 
 const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formData:any, setFormData:any}) => {
     const [ rebalanceEventData, setRebalanceEventData ] = useState(defaultRebalanceEventForm);
-      // Clear fields if successfully added or cancel button clicked or if editing
-      const handleClose = (clear:boolean) => {
+    const [ error, setError ] = useState("");
+
+    // Clear fields if successfully added or cancel button clicked or if editing
+    const handleClose = (clear:boolean) => {
         if (clear)
             setRebalanceEventData(defaultRebalanceEventForm)
         setOpen(false)
+        setError("")
     }
 
     function handleRebalanceEvent() {
+        const important_fields = [rebalanceEventData.name]
+
+        if (important_fields.some((field) => field === "")) {
+            setError("Please fill out all fields");
+            return;
+        }
+        let { type: s_type, fixed: s_fixed, min: s_min, max: s_max, mean: s_mean, stddev: s_stddev, event_series: s_event_series } = rebalanceEventData.start_year;
+        if (
+            s_type == '' ||
+            s_type === 'fixed' && s_fixed < 0 ||
+            s_type === 'uniform' && (s_min < 0 || s_max < 0) || 
+            s_type === 'normal' && (s_mean < 0 || s_stddev < 0) ||
+            (s_type === 'same_year' || s_type === 'year_after') && s_event_series === ""
+        ) {
+            setError("Please fill out Start Year fields");
+            return;
+        }
+        
+        let { type: d_type, fixed: d_fixed, min: d_min, max: d_max, mean: d_mean, stddev: d_stddev } = rebalanceEventData.duration;
+        if (
+            d_type == '' ||
+            d_type === 'fixed' && d_fixed < 0 ||
+            d_type === 'uniform' && (d_min < 0 || d_max < 0) || 
+            d_type === 'normal' && (d_mean < 0 || d_stddev < 0)
+        ) {
+            setError("Please fill out Duration fields");
+            return;
+        }
         setFormData({
             ...formData,
             event_series: [...formData.event_series,rebalanceEventData] 
@@ -50,6 +81,7 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
 
     const handleStartYearChange = (e: any) => {
         let { name, value } = e.target;
+        name = name.split('-')[1]
 
         setRebalanceEventData({
             ...rebalanceEventData,
@@ -64,6 +96,7 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
 
     const handleDurationChange = (e:any) => {
         let { name, value } = e.target;
+        name = name.split('-')[1]
 
         setRebalanceEventData({
             ...rebalanceEventData,
@@ -153,10 +186,32 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
                         <h1 className="text-center">No investments to allocate</h1>
                     )}
 
+                    <div className="flex flex-col">
+                        {formData.investment.filter(investment => investment.tax_status ===  rebalanceEventData.tax_status).length > 0 && (
+                            <h1 className="text-center">{rebalanceEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
+                        )}
+                        <div className="flex flex-col gap-3">
+                            {formData.investment
+                            .filter(investment => investment.tax_status ===  rebalanceEventData.tax_status)
+                            .map(investment =>
+                                <div className="flex flex-col gap-1 w-60">
+                                    <InvestmentCard investment={investment}/>
+                                    <div className='flex gap-3'>
+                                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
+                                            name={"initial:"+investment.investment_type+'|'+investment.tax_status} 
+                                            value={(rebalanceEventData.final_allocation["initial:"+investment.investment_type+'|'+investment.tax_status])} 
+                                            onChange={handleAssetAllocation} 
+                                            min="0" max="100"/> %
+                                    </div>
+                                </div> 
+                            )}
+                        </div>
+                    </div>
+
                     {rebalanceEventData.is_glide && (
                         <div className="flex flex-col">
                             {formData.investment.filter(investment => investment.tax_status ==  rebalanceEventData.tax_status).length > 0 && (
-                                <h1 className="text-center">Initial Percentages</h1>
+                                <h1 className="text-center">Final Percentages</h1>
                             )}
                             
                             <div className="flex flex-col gap-3">
@@ -169,8 +224,8 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
                                             <input
                                                 type="number"
                                                 className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                                                name={"initial:"+investment.investment_type+'|'+investment.tax_status}
-                                                value={rebalanceEventData.initial_allocation["initial:"+investment.investment_type+'|'+investment.tax_status]}
+                                                name={"final:"+investment.investment_type+'|'+investment.tax_status}
+                                                value={rebalanceEventData.initial_allocation["final:"+investment.investment_type+'|'+investment.tax_status]}
                                                 onChange={handleAssetAllocation}
                                                 min="0"
                                                 max="100"
@@ -182,32 +237,13 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
                         </div>
                     )}
 
-                    <div className="flex flex-col">
-                        {formData.investment.filter(investment => investment.tax_status ===  rebalanceEventData.tax_status).length > 0 && (
-                            <h1 className="text-center">Final Percentages</h1>
-                        )}
-                        <div className="flex flex-col gap-3">
-                            {formData.investment
-                            .filter(investment => investment.tax_status ===  rebalanceEventData.tax_status)
-                            .map(investment =>
-                                <div className="flex flex-col gap-1 w-60">
-                                    <InvestmentCard investment={investment}/>
-                                    <div className='flex gap-3'>
-                                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
-                                            name={"final:"+investment.investment_type+'|'+investment.tax_status} 
-                                            value={(rebalanceEventData.final_allocation["final:"+investment.investment_type+'|'+investment.tax_status])} 
-                                            onChange={handleAssetAllocation} 
-                                            min="0" max="100"/> %
-                                    </div>
-                                </div> 
-                            )}
-                        </div>
-                    </div>
+
                 </div>
             </div>
 
-            <div className="flex justify-center gap-20">
+            <div className="flex justify-between">
                 <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
+                <div className="text-red-600 font-bold">{error}</div>
                 <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleRebalanceEvent}>Add</button>
             </div>
             
