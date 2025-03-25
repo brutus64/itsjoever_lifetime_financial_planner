@@ -40,32 +40,149 @@ async def create_scenario(scenario:  dict):
     try:
         # 
         user = scenario['user']
-        print(user)
+        # print(user)
         name = scenario['name']
-        print(name)
+        # print(name)
         marital= scenario['marital']
-        print(marital)
+        # print(marital)
         birth_year = scenario['birth_year']
-        print(birth_year)
+        # print(birth_year)
         life_expectancy = scenario['life_expectancy']
-        print(life_expectancy)
+        # print(life_expectancy)
         inflation_assume = scenario['inflation_assume']
-        print(inflation_assume)
+        # print(inflation_assume)
         limit_posttax=scenario['limit_posttax']
-        print(limit_posttax)
+        # print(limit_posttax)
         roth_optimizer= scenario['roth_optimizer']
-        print(roth_optimizer)
+        # print(roth_optimizer)
         r_only_share = scenario['r_only_share']
-        print(r_only_share)
+        # print(r_only_share)
         wr_only_share =scenario['wr_only_share']
-        print(wr_only_share)
+        # print(wr_only_share)
         fin_goal = scenario['fin_goal']
-        print(fin_goal)
+        # print(fin_goal)
         # investment_types: List[Link["InvestmentType"]]
         investment_types = scenario['investment_types']
-        print(investment_types)
+        # print(investment_types)
+
+    
+        result_investment_types = [] # include ids of investments types for scenario creation
+        for it in investment_types:
+            it_name = it['name']
+            it_description = it['description']
+            it_expense_ratio = it['expense_ratio']
+            it_tax = it['is_tax_exempt']
+            if it['exp_annual_return']['type'] == 'fixed':
+                exp_annual_return_type = 'fixed'
+                value = it['exp_annual_return']['fixed']
+                is_percent=it['exp_annual_return']['is_percent']
+                #invest annual change
+                return_iac = {'type': exp_annual_return_type, 'value':value, 'is_percent': is_percent}
+            else:
+                exp_annual_return_type = 'normal'
+                mean = it['exp_annual_return']['mean']
+                std = it['exp_annual_return']['stddev']
+                is_percent=it['is_percent']
+                return_iac = {'type':exp_annual_return_type, 'mean': mean, 'stdev':std, 'is_percent':is_percent}
+            if it['exp_annual_income']['type'] == 'fixed':
+                exp_annual_income_type = 'fixed'
+                value = it['exp_annual_income']['fixed']
+                is_percent=it['exp_annual_income']['is_percent']
+                #invest annual change
+                income_iac = {'type': exp_annual_income_type, 'value':value, 'is_percent': is_percent}
+            else:
+                exp_annual_return_type = 'normal'
+                mean = it['exp_annual_income']['mean']
+                std = it['exp_annual_income']['stddev']
+                is_percent=it['exp_annual_income']['is_percent']
+                income_iac = {'type':exp_annual_income_type, 'mean': mean, 'stdev':std, 'is_percent':is_percent}
+            investment_type = {'name': it_name, 'description': it_description, 'exp_annual_return': return_iac, 'expense_ratio':it_expense_ratio, 'exp_annual_income': income_iac, 'taxability':it_tax}
+            # print(investment_type)
+            it_db_obj = InvestmentType(**investment_type)
+            result_investment_types.append(investment_type)
+            await it_db_obj.insert()
+        
         # investment: List[Link["Investment"]]
+        investments = scenario['investment']
+        for i in investments:
+            invest_type = i['investment_type']
+            tax_status = i['tax_status']
+            val = i['value']
+            i_id = invest_type+tax_status
+        # invest_type: str #name to investment_type
+        # invest_id: Optional[str] #name to investment + tax status?
+        # value: float
+        # tax_status: Literal['non-retirement','pre-tax','after-tax'
+            investment_ids = []
+            investment = {'invest_type': invest_type, 'invest_id':i_id, 'value': val, 'tax_status':tax_status}
+            inv_db_obj = Investment(**investment)
+            inv = await inv_db_obj.insert()
+            investment_ids.append(inv.id)
+        # print(investment_ids)
         # event_series: List[Link["EventSeries"]]
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # event_series = scenario['event_series']
+        # event_series_id = []
+        # for e in event_series:
+        #     e_name = e['name']
+        #     e_description = e['description']
+        #     e_type = e['type']
+        #     e_start_type = e['start_year']['type']
+        #     if e_start_type == 'fixed':
+        #         e_date = {'value': e['start_year']['fixed']}
+        #     elif e_start_type == 'uniform':
+        #         e_date = {'lower': e['start_year']['min'], 'upper': e['start_year']['max']}
+        #     elif e_start_type == 'normal':
+        #         e_date = {'mean': e['start_year']['mean'], 'stdev': e['start_year']['stddev']}
+        #     elif e_start_type in ['start_with', 'end_with']:
+        #         e_date = {'event_series': e['start_year']['event_series']}
+        #     e_duration_type = e['duration']['type']
+        #     if e_duration_type == 'fixed':
+        #         e_duration = {'value': e['duration']['fixed']}
+        #     elif e_duration_type == 'uniform':
+        #         e_duration = {'lower': e['duration']['min'], 'upper': e['duration']['max']}
+        #     elif e_duration_type == 'normal':
+        #         e_duration = {'mean': e['duration']['mean'], 'stdev': e['duration']['stddev']}
+        #     elif e_duration_type in ['start_with', 'end_with']:
+        #         e_duration = {'event_series': e['duration']['event_series']}
+        #     if e_type == 'income':
+        #         initial_amt = e['initial_amount']
+        #         inflation_adjust = True #??? idk what the frontend data is for this
+        #         user_split = 0.0 # ???
+        #         social_security = False # ???
+        #         exp_annual_change_type = e['exp_annual_change']['type']
+        #         if exp_annual_change_type == 'fixed':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'value': e['exp_annual_change']['fixed']}
+        #         if exp_annual_change_type == 'uniform':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'lower': e['exp_annual_change']['min'], 'upuper': e['exp_annual_change']['max']}
+        #         if exp_annual_change_type == 'normal':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'mean': e['exp_annual_change']['mean'], 'stdev':e['exp_annual_change']['stddev']}
+        #         income = {'initial_amt':initial_amt, 'inflation_adjust': inflation_adjust, 'user_split':user, 'social_security': social_security}
+        #         event = {'name': e_name, 'description': e_description, 'start': e_date, 'duration': e_duration, 'type':e_type, 'details': income}
+                
+        #     elif e_type == 'expense':
+        #         initial_amt = e['initial_amount']
+        #         inflation_adjust = True #??? idk what the frontend data is for this
+        #         user_split = 0.0 # ???
+        #         is_discretionary = False # ???
+        #         exp_annual_change_type = e['exp_annual_change']['type']
+        #         if exp_annual_change_type == 'fixed':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'value': e['exp_annual_change']['fixed']}
+        #         if exp_annual_change_type == 'uniform':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'lower': e['exp_annual_change']['min'], 'upuper': e['exp_annual_change']['max']}
+        #         if exp_annual_change_type == 'normal':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'mean': e['exp_annual_change']['mean'], 'stdev':e['exp_annual_change']['stddev']}
+        #         expense = {'initial_amt':initial_amt, 'inflation_adjust': inflation_adjust, 'user_split':user, 'is_discretioinary': is_discretionary}
+        #         event = {'name': e_name, 'description': e_description, 'start': e_date, 'duration': e_duration, 'type':e_type, 'details': expense}
+                
+        #     elif e_type == 'invest':
+        #         pass
+        #     elif e_type == 'rebalance':
+        #         pass
+        #     event_db_obj = EventSeries(**event)
+        #     event_obj = await event_db_obj.insert()
+        #     event_series_id.append(event_obj.id)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # spending_strat: List[Link["EveDntSeries"]] #example uses name rather than link
         # expense_withdraw: List[Link["Investment"]] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
         # rmd_strat: List[Link["Investment"]] #example uses [S&P 500 pre-tax]
