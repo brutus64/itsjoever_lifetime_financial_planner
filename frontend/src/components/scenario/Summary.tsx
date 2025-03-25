@@ -48,22 +48,112 @@ const Summary = ({formData,setFormData}:any) => {
             return
         }
         const user_id = user?._id;
-        console.log(user_id)
+        console.log(user_id);
+        console.log(formData);
+        // const parse_investment_types = (investment_types:any) => {
+        //     let newData = investment_types.map((item:any) => {
+        //         // Looks like you meant 'type' instead of 'map'
+        //         if (item.type === 'fixed') {
+        //             item.exp_annual_income = {
+        //                 type: "fixed",
+        //                 normal: null,
+        //                 // This needs to be restructured - the nested object should be a direct property
+        //                 amt: item.exp_annual_income.fixed,
+        //                 is_percent: item.exp_annual_income.is_percent
+        //             };
+        //         }
+        //         else if(item.type === 'normal'){
+        //                 item.exp_annual_income = {
+        //                     type: "normal",
+        //                     fixed: null,
+        //                     mean: item.exp_annual_income.mean,
+        //                     stdev: item.exp_annual_income.stddev,
+        //                     is_percent: item.exp_annual_income.is_percent
+        //                 };
+        //         }
+        //         return item; // Don't forget to return the item
+        //     });
+        //     return newData; // Return the transformed array
+        //     };
         const scenario_data = {
             user: user_id,
             name: formData.name,
             marital: formData.is_married ? "couple" : "individual",
             birth_year: [formData.birth_year],
             life_expectancy: [formData.life_expectancy],
-            investment_types: [],
-            investment: [],
-            event_series: [],
+            investment_types: formData.investment_types,
+            // investment_types: formData.investment_types.map((item:any) => 
+            //     item.exp_annual_income.type === 'fixed' ?  {
+            //         name: item.name? item.name: "",
+            //         description: item.description,
+            //         expense_ratio: item.expense_ratio,
+            //         taxability: item.is_tax_exempt,
+            //         exp_annual_income: {
+            //             type: "fixed",
+            //             fixed: {
+            //                 amt: item.exp_annual_income.fixed,
+            //                 is_percent: item.exp_annual_income.is_percent
+            //             },
+            //             normal: null
+            //         },
+            //         exp_annual_return: item.exp_annual_return.type === 'fixed'?{
+            //             type: "fixed",
+            //             fixed: {
+            //                 amt: item.exp_annual_return.fixed,
+            //                 is_percent: item.exp_annual_return.is_percent
+            //             },
+            //             normal: null
+            //         }:{
+            //             type: "normal",
+            //             normal: {
+            //                 mean: item.exp_annual_return.mean,
+            //                 stdev: item.exp_annual_return.stddev,
+            //                 is_percent: item.exp_annual_return.is_percent
+            //             },
+            //             fixed: null
+            //         }
+            //     }: 
+            //     {
+            //         name: item.name? item.name: "",
+            //         description: item.description,
+            //         expense_ratio: item.expense_ratio,
+            //         taxability: item.is_tax_exempt,
+            //         exp_annual_income: {
+            //             type: "normal",
+            //             normal: {
+            //                 mean: item.exp_annual_income.mean,
+            //                 stdev: item.exp_annual_income.stddev,
+            //                 is_percent: item.exp_annual_income.is_percent
+            //             },
+            //             fixed: null
+            //         },
+            //         exp_annual_return: item.exp_annual_return.type === 'fixed'?{
+            //             type: "fixed",
+            //             fixed: {
+            //                 amt: item.exp_annual_return.fixed,
+            //                 is_percent: item.exp_annual_return.is_percent
+            //             },
+            //             normal: null
+            //         }:{
+            //             type: "normal",
+            //             normal: {
+            //                 mean: item.exp_annual_return.mean,
+            //                 stdev: item.exp_annual_return.stddev,
+            //                 is_percent: item.exp_annual_return.is_percent
+            //             },
+            //             fixed: null
+            //         }
+            //     }
+                
+            // ),            
+            investment: formData.investment,
+            event_series: formData.event_series,
             inflation_assume: formData.inflation_assume,
             limit_posttax: 0.0,
-            spending_strat: [], 
-            expense_withdraw: [], 
-            rmd_strat: [] ,
-            roth_conversion_strat: [], 
+            spending_strat: formData.spending_strat, 
+            expense_withdraw: formData.expense_withdraw, 
+            rmd_strat: formData.rmd_strat ,
+            roth_conversion_strat: formData.roth_conversion_strat, 
             roth_optimizer: formData.roth_optimizer,
             r_only_share:  [],
             wr_only_share: [],
@@ -71,6 +161,9 @@ const Summary = ({formData,setFormData}:any) => {
             fin_goal: parseFloat(formData.fin_goal),
             state: formData.state
         }
+
+        
+
         try{
             console.log(scenario_data);
             const response = await axios.post("http://localhost:8000/api/scenario/create_scenario", scenario_data);
@@ -82,7 +175,7 @@ const Summary = ({formData,setFormData}:any) => {
             }
         }
         catch(error:any){
-            console.log("Error saving the scenario: ", error.response.data);
+            console.log("Error saving the scenario: ", error);
     
         }
 

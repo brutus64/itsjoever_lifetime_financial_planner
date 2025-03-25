@@ -25,12 +25,53 @@ async def create_investment():
     except Exception as e:
         pass
     
-@router.post("/create_scenario")
-async def create_scenario(scenario: Scenario):
-    try:
+# @router.post("/create_scenario")
+# async def create_scenario(scenario: Scenario):
+#     try:
         
-        created_scenario = await scenario.insert()
-        return {"message": "success"}
+#         created_scenario = await scenario.insert()
+#         return {"message": "success"}
+#     except Exception as e:
+#         print(f"Error in create_scenario: {e}")  # Actually print the exception
+#         raise 
+@router.post("/create_scenario")
+async def create_scenario(scenario:  dict):
+    try:
+        # 
+        user = scenario['user']
+        print(user)
+        name = scenario['name']
+        print(name)
+        marital= scenario['marital']
+        print(marital)
+        birth_year = scenario['birth_year']
+        print(birth_year)
+        life_expectancy = scenario['life_expectancy']
+        print(life_expectancy)
+        inflation_assume = scenario['inflation_assume']
+        print(inflation_assume)
+        limit_posttax=scenario['limit_posttax']
+        print(limit_posttax)
+        roth_optimizer= scenario['roth_optimizer']
+        print(roth_optimizer)
+        r_only_share = scenario['r_only_share']
+        print(r_only_share)
+        wr_only_share =scenario['wr_only_share']
+        print(wr_only_share)
+        fin_goal = scenario['fin_goal']
+        print(fin_goal)
+        # investment_types: List[Link["InvestmentType"]]
+        investment_types = scenario['investment_types']
+        print(investment_types)
+        # investment: List[Link["Investment"]]
+        # event_series: List[Link["EventSeries"]]
+        # spending_strat: List[Link["EveDntSeries"]] #example uses name rather than link
+        # expense_withdraw: List[Link["Investment"]] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
+        # rmd_strat: List[Link["Investment"]] #example uses [S&P 500 pre-tax]
+        # roth_conversion_strat: List[Link["Investment"]] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
+        
+        
+        return {"message":"success"}
     except Exception as e:
         print(f"Error in create_scenario: {e}")  # Actually print the exception
         raise 
