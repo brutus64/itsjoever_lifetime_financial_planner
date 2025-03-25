@@ -10,6 +10,19 @@ lifeExpectancy:
   mean: 82.0
   stdev: 3.0
 investmentTypes:
+- name: tax-exempt bonds
+  description: NY tax-exempt bonds
+  expenseRatio: 0.004
+  taxability: false
+  returnAmtOrPct: amount
+  returnDistribution:
+    type: fixed
+    value: 0.0
+  incomeAmtOrPct: percent
+  incomeDistribution:
+    type: normal
+    mean: 0.03
+    stdev: 0.01
 - name: cash
   description: cash
   expenseRatio: 0.0
@@ -36,41 +49,41 @@ investmentTypes:
     type: normal
     mean: 0.01
     stdev: 0.005
-- name: tax-exempt bonds
-  description: NY tax-exempt bonds
-  expenseRatio: 0.004
-  taxability: false
-  returnAmtOrPct: amount
-  returnDistribution:
-    type: fixed
-    value: 0.0
-  incomeAmtOrPct: percent
-  incomeDistribution:
-    type: normal
-    mean: 0.03
-    stdev: 0.01
 investments:
+- investmentType: cash
+  value: 100.0
+  taxStatus: non-retirement
+  id: cash
+- investmentType: S&P 500
+  value: 2000.0
+  taxStatus: after-tax
+  id: S&P 500 after-tax
 - investmentType: tax-exempt bonds
   value: 2000.0
   taxStatus: non-retirement
   id: tax-exempt bonds
 - investmentType: S&P 500
   value: 10000.0
-  taxStatus: pre-tax
-  id: S&P 500 pre-tax
-- investmentType: S&P 500
-  value: 2000.0
-  taxStatus: after-tax
-  id: S&P 500 after-tax
-- investmentType: cash
-  value: 100.0
-  taxStatus: non-retirement
-  id: cash
-- investmentType: S&P 500
-  value: 10000.0
   taxStatus: non-retirement
   id: S&P 500 non-retirement
+- investmentType: S&P 500
+  value: 10000.0
+  taxStatus: pre-tax
+  id: S&P 500 pre-tax
 eventSeries:
+- name: rebalance
+  type: rebalance
+  start:
+    type: uniform
+    lower: 2025.0
+    upper: 2030.0
+  duration:
+    type: fixed
+    value: 10.0
+  glidePath: false
+  assetAllocation:
+    S&P500 non-retirement: 0.7
+    tax-exempt bonds: 0.3
 - name: food
   type: expense
   start:
@@ -88,6 +101,23 @@ eventSeries:
     type: normal
     mean: 0.02
     stdev: 0.01
+- name: salary
+  type: income
+  start:
+    type: fixed
+    value: 2025.0
+  duration:
+    type: fixed
+    value: 40.0
+  initialAmount: 75000.0
+  inflationAdjusted: false
+  userFraction: 1.0
+  socialSecurity: false
+  changeAmtOrPct: amount
+  changeDistribution:
+    type: uniform
+    lower: 500.0
+    upper: 2000.0
 - name: vacation
   type: expense
   start:
@@ -137,36 +167,6 @@ eventSeries:
     S&P 500 non-retirement: 0.8
     S&P 500 after-tax: 0.2
   maxCash: 1000.0
-- name: rebalance
-  type: rebalance
-  start:
-    type: uniform
-    lower: 2025.0
-    upper: 2030.0
-  duration:
-    type: fixed
-    value: 10.0
-  glidePath: false
-  assetAllocation:
-    S&P500 non-retirement: 0.7
-    tax-exempt bonds: 0.3
-- name: salary
-  type: income
-  start:
-    type: fixed
-    value: 2025.0
-  duration:
-    type: fixed
-    value: 40.0
-  initialAmount: 75000.0
-  inflationAdjusted: false
-  userFraction: 1.0
-  socialSecurity: false
-  changeAmtOrPct: amount
-  changeDistribution:
-    type: uniform
-    lower: 500.0
-    upper: 2000.0
 inflationAssumption:
   type: fixed
   value: 0.03

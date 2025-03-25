@@ -33,4 +33,5 @@ def test_import_scenario(client):
 def test_export_scenario(client):
     # test_import_scenario(client)
     res = client.get("/api/scenario/export/Retirement Planning Scenario")
+    # assert res.headers.get("content-type") == "application/x-yaml"
     assert res.status_code == 200
