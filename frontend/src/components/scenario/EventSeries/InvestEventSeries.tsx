@@ -84,7 +84,9 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
 
     const handleStartYearChange = (e: any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setInvestEventData({
             ...investEventData,
@@ -99,7 +101,9 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
 
     const handleDurationChange = (e:any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setInvestEventData({
             ...investEventData,

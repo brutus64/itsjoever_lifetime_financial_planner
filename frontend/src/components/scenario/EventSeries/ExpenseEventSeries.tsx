@@ -99,7 +99,9 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
 
     const handleStartYearChange = (e: any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setExpenseEventData({
             ...expenseEventData,
@@ -114,7 +116,9 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
 
     const handleDurationChange = (e:any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setExpenseEventData({
             ...expenseEventData,
@@ -128,7 +132,9 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
 
     const handleAnnualChange = (e:any) => {
         let { name, value } = e.target;
-        name = name.split('-')[1]
+        if (name.includes("-")) {
+            name = name.split('-')[1]
+        }
 
         setExpenseEventData({
             ...expenseEventData,
