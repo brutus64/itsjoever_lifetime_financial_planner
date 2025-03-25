@@ -1,12 +1,77 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from 'react';
+import Cookies from "js-cookie";
 
 // Quick summary of form inputs before form is submitted and saved
 
 const Summary = ({formData,setFormData}:any) => {
+        const [user, setUser] = useState(null);
 
+        useEffect(()=>{
+            console.log("hi");
+            const accessToken = Cookies.get("access_token");
+            console.log(accessToken);
+            fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+                method: "GET",
+                headers: {
+                Authorization: `Bearer ${accessToken}`,
+                },
+            })
+            .then((response) => response.json())
+            .then(async (data) => {
+                console.log(data);
+                const response = (await fetch(`http://localhost:8000/api/get_user?email=${data.email}`));
+                const user = await response.json();
+                setUser(user);
+                console.log(user);
+            })
+            .catch((error) => {
+                console.error("Error fetching user info", error);
+            });
+        
+
+        },[]);
+        
     // must validate fields
-    const handleSubmit = () => { // redirect to page that lets u view, edit, or simulate scenario
+    const handleSubmit = async () => { // redirect to page that lets u view, edit, or simulate scenario
+            // const parsed_life_exp = formData.life_expectancy.type === 'fixed'? {type: 'fixed', fixed: formData.life_expectancy.fixed, normal: null}: {type: 'normal', fixed:null, normal:{formData.life_expectancy.mean, formData.life_expectancy.stddev, false}}
+        const scenario_data = {
+            // user: { $oid: user._id },
+            name: formData.name,
+            martial: formData.is_married ? "couple" : "individual",
+            birth_year: [formData.birth_year],
+            life_expectancy: [{type: 'fixed', fixed: 20, normal:null}],
+            investment_types: [],
+            investment: [],
+            event_series: [],
+            inflation_assume: formData.inflation_assume,
+            limit_posttax: 0.0,
+            spending_strat: [], 
+            expense_withdraw: [], 
+            rmd_strat: [] ,
+            roth_conversion_strat: [], 
+            roth_optimizer: formData.roth_optimizer,
+            r_only_share:  [],
+            wr_only_share: [],
+            ignore_state_tax: true,
+            fin_goal: parseFloat(formData.fin_goal),
+            state: formData.state
+        }
+        try{
+            console.log(scenario_data);
+            const response = await axios.post("http://localhost:8000/api/scenario/create_scenario", scenario_data);
+            if(response.data.message === "success"){
+                console.log("success");
+            }
+            else{
+                console.log("fail");
+            }
+        }
+        catch(error:any){
+            console.log("Error saving the scenario: ", error.response.data);
+      
+        }
 
     }
     return (
@@ -25,7 +90,7 @@ const Summary = ({formData,setFormData}:any) => {
                         <div><span className="font-medium">Spouse Life Expectancy:</span> {formData.spouse_life_expectancy.type === "normal" ? `Normal {Mean=${formData.spouse_life_expectancy.mean} , Stddev=${formData.spouse_life_expectancy.stddev}}` : formData.spouse_life_expectancy.fixed}</div>
                     </div>
                 }
-                <div><span className="font-medium">Inflation Assumption:</span> {formData.inflation_assume.type === "normal" ? `Normal {Mean=${formData.life_expectancy.mean} , Stddev=${formData.life_expectancy.stddev}}` : formData.life_expectancy.fixed}</div>
+                <div><span className="font-medium">Inflation Assumption:</span> {formData.inflation_assume.type === "normal" ? `Normal {Mean=${formData.inflation_assume.mean} , Stddev=${formData.inflation_assume.stddev}}` : formData.inflation_assume.fixed}</div>
 
 
                 <div>
