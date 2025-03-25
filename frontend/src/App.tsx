@@ -5,6 +5,7 @@ import SharedPage from './components/SharedPage';
 import ExplorationPage from './components/ExplorationPage';
 import SimulationLogPage from './components/SimulationLogPage';
 import AppLayout from './components/Navigation/AppLayout';
+import ScenarioForm from './components/scenario/ScenarioForm';
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/simulation" element={<SimulationLogPage/>}/>
           <Route path="/shared" element={<SharedPage/>}/>
           <Route path="/profile" element={<ProfilePage/>}/>
+          <Route path="/scenario/new" element={<ScenarioForm/>}/>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>

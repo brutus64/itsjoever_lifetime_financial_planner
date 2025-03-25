@@ -1,7 +1,14 @@
 import React from 'react';
 import AppLayout from './Navigation/AppLayout';
+import { useNavigate } from 'react-router-dom';
 
 const ScenarioPage: React.FC = () => {
+    const navigate = useNavigate();
+
+    const handleNewScenario = () => {
+        navigate('/scenario/new');
+    }
+
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
@@ -15,7 +22,8 @@ const ScenarioPage: React.FC = () => {
                             className="bg-transparent outline-none text-sm"
                         />
                     </div>
-                    <button className="bg-gray-900 text-white rounded-full px-4 py-2 ml-4 hover:bg-gray-700 cursor-pointer">
+                    <button className="bg-gray-900 text-white rounded-full px-4 py-2 ml-4 hover:bg-gray-700 cursor-pointer"
+                        onClick={handleNewScenario}>
                         New Scenario
                     </button>
                 </div>
