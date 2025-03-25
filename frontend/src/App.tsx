@@ -1,19 +1,31 @@
 import LandingPage from './components/LandingPage';
-import HomePage from './components/HomePage';
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import ProfilePage from './components/ProfilePage';
+import ScenarioPage from './components/ScenarioPage';
+import SharedPage from './components/SharedPage';
+import ExplorationPage from './components/ExplorationPage';
+import SimulationLogPage from './components/SimulationLogPage';
+import AppLayout from './components/Navigation/AppLayout';
+import ScenarioForm from './components/scenario/ScenarioForm';
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 
 function App() {
-
   return (
-    <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/home" element={<HomePage />} />
-        </Routes>
-      </Router>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        
+        <Route path="/" element={<AppLayout />}>
+          <Route path="scenario" element={<ScenarioPage />} />
+          <Route path="/exploration" element={<ExplorationPage/>}/>
+          <Route path="/simulation" element={<SimulationLogPage/>}/>
+          <Route path="/shared" element={<SharedPage/>}/>
+          <Route path="/profile" element={<ProfilePage/>}/>
+          <Route path="/scenario/new" element={<ScenarioForm/>}/>
+          {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App

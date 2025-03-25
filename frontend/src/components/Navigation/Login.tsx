@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom"; // Import the useNavigate hook
 import Cookies from "js-cookie";
 
@@ -7,7 +8,7 @@ export default function Login() {
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
-
+  const calledOnce = useRef(false);
   const handleClick = () => {
     const accessToken = Cookies.get("access_token");
     if (accessToken) {
@@ -27,10 +28,11 @@ export default function Login() {
     window.location.href = targetUrl;
   };
 
+  // useEffect is being called twice for some reason?
   useEffect(() => {
     const accessTokenRegex = /access_token=([^&]+)/;
     const isMatch = window.location.href.match(accessTokenRegex);
-
+   
     if (isMatch) {
       const accessToken = isMatch[1];
       Cookies.set("access_token", accessToken);
@@ -44,9 +46,16 @@ export default function Login() {
         },
       })
         .then((response) => response.json())
-        .then((data) => {
+        .then(async (data) => {
           // Set user info from the response
+          // console.log(data)
           setUserInfo(data);
+          
+          const userExists = await foundUser(data.email);
+          if (!userExists){
+            await createUser(data);
+          }
+
         })
         .catch((error) => {
           console.error("Error fetching user info", error);
@@ -56,9 +65,71 @@ export default function Login() {
 
   useEffect(() => {
     if (isLoggedin) {
-        navigate('/home');
+        navigate('/scenario');
     }
   }, [isLoggedin, navigate]);
+
+  const foundUser = async (email: string) => {
+    try{
+      const response = await fetch(`http://localhost:8000/api/get_user?email=${email}`);
+      const user = await response.json();
+      return user.exists;
+    }
+
+    catch(error) {
+      console.error("Error checking for user existence: ", error);
+      return false;
+    }
+  };
+
+  const createUser = async (data: any) => {
+    try {
+      
+      if (calledOnce.current) return; // Prevent multiple runs
+      calledOnce.current = true;
+      console.log("createUser called")
+      // let bd = new Date();
+      // const today = new Date();
+      // let age = 0;
+      // if (data.birthday){
+      //   bd = new Date(data.birthday)
+                
+      //   age = today.getFullYear() - bd.getFullYear(); 
+
+      //   // Adjust age if the birthday hasn't occurred yet this year
+      //   const hasBirthdayPassed = (
+      //       today.getMonth() > bd.getMonth() ||
+      //       (today.getMonth() === bd.getMonth() && today.getDate() >= bd.getDate())
+      //   );
+
+      //   if (!hasBirthdayPassed) {
+      //       age--;
+      //   }
+      // }
+      const response = await fetch('http://localhost:8000/api/add_user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,  
+          session: '',  
+          scenarios: [],
+          age: 0,  
+          birthday: new Date( ),
+          shared_r_scenarios: [],
+          shared_rw_scenarios: [],
+        }),
+      });
+
+      const newUser = await response.json();
+      console.log("New user created:", newUser);
+    } catch (error) {
+      console.error("Error creating user", error);
+    }
+  };
+  
 
   // TODO: REMOVE
   function test() {
