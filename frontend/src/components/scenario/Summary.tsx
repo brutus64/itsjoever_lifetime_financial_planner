@@ -18,7 +18,7 @@ type User = {
 const Summary = ({formData,setFormData}:any) => {
         const [user, setUser] = useState<User | null>(null);
         useEffect(()=>{
-            console.log("hi");
+            console.log(formData);
             const accessToken = Cookies.get("access_token");
             console.log(accessToken);
             fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
