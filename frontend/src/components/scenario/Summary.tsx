@@ -4,10 +4,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import Cookies from "js-cookie";
 
 // Quick summary of form inputs before form is submitted and saved
-
+type User = {
+    age: number;
+    birthday: string;
+    email: string;
+    name: string;
+    scenarios: any[];            
+    session: string;
+    shared_r_scenarios: any[];   
+    shared_rw_scenarios: any[];  
+    _id: string;                 // The field you need
+};
 const Summary = ({formData,setFormData}:any) => {
-        const [user, setUser] = useState(null);
-
+        const [user, setUser] = useState<User | null>(null);
         useEffect(()=>{
             console.log("hi");
             const accessToken = Cookies.get("access_token");
@@ -23,8 +32,8 @@ const Summary = ({formData,setFormData}:any) => {
                 console.log(data);
                 const response = (await fetch(`http://localhost:8000/api/get_user?email=${data.email}`));
                 const user = await response.json();
-                setUser(user);
-                console.log(user);
+                setUser(user.user);
+                console.log(user.user);
             })
             .catch((error) => {
                 console.error("Error fetching user info", error);
@@ -35,8 +44,13 @@ const Summary = ({formData,setFormData}:any) => {
         
     // must validate fields
     const handleSubmit = async () => { // redirect to page that lets u view, edit, or simulate scenario
+        if (!user){
+            return
+        }
+        const user_id = user?._id;
+        console.log(user_id)
         const scenario_data = {
-            // user: { $oid: user._id },
+            user: user_id,
             name: formData.name,
             marital: formData.is_married ? "couple" : "individual",
             birth_year: [formData.birth_year],
@@ -53,7 +67,7 @@ const Summary = ({formData,setFormData}:any) => {
             roth_optimizer: formData.roth_optimizer,
             r_only_share:  [],
             wr_only_share: [],
-            ignore_state_tax: true,
+            ignore_state_tax: true, //?
             fin_goal: parseFloat(formData.fin_goal),
             state: formData.state
         }
@@ -69,7 +83,7 @@ const Summary = ({formData,setFormData}:any) => {
         }
         catch(error:any){
             console.log("Error saving the scenario: ", error.response.data);
-      
+    
         }
 
     }
