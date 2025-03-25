@@ -50,7 +50,7 @@ function AppLayout() {
                 isMenuOpen ? "opacity-100 delay-300" : "opacity-0"
               }`}
               >
-              {isMenuOpen && <Menu />}
+              <Menu />
               </div>
             </div>
             <div className="flex-1 px-10 py-4 overflow-auto">
