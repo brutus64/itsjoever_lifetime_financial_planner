@@ -103,7 +103,7 @@ class Expense(Document):
 
 class EventSeries(Document):
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     start: EventDate
     duration: EventDate
     type: Literal['income', 'expense', 'invest', 'rebalance']

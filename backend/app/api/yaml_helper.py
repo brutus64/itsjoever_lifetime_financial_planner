@@ -1,8 +1,10 @@
-from app.models.scenario import Scenario
+from app.models.scenario import *
 from app.models.investment import *
 from app.models.event_series import *
-from beanie.operators import Set
+from beanie.operators import Set, And
 import yaml
+
+'''----------------- INVESTMENT TYPE & INVESTMENT ---------------'''
 
 def create_investment_type_from_yaml(data):
     # Parse the return distribution
@@ -149,6 +151,7 @@ def create_assetalloc(data):
 
 async def create_event_from_yaml(data):
     event_type = data.get('type')
+    detail_id = None
     income, expense, invest, rebalance, res = None, None, None, None, None
     if event_type == 'income':
         income = Income(
@@ -158,11 +161,22 @@ async def create_event_from_yaml(data):
             user_split=data.get('userFraction'),
             social_security=data.get('socialSecurity')
         )
-        res = await Income.find_one(income.id == Income.id).upsert(
-            Set(income.model_dump(exclude={'id'})),
-            on_insert=income
+        #NEED FIX
+        exists = await Income.find_one(
+            And(
+                Income.initial_amt == income.initial_amt,
+                Income.user_split == income.user_split
+            )
         )
-        print("INCOME RES:", res)
+        if exists:
+            exists.exp_annual_change = income.exp_annual_change
+            exists.inflation_adjust = income.inflation_adjust
+            exists.social_security = income.social_security
+            await exists.save()
+            detail_id = exists.id
+        else:
+            await income.save() #edits the income now to have id
+            detail_id = income.id
     elif event_type == 'expense':
         expense = Expense(
             initial_amt=data.get('initialAmount'),
@@ -171,39 +185,109 @@ async def create_event_from_yaml(data):
             user_split=data.get('userFraction'),
             is_discretionary=data.get('discretionary')
         )
-        res = await Expense.find_one(expense.id == Expense.id).upsert(
-            Set(expense.model_dump(exclude={'id'})),
-            on_insert=expense
+        exists = await Expense.find_one(
+            And(
+                Expense.initial_amt == expense.initial_amt,
+                Expense.user_split == expense.user_split
+            )
         )
-        print("EXPENSE", res)
+        if exists:
+            exists.exp_annual_change = expense.exp_annual_change
+            exists.inflation_adjust = expense.inflation_adjust
+            exists.is_discretionary = expense.is_discretionary
+            await exists.save()
+            detail_id = exists.id
+        else:
+            await expense.save() #edits the income now to have id
+            detail_id = expense.id
+            
     elif event_type == 'invest':
         invest = Invest(
             is_glide=data.get('glidePath', False),
             assets=create_assetalloc(data),
             max_cash=data.get('maxCash')
         )
-        res = await Invest.find_one(invest.id == Invest.id).upsert(
-            Set(invest.model_dump(exclude={'id'})),
-            on_insert=invest
+        #NEED FIX
+        exists = await Invest.find_one(
+            And(
+                Invest.is_glide == invest.is_glide,
+                Invest.max_cash == invest.max_cash
+            )
         )
-        print("INVEST", res)
+        
+        if exists:
+            await exists.update({"$set": invest.model_dump(exclude={'id'})})
+            detail_id = exists.id
+        else:
+            # Insert new document
+            await invest.save()
+            detail_id = invest.id
+            
     elif event_type == 'rebalance':
         rebalance = Rebalance(
             is_glide=data.get('glidePath', False),
             assets=create_assetalloc(data)
         )
-        res = await Rebalance.find_one(rebalance.id == Rebalance.id).upsert(
-            Set(rebalance.model_dump(exclude={'id'})),
-            on_insert=rebalance
+        # For rebalance, similar to invest
+        exists = await Rebalance.find_one(
+            Rebalance.is_glide == rebalance.is_glide
         )
-        print("REBALANCE", res)
-    print("ID IN THE END:", res.id)
+        
+        if exists:
+            # Update exists document
+            await exists.update({"$set": rebalance.model_dump(exclude={'id'})})
+            detail_id = exists.id
+        else:
+            # Insert new document
+            await rebalance.save()
+            detail_id = rebalance.id
+    print("ID IN THE END:", detail_id)
     event = EventSeries(
         name=data.get('name'),
         description=data.get('description'),
         start=event_date_parse(data.get('start')),
         duration=event_date_parse(data.get('duration')),
         type=event_type,
-        details=res.id
+        details=detail_id #NEED FIX
     )
     return event
+
+
+'''-----------------------SCENARIO PARSING-----------------------'''
+def parse_life(data):
+    life_data = data.get('lifeExpectancy')
+    length = 2 if data.get('martialStatus') == 'couple' else 1
+    arr = []
+    for i in range(length):
+        dist_type = life_data[i].get('type')
+        life = LifeExpectancy(
+            type=dist_type
+        )
+        if dist_type == 'fixed':
+            life.value = life_data[i].get('value')
+        elif dist_type == 'normal':
+            life.mean = life_data[i].get('mean')
+            life.stdev = life_data[i].get('stdev')
+        arr.append(life)
+    return arr
+
+def parse_inflation_assumption(data):
+    inflat = data.get('inflationAssumption')
+    inflat_type = inflat.get('type')
+    inflation = Inflation(type=inflat_type)
+    if inflat_type == 'fixed':
+        inflation.value = inflat.get('value')
+    elif inflat_type == 'normal':
+        inflation.mean = inflat.get('mean')
+        inflation.stdev = inflat.get('stdev')
+    elif inflat_type == 'uniform':
+        inflation.lower_bound = inflation.get('lower')
+        inflation.upper_bound = inflation.get('upper')
+    return inflation
+ 
+def parse_roth_opt(data):
+    return RothOptimizer(
+        is_enable=data.get('RothConversionOpt'),
+        start_year=data.get('RothConversionStart'),
+        end_year=data.get('RothConversionEnd')
+    )

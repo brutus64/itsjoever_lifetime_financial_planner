@@ -35,13 +35,12 @@ const Summary = ({formData,setFormData}:any) => {
         
     // must validate fields
     const handleSubmit = async () => { // redirect to page that lets u view, edit, or simulate scenario
-            // const parsed_life_exp = formData.life_expectancy.type === 'fixed'? {type: 'fixed', fixed: formData.life_expectancy.fixed, normal: null}: {type: 'normal', fixed:null, normal:{formData.life_expectancy.mean, formData.life_expectancy.stddev, false}}
         const scenario_data = {
             // user: { $oid: user._id },
             name: formData.name,
-            martial: formData.is_married ? "couple" : "individual",
+            marital: formData.is_married ? "couple" : "individual",
             birth_year: [formData.birth_year],
-            life_expectancy: [{type: 'fixed', fixed: 20, normal:null}],
+            life_expectancy: [formData.life_expectancy],
             investment_types: [],
             investment: [],
             event_series: [],
