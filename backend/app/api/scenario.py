@@ -29,7 +29,6 @@ async def create_investment():
 async def create_scenario(scenario: Scenario):
     try:
         
-        scenario.user = scenario.user.user.id
         created_scenario = await scenario.insert()
         return {"message": "success"}
     except Exception as e:
