@@ -110,6 +110,8 @@ async def create_scenario(scenario:  dict):
             inv = await inv_db_obj.insert()
             investment_ids.append(inv.id)
             investment_id_map[investment['invest_id']] = inv.id
+        print('\n\n\n INVESTMENT MAPPING', investment_id_map)
+        
         # print(investment_ids)
 
         event_series = scenario['event_series']
@@ -134,16 +136,22 @@ async def create_scenario(scenario:  dict):
         #NOT TESTED
         expense_withdraw_ids = []
         for invest_name in scenario.get('expense_withdraw', []):
+            print("invest_name", invest_name)
             if invest_name in investment_id_map:
                 expense_withdraw_ids.append(investment_id_map[invest_name])
+        print("DID EXPENSE GET ID", expense_withdraw_ids)
         #NOT TESTED
         rmd_strat_ids = []
         for invest_name in scenario.get('rmd_strat', []):
+            invest_name = invest_name + " pre-tax"
+            print("RMD_STRAT", invest_name)
             if invest_name in investment_id_map:
                 rmd_strat_ids.append(investment_id_map[invest_name])
         #NOT TESTED
         roth_conversion_strat_ids = []
         for invest_name in scenario.get('roth_conversion_strat', []):
+            invest_name = invest_name + " pre-tax"
+            print("ROTH_CONVERSION", invest_name)
             if invest_name in investment_id_map:
                 roth_conversion_strat_ids.append(investment_id_map[invest_name])
         

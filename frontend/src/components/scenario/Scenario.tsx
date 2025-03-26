@@ -143,8 +143,8 @@ const Scenario = ({}) => {
                 <div className="flex flex-col gap-2">
                     {scenario.event_series.map((es,i) =>
                         <div >
-                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("investment_types",i)}>{es.name}<span className="text-gray-400 font-normal text-sm"> - {es.type}</span></div>
-                            {collapse.investment_types[i] && 
+                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("event_series",i)}>{es.name}<span className="text-gray-400 font-normal text-sm"> - {es.type}</span></div>
+                            {collapse.event_series[i] && 
                             <div className="flex flex-col p-4 gap-1 w-140">
                                 <div><b>Description:</b> {es.description}</div>
                                 <div><b>Start year:</b> {handleNotPercent(es.start)}</div>
@@ -214,7 +214,7 @@ const Scenario = ({}) => {
                     {scenario.rmd_strat.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
                         </div>))}
 
                 </div>
@@ -227,7 +227,7 @@ const Scenario = ({}) => {
                                 {scenario.roth_conversion_strat.map((investment,i) => 
                                 (<div className="flex items-center">
                                     <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
+                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
                                 </div>))}
                             </div>
                             
