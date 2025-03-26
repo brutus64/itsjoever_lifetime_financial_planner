@@ -123,7 +123,7 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <div className=""> starts</div> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="year_after" onChange={handleStartYearChange} checked={eventData.start_year.type === 'year_after'}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="end_with" onChange={handleStartYearChange} checked={eventData.start_year.type === 'end_with'}/>
                         <div className="">Year after event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-event_series"
