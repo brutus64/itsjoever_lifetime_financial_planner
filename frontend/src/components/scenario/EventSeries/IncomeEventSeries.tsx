@@ -33,6 +33,7 @@ const defaultIncomeEventForm = {
         min: 0,
         max: 0
     },
+    inflation_adjust: false,
     percent_associated: 0.0,
     income: 'Wages'
 }
@@ -147,13 +148,23 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
 
     }
 
+    const handleInflationChange = (e: any) => {
+        let { name, value } = e.target;
+        setIncomeEventData({
+            ...incomeEventData,
+            [name]:!incomeEventData.inflation_adjust,
+        });
+
+        console.log(`${name} is ${incomeEventData.inflation_adjust}`)
+
+    }
+
     const handleChange = (e: any) => {
         const { name, value } = e.target;
         setIncomeEventData({
             ...incomeEventData,
             [name]:value,
         });
-        console.log(`holy shit ${name} ${value}`)
     };
 
     return (
@@ -172,7 +183,12 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
                     type="number" 
                     min="0"/> 
             </div>
-            
+
+            <div className="flex gap-5 align-middle">
+                <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
+                <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={incomeEventData.inflation_adjust}/>  
+            </div>
+
             <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={incomeEventData}/>
 
             <div className='flex gap-4'>

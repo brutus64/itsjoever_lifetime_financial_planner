@@ -23,7 +23,7 @@ const EventSeries = ({ formData,setFormData }:any) => {
                 </div>
                 <EventSeriesPopUp formData={formData} setFormData={setFormData} />
             </div>
-            <div className="bg-white shadow-md rounded-lg p-6 flex flex-1 gap-4">
+            <div className="bg-white shadow-md rounded-lg p-2 flex flex-1 gap-4">
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-4 overflow-y-auto w-fit">
                     <h2 className="text-xl font-bold whitespace-nowrap">Income Event Series</h2>
                     
@@ -52,7 +52,7 @@ const EventSeries = ({ formData,setFormData }:any) => {
                     )}
                 </div>
                 
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-4 overflow-y-auto w-fit">
+                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-6 overflow-y-auto w-fit">
                     <h2 className="text-xl font-bold whitespace-nowrap">Rebalance Event Series</h2>
                     {formData.event_series
                     .filter(event_series => event_series.type === 'rebalance')  // Only keep items with type 'income'
@@ -75,15 +75,14 @@ const EventSeriesPopUp = ({ formData, setFormData }:any) => {
     return (
         <div>
             <div 
-                className="bg-white shadow-md rounded-lg p-6 flex items-center justify-center flex-0 gap-3 w-fit hover:bg-gray-100 cursor-pointer"
+                className="bg-white shadow-md rounded-lg p-5 flex items-center justify-center flex-0 gap-3 w-fit hover:bg-gray-100 cursor-pointer"
                 onClick={() => setOpen(true)}
             >
-                <img src='add.png' className="w-7 h-7"/>
                 <div className="flex items-center gap-3">
-                    <p className="text-md"> 
-                        Add 
+                    <p className="text-sm"> 
+                        + Add 
                         <select 
-                            className="border border-gray-300 rounded-md inline-block mx-2 w-fit"
+                            className="border border-gray-300 inline-block rounded-md inline-block mx-2 w-fit"
                             onChange={(e) => setEventSeriesType(e.target.value)}
                             value={eventSeriesType}
                             onClick={(e) => e.stopPropagation()} // Prevent modal from opening
@@ -93,7 +92,7 @@ const EventSeriesPopUp = ({ formData, setFormData }:any) => {
                             <option value="invest">Invest</option>
                             <option value="rebalance">Rebalance</option>
                         </select>
-                        Event Series
+                        <br></br>Event Series
                     </p>
                 </div>
             </div>
