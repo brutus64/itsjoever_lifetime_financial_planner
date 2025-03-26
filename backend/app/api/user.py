@@ -31,7 +31,6 @@ async def find_user_email(email: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error finding user: {e}")
 
-#NOT TESTED
 @router.delete("/{user_id}/{scenario_id}")
 async def delete_user_scenario(user_id: str, scenario_id: str):
     try:
@@ -60,7 +59,6 @@ async def delete_user_scenario(user_id: str, scenario_id: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-#NOT TESTED
 @router.get("/scenarios/view/{scenario_id}")
 async def fetch_user_scenario(scenario_id: str):
     try:
@@ -80,7 +78,6 @@ async def fetch_user_scenario(scenario_id: str):
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-#NOT TESTED
 @router.get("/scenarios/{user_id}")
 async def fetch_user_scenarios(user_id: str):
     try:
