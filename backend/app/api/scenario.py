@@ -4,30 +4,87 @@ from app.models.investment import Investment, InvestmentType
 from app.models.event_series import EventSeries
 from app.api.yaml_helper import *
 from app.api.scenario_helper import *
-from beanie.operators import Set
 from app.db.db_utils import *
 import yaml
 import os
 from fastapi.responses import FileResponse
 from beanie import PydanticObjectId
 
-router = APIRouter(prefix="/scenario")
+router = APIRouter()
 
-
-@router.post("/create_event_series")
-async def create_event_series():
+#NOT TESTED
+#update existing scenario given its id
+@router.put("/update_scenario/{scenario_id}")
+async def update_scenario(scenario_id: str, scenario: dict):
     try:
-        pass
-    except Exception as e:
-        pass
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        
+        existing_scenario = await Scenario.get(scenario_obj_id)
+        if not existing_scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
 
-@router.post("/create_investment")
-async def create_investment():
-    try:
-        pass
+        #update investment types
+        new_investment_type_ids = []
+        for it in scenario.get('investment_types', []):
+            investment_type = parse_invest_type(it)
+            it_db_obj = await InvestmentType.find_one(InvestmentType.name == investment_type['name'])
+            if not it_db_obj:
+                it_db_obj = InvestmentType(**investment_type)
+                await it_db_obj.insert()
+            new_investment_type_ids.append(it_db_obj.id)
+
+        #update investments
+        new_investment_ids = []
+        investment_id_map = {}
+        for i in scenario.get('investment', []):
+            investment = parse_investments(i)
+            inv_db_obj = await Investment.find_one(Investment.invest_id == investment['invest_id'])
+            if not inv_db_obj:
+                inv_db_obj = Investment(**investment)
+                await inv_db_obj.insert()
+            new_investment_ids.append(inv_db_obj.id)
+            investment_id_map[investment['invest_id']] = inv_db_obj.id
+
+        #update event series
+        new_event_series_ids = []
+        event_series_id_map = {}
+        for e in scenario.get('event_series', []):
+            event = await parse_events(e)
+            event_obj = await EventSeries.find_one(EventSeries.name == event['name'])
+            if not event_obj:
+                event_obj = EventSeries(**event)
+                await event_obj.insert()
+            new_event_series_ids.append(event_obj.id)
+            event_series_id_map[event['name']] = event_obj.id
+
+        update_data = {
+            "name": scenario.get('name', existing_scenario.name),
+            "marital": scenario.get('marital', existing_scenario.marital),
+            "birth_year": [int(year) for year in scenario.get('birth_year', existing_scenario.birth_year)],
+            "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
+            "investment_types": new_investment_type_ids,
+            "investment": new_investment_ids,
+            "event_series": new_event_series_ids,
+            "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
+            "limit_posttax": float(scenario.get('limit_posttax', existing_scenario.limit_posttax)),
+            "spending_strat": [event_series_id_map.get(name, name) for name in scenario.get('spending_strat', [])],
+            "expense_withdraw": [investment_id_map.get(name, name) for name in scenario.get('expense_withdraw', [])],
+            "rmd_strat": [investment_id_map.get(name, name) for name in scenario.get('rmd_strat', [])],
+            "roth_conversion_strat": [investment_id_map.get(name, name) for name in scenario.get('roth_conversion_strat', [])],
+            "roth_optimizer": RothOptimizer(**parse_roth_optimizer(scenario.get('roth_optimizer', {}))),
+            "fin_goal": float(scenario.get('fin_goal', existing_scenario.fin_goal)),
+            "state": scenario.get('state', existing_scenario.state)
+        }
+
+        # Update the scenario
+        await existing_scenario.update({"$set": update_data})
+
+        return {"message": "Scenario updated successfully"}
+
     except Exception as e:
-        pass
-    
+        print(f"Error in update_scenario: {e}")
+        raise HTTPException(status_code=400, detail="Error updating scenario")
+
 
 @router.post("/create_scenario")
 async def create_scenario(scenario:  dict):
@@ -69,45 +126,27 @@ async def create_scenario(scenario:  dict):
         parsed_life_expectancy = parse_life_expectancy(scenario.get('life_expectancy', []))
         parsed_inflation = Inflation(**parse_inflation(scenario.get('inflation_assume', {})))
         parsed_roth_optimizer = RothOptimizer(**parse_roth_optimizer(scenario.get('roth_optimizer', {})))
-        
+        #NOT TESTED
         spending_strat_ids = []
         for event_name in scenario.get('spending_strat', []):
             if event_name in event_series_id_map:
                 spending_strat_ids.append(event_series_id_map[event_name])
-        
+        #NOT TESTED
         expense_withdraw_ids = []
         for invest_name in scenario.get('expense_withdraw', []):
             if invest_name in investment_id_map:
                 expense_withdraw_ids.append(investment_id_map[invest_name])
-        
+        #NOT TESTED
         rmd_strat_ids = []
         for invest_name in scenario.get('rmd_strat', []):
             if invest_name in investment_id_map:
                 rmd_strat_ids.append(investment_id_map[invest_name])
-        
+        #NOT TESTED
         roth_conversion_strat_ids = []
         for invest_name in scenario.get('roth_conversion_strat', []):
             if invest_name in investment_id_map:
                 roth_conversion_strat_ids.append(investment_id_map[invest_name])
         
-        # # inflation_assume
-        # # roth_optimizer
-        # # spending_strat #links to eventseries
-        # # expense_withdraw #links to investments
-        # # rmd_strat #link to investments
-        # # roth_conversion_strat #link to investments
-        
-        
-        # # #no parsing needed
-        # # name
-        # # marital
-        # # birth_year
-        # # limit_posttax
-        # # fin_goal
-        # # state
-        
-        # #No need: r_only_share, wr_only_share at creation is empty
-        # user_id = scenario.get('user')
         user = await User.get(scenario.get('user'))
         if not user:
             raise ValueError("User not found")
@@ -138,15 +177,12 @@ async def create_scenario(scenario:  dict):
         user.scenarios.append(scenario_obj)
         await user.save()
         print(user)
-        # print(us)
-        # us.scenarios.append(scenario_obj.id)
-        # await us.save()
-        # print("AFTER SAVE", us)
         return {"message":"success"}
     except Exception as e:
         print(f"Error in create_scenario: {e}")  # Actually print the exception
-        raise 
+        raise HTTPException(status_code=400, detail="Error at scenario creation")
 
+#NOT TESTED
 @router.get("/{scenario_id}")
 async def fetch_scenario(scenario_id: str):
     try:

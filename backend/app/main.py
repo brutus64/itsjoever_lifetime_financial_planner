@@ -1,9 +1,14 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import user, scrape_yaml, scenario
 from app.db.db import init_db
 from contextlib import asynccontextmanager
+import time
+import logging
+import cProfile
+import pstats
+import io
 
 @asynccontextmanager #expects yield statement
 async def lifespan(app: FastAPI):
@@ -15,6 +20,24 @@ async def lifespan(app: FastAPI):
     
     
 app = FastAPI(lifespan=lifespan)
+
+@app.middleware("http")
+async def route_profiling_middleware(request: Request, call_next):
+    profiler = cProfile.Profile()
+    profiler.enable()
+    start_time = time.perf_counter()
+    
+    response = await call_next(request)
+    
+    process_time = time.perf_counter() - start_time
+    profiler.disable()
+    s = io.StringIO()
+    ps = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
+    ps.print_stats()
+    
+    logging.info(f"Route {request.url.path} took {process_time:.4f} seconds")
+    logging.info(f"Performance profile for {request.url.path}:\n{s.getvalue()}")
+    return response
 
 origins = [
     "http://localhost:5173",
@@ -30,7 +53,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router, prefix='/api')
-app.include_router(scenario.router, prefix='/api')
+app.include_router(scenario.router, prefix='/api/scenario')
 
 # @app.on_event("startup")
 # async def startup_event():

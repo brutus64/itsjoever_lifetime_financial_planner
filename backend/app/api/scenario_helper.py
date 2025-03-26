@@ -73,7 +73,7 @@ def parse_investments(investment):
     }
     tax_status = tax_status_mapping[investment['tax_status']]
     val = investment['value']
-    i_id = invest_type+tax_status #CHECK NOT SURE ABOUT THIS
+    i_id = invest_type+ " " + tax_status #CHECK NOT SURE ABOUT THIS
     
     investment = {
         'invest_type':invest_type,
