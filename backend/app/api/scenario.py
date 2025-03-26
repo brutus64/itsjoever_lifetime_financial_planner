@@ -5,8 +5,9 @@ from app.models.event_series import EventSeries
 from app.api.yaml_helper import *
 from beanie.operators import Set
 from app.db.db_utils import *
-
 import yaml
+import os
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/scenario")
 
@@ -25,12 +26,170 @@ async def create_investment():
     except Exception as e:
         pass
     
-@router.post("/create_scenario")
-async def create_scenario(scenario: Scenario):
-    try:
+# @router.post("/create_scenario")
+# async def create_scenario(scenario: Scenario):
+#     try:
         
-        created_scenario = await scenario.insert()
-        return {"message": "success"}
+#         created_scenario = await scenario.insert()
+#         return {"message": "success"}
+#     except Exception as e:
+#         print(f"Error in create_scenario: {e}")  # Actually print the exception
+#         raise 
+@router.post("/create_scenario")
+async def create_scenario(scenario:  dict):
+    try:
+        # 
+        user = scenario['user']
+        # print(user)
+        name = scenario['name']
+        # print(name)
+        marital= scenario['marital']
+        # print(marital)
+        birth_year = scenario['birth_year']
+        # print(birth_year)
+        life_expectancy = scenario['life_expectancy']
+        # print(life_expectancy)
+        inflation_assume = scenario['inflation_assume']
+        # print(inflation_assume)
+        limit_posttax=scenario['limit_posttax']
+        # print(limit_posttax)
+        roth_optimizer= scenario['roth_optimizer']
+        # print(roth_optimizer)
+        r_only_share = scenario['r_only_share']
+        # print(r_only_share)
+        wr_only_share =scenario['wr_only_share']
+        # print(wr_only_share)
+        fin_goal = scenario['fin_goal']
+        # print(fin_goal)
+        # investment_types: List[Link["InvestmentType"]]
+        investment_types = scenario['investment_types']
+        # print(investment_types)
+
+    
+        result_investment_types = [] # include ids of investments types for scenario creation
+        for it in investment_types:
+            it_name = it['name']
+            it_description = it['description']
+            it_expense_ratio = it['expense_ratio']
+            it_tax = it['is_tax_exempt']
+            if it['exp_annual_return']['type'] == 'fixed':
+                exp_annual_return_type = 'fixed'
+                value = it['exp_annual_return']['fixed']
+                is_percent=it['exp_annual_return']['is_percent']
+                #invest annual change
+                return_iac = {'type': exp_annual_return_type, 'value':value, 'is_percent': is_percent}
+            else:
+                exp_annual_return_type = 'normal'
+                mean = it['exp_annual_return']['mean']
+                std = it['exp_annual_return']['stddev']
+                is_percent=it['is_percent']
+                return_iac = {'type':exp_annual_return_type, 'mean': mean, 'stdev':std, 'is_percent':is_percent}
+            if it['exp_annual_income']['type'] == 'fixed':
+                exp_annual_income_type = 'fixed'
+                value = it['exp_annual_income']['fixed']
+                is_percent=it['exp_annual_income']['is_percent']
+                #invest annual change
+                income_iac = {'type': exp_annual_income_type, 'value':value, 'is_percent': is_percent}
+            else:
+                exp_annual_return_type = 'normal'
+                mean = it['exp_annual_income']['mean']
+                std = it['exp_annual_income']['stddev']
+                is_percent=it['exp_annual_income']['is_percent']
+                income_iac = {'type':exp_annual_income_type, 'mean': mean, 'stdev':std, 'is_percent':is_percent}
+            investment_type = {'name': it_name, 'description': it_description, 'exp_annual_return': return_iac, 'expense_ratio':it_expense_ratio, 'exp_annual_income': income_iac, 'taxability':it_tax}
+            # print(investment_type)
+            it_db_obj = InvestmentType(**investment_type)
+            result_investment_types.append(investment_type)
+            await it_db_obj.insert()
+        
+        # investment: List[Link["Investment"]]
+        investments = scenario['investment']
+        for i in investments:
+            invest_type = i['investment_type']
+            tax_status = i['tax_status']
+            val = i['value']
+            i_id = invest_type+tax_status
+        # invest_type: str #name to investment_type
+        # invest_id: Optional[str] #name to investment + tax status?
+        # value: float
+        # tax_status: Literal['non-retirement','pre-tax','after-tax'
+            investment_ids = []
+            investment = {'invest_type': invest_type, 'invest_id':i_id, 'value': val, 'tax_status':tax_status}
+            inv_db_obj = Investment(**investment)
+            inv = await inv_db_obj.insert()
+            investment_ids.append(inv.id)
+        # print(investment_ids)
+        # event_series: List[Link["EventSeries"]]
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # event_series = scenario['event_series']
+        # event_series_id = []
+        # for e in event_series:
+        #     e_name = e['name']
+        #     e_description = e['description']
+        #     e_type = e['type']
+        #     e_start_type = e['start_year']['type']
+        #     if e_start_type == 'fixed':
+        #         e_date = {'value': e['start_year']['fixed']}
+        #     elif e_start_type == 'uniform':
+        #         e_date = {'lower': e['start_year']['min'], 'upper': e['start_year']['max']}
+        #     elif e_start_type == 'normal':
+        #         e_date = {'mean': e['start_year']['mean'], 'stdev': e['start_year']['stddev']}
+        #     elif e_start_type in ['start_with', 'end_with']:
+        #         e_date = {'event_series': e['start_year']['event_series']}
+        #     e_duration_type = e['duration']['type']
+        #     if e_duration_type == 'fixed':
+        #         e_duration = {'value': e['duration']['fixed']}
+        #     elif e_duration_type == 'uniform':
+        #         e_duration = {'lower': e['duration']['min'], 'upper': e['duration']['max']}
+        #     elif e_duration_type == 'normal':
+        #         e_duration = {'mean': e['duration']['mean'], 'stdev': e['duration']['stddev']}
+        #     elif e_duration_type in ['start_with', 'end_with']:
+        #         e_duration = {'event_series': e['duration']['event_series']}
+        #     if e_type == 'income':
+        #         initial_amt = e['initial_amount']
+        #         inflation_adjust = True #??? idk what the frontend data is for this
+        #         user_split = 0.0 # ???
+        #         social_security = False # ???
+        #         exp_annual_change_type = e['exp_annual_change']['type']
+        #         if exp_annual_change_type == 'fixed':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'value': e['exp_annual_change']['fixed']}
+        #         if exp_annual_change_type == 'uniform':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'lower': e['exp_annual_change']['min'], 'upuper': e['exp_annual_change']['max']}
+        #         if exp_annual_change_type == 'normal':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'mean': e['exp_annual_change']['mean'], 'stdev':e['exp_annual_change']['stddev']}
+        #         income = {'initial_amt':initial_amt, 'inflation_adjust': inflation_adjust, 'user_split':user, 'social_security': social_security}
+        #         event = {'name': e_name, 'description': e_description, 'start': e_date, 'duration': e_duration, 'type':e_type, 'details': income}
+                
+        #     elif e_type == 'expense':
+        #         initial_amt = e['initial_amount']
+        #         inflation_adjust = True #??? idk what the frontend data is for this
+        #         user_split = 0.0 # ???
+        #         is_discretionary = False # ???
+        #         exp_annual_change_type = e['exp_annual_change']['type']
+        #         if exp_annual_change_type == 'fixed':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'value': e['exp_annual_change']['fixed']}
+        #         if exp_annual_change_type == 'uniform':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'lower': e['exp_annual_change']['min'], 'upuper': e['exp_annual_change']['max']}
+        #         if exp_annual_change_type == 'normal':
+        #             exp_annual_change = {'is_percent': e['exp_annual_change']['is_percent'], 'mean': e['exp_annual_change']['mean'], 'stdev':e['exp_annual_change']['stddev']}
+        #         expense = {'initial_amt':initial_amt, 'inflation_adjust': inflation_adjust, 'user_split':user, 'is_discretioinary': is_discretionary}
+        #         event = {'name': e_name, 'description': e_description, 'start': e_date, 'duration': e_duration, 'type':e_type, 'details': expense}
+                
+        #     elif e_type == 'invest':
+        #         pass
+        #     elif e_type == 'rebalance':
+        #         pass
+        #     event_db_obj = EventSeries(**event)
+        #     event_obj = await event_db_obj.insert()
+        #     event_series_id.append(event_obj.id)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # spending_strat: List[Link["EveDntSeries"]] #example uses name rather than link
+        # expense_withdraw: List[Link["Investment"]] #example uses name rather than link, also includes in the name "non-retirement" e.g "[S&P 500 non-retirement, tax-exempt bonds, S&P 500 after-tax]"
+        # rmd_strat: List[Link["Investment"]] #example uses [S&P 500 pre-tax]
+        # roth_conversion_strat: List[Link["Investment"]] #Example uses "[S&P 500 pre-tax]", should we store name as well rather than objectid?
+        
+        
+        return {"message":"success"}
     except Exception as e:
         print(f"Error in create_scenario: {e}")  # Actually print the exception
         raise 
@@ -62,9 +221,9 @@ async def import_scenario(file: UploadFile = File(...)):
         event_ids = []
         for investment_type in data.get('investmentTypes'):
             invest_type = create_investment_type_from_yaml(investment_type)
-            print("INVEST TYPE")
-            print(invest_type)
-            print("MODEL DUMP: ", invest_type.model_dump(exclude={"id", "name"}))
+            # print("INVEST TYPE")
+            # print(invest_type)
+            # print("MODEL DUMP: ", invest_type.model_dump(exclude={"id", "name"}))
             exists = await InvestmentType.find_one(InvestmentType.name == invest_type.name)
             if exists:
                 update_data = invest_type.model_dump(exclude={"id"})
@@ -83,9 +242,9 @@ async def import_scenario(file: UploadFile = File(...)):
             # print(f"Post insert/update: {res}")
         
         for investment in data.get('investments'):
-            print(investment)
+            # print(investment)
             invest = create_investment_from_yaml(investment)
-            print("INVEST", invest)
+            # print("INVEST", invest)
             
             exists = await Investment.find_one(Investment.invest_id == invest.invest_id)
             
@@ -104,7 +263,7 @@ async def import_scenario(file: UploadFile = File(...)):
                 
         event_series = []
         for event in data.get('eventSeries'):
-            print(event)
+            # print(event)
             #NEED FIX SHOULD BE FIXED WITH NAME
             e = await create_event_from_yaml(event)
             exists = await EventSeries.find_one(EventSeries.name == e.name)
@@ -125,11 +284,11 @@ async def import_scenario(file: UploadFile = File(...)):
                 event_ids.append(e.id)
         
         
-        print("INVESTTYPE ID", investtype_ids)
-        print("INVEST ID", invest_ids)
-        print("EVENT ID", event_ids)
+        # print("INVESTTYPE ID", investtype_ids)
+        # print("INVEST ID", invest_ids)
+        # print("EVENT ID", event_ids)
         investments = await Investment.find_all().to_list()
-        print(investments)
+        # print(investments)
         spending_strat = await eventnames_to_id(data.get('spendingStrategy'), event_series)
         expense_withdraw = await investmentnames_to_id(data.get('expenseWithdrawalStrategy'),investments)
         rmd_strat = await investmentnames_to_id(data.get('RMDStrategy'), investments)
@@ -158,12 +317,17 @@ async def import_scenario(file: UploadFile = File(...)):
         )
         scenario_exists = await Scenario.find_one(Scenario.name == scenario.name)
         if scenario_exists:
-            scenario_data = scenario.model_dump(exclude={"id", "name"})
+            scenario_data = scenario.model_dump(exclude={"id"})
             for key, value in scenario_data.items():
                 setattr(scenario_exists, key, value)
+            print("SCENARIO UPDATED")
+            print("SCENARIO ID = ", str(scenario_exists.id))
             await scenario_exists.save()
         else:
+            print("SCENARIO SAVED")
+            print("SCENARIO ID = ", str(scenario.id))
             await scenario.save()
+        
         return {
             "name": scenario.name,
             "id": str(scenario.id),
@@ -178,8 +342,99 @@ async def import_scenario(file: UploadFile = File(...)):
 
     
     
-@router.get("/export/{scenario_id}")
-async def export_scenario(scenario_id: str):
-    pass
+@router.get("/export/{scenario_name}")
+async def export_scenario(scenario_name: str):
+    try:
+        scenario = await Scenario.find_one(Scenario.name == scenario_name, fetch_links=True)
+        if not scenario:
+            raise HTTPException(status_code=404, detail=f"Scenario: {scenario_name} does not exist.")
+
+        print("\n\n\n BEGINNING OF EXPORT")
+        print(scenario)
+        #handle InvestmentType, Investment, EventSeries
+        
+        investment_types = []
+        for type_id in scenario.investment_types:
+            print("\n\n\n ", type_id)
+            investment_types.append(invest_type_to_yaml(type_id))
+        # print("INVESTMENT TYPES:", investment_types)
+        
+        investments = []
+        for invest_id in scenario.investment:
+            print("\n\n\n INVEST", invest_id)
+            investments.append(invest_to_yaml(invest_id))
+        event_series = []
+        for event in scenario.event_series:
+            event_series.append(event_to_yaml(event))
+        
+        print("\n\n\n",event_series)
+        #Scenario no processing needed: name, marital, birth_years, after tax contrib, financialGoal, residenceState
+        
+        #Scenario processing needed: life_expectancy, inflation_assume, spending_strat, expense_withdraw, rmd_strat, roth_opt, roth_conversion_strat
+        spending_strategy = []
+        for event in scenario.spending_strat:
+            if hasattr(event, 'name'):
+                spending_strategy.append(event.name)
+        
+        expense_withdraw_strategy = []
+        for invest in scenario.expense_withdraw:
+            if hasattr(invest, 'invest_id'):
+                expense_withdraw_strategy.append(invest.invest_id)
+        
+        rmd_strategy = []
+        for invest in scenario.rmd_strat:
+            if hasattr(invest, 'invest_id'):
+                rmd_strategy.append(invest.invest_id)
+        
+        roth_conversion_strategy = []
+        for invest in scenario.roth_conversion_strat:
+            if hasattr(invest, 'invest_id'):
+                roth_conversion_strategy.append(invest.invest_id)
+        
+        yaml_data = {
+            "name": scenario.name,
+            "maritalStatus": scenario.marital,
+            "birthYears": scenario.birth_year,
+            "lifeExpectancy": life_to_yaml(scenario.life_expectancy),
+            "investmentTypes": investment_types,
+            "investments": investments,
+            "eventSeries": event_series,
+            "inflationAssumption": inflat_to_yaml(scenario.inflation_assume),
+            "afterTaxContributionLimit": scenario.limit_posttax,
+            "spendingStrategy": spending_strategy,
+            "expenseWithdrawalStrategy": expense_withdraw_strategy,
+            "RMDStrategy": rmd_strategy,
+        }
+        if scenario.roth_optimizer:
+            yaml_data["RothConversionOpt"] = scenario.roth_optimizer.is_enable
+            yaml_data["RothConversionStart"] = scenario.roth_optimizer.start_year
+            yaml_data["RothConversionEnd"] = scenario.roth_optimizer.end_year
+        else:
+            yaml_data["RothConversionOpt"] = False
+        yaml_data["RothConversionStrategy"] = roth_conversion_strategy
+        yaml_data["financialGoal"] = scenario.fin_goal
+        yaml_data["residenceState"] = scenario.state
+        
+        # print("\n\n\n YAML:", yaml_data)
+        
+        yaml_content = yaml.dump(yaml_data, sort_keys=False, default_flow_style=False)
+        
+        #set up at directory exports
+        export_dir = os.path.join(os.getcwd(), "exports")
+        os.makedirs(export_dir, exist_ok=True)
+        file_path = os.path.join(export_dir, f"{scenario_name}.yaml")
+        
+        #write it
+        with open(file_path, "w") as f:
+            f.write(yaml_content)
+        print(f"YAML file saved at: {file_path}")
+        
+        return FileResponse(
+            path=file_path,
+            filename=f"{scenario_name}.yaml",
+            media_type="application/x-yaml"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error exporting {scenario_name}")
     
     
