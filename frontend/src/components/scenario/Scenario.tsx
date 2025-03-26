@@ -46,7 +46,7 @@ const Scenario = ({}) => {
         return ""
     }
 
-    const handleYear = ({type,value,lower,upper,mean,stdev,event_series}) => {
+    const handleNotPercent = ({type,value,lower,upper,mean,stdev,event_series}) => {
         switch(type) {
             case "fixed": return value
             case "normal": return `Normal(mean=${mean},stddev=${stdev})`
@@ -89,8 +89,26 @@ const Scenario = ({}) => {
             taxability:true
         }],
         investment: [{
-            invest_type: "stocks",
-            invest_id: "3284235",
+            invest_type: {
+                name:"stocks",
+                description:"moneyyyy",
+                exp_annual_return: {
+                    type:"normal",
+                    value:0,
+                    is_percent:true,
+                    mean:5,
+                    stdev:3
+                },
+                expense_ratio: 0.2,
+                exp_annual_income: {
+                    type:"fixed",
+                    value:1000,
+                    is_percent:false,
+                    mean:0,
+                    stdev:1
+                },
+                taxability:true
+            },
             value: 34000,
             tax_status:"pre-tax"
         }],
@@ -194,27 +212,137 @@ const Scenario = ({}) => {
             details: {
                 is_glide: true,
                 max_cash: 75000,
-                assets:[]
+                assets:[{
+                    invest_id: "stocks",
+                    initial:10,
+                    final:90
+                }]
             }
 
         }],
         inflation_assume: {
-
+            type: "uniform",
+            value: 4,
+            lower: 3,
+            upper: 5,
+            mean: 0,
+            stdev: 1,
         },
         spending_strat: [{
+            name:"eating out",
+            description:"yum yum",
+            start: {
+                type: "normal",
+                value: 2020,
+                lower:2019,
+                upper:2022,
+                mean:2019,
+                stdev:3,
+                event_series:""
+            },
+            duration: {
+                type: "uniform",
+                value: 0,
+                lower:20,
+                upper:30,
+                mean:0,
+                stdev:1,
+                event_series:""
+            },
+            type: "expense",
+            details: {
+                initial_amt: 6000,
+                exp_annual_change: {
+                    type: "normal",
+                    is_percent: true,
+                    value: 0,
+                    lower: 10,
+                    upper: 90,
+                    mean: 3,
+                    stdev:0.5
+                },
+                inflation_adjust: true,
+                user_split: [100],
+                is_discretionary: true
+            }
 
         }], 
         expense_withdraw: [{
-
+            invest_type: {
+                name:"stocks",
+                description:"moneyyyy",
+                exp_annual_return: {
+                    type:"normal",
+                    value:0,
+                    is_percent:true,
+                    mean:5,
+                    stdev:3
+                },
+                expense_ratio: 0.2,
+                exp_annual_income: {
+                    type:"fixed",
+                    value:1000,
+                    is_percent:false,
+                    mean:0,
+                    stdev:1
+                },
+                taxability:true
+            },
+            value: 34000,
+            tax_status:"pre-tax"
         }], 
         rmd_strat: [{
-
+            invest_type: {
+                name:"stocks",
+                description:"moneyyyy",
+                exp_annual_return: {
+                    type:"normal",
+                    value:0,
+                    is_percent:true,
+                    mean:5,
+                    stdev:3
+                },
+                expense_ratio: 0.2,
+                exp_annual_income: {
+                    type:"fixed",
+                    value:1000,
+                    is_percent:false,
+                    mean:0,
+                    stdev:1
+                },
+                taxability:true
+            },
+            value: 34000,
+            tax_status:"pre-tax"
         }] ,
         roth_conversion_strat: [{
-
+            invest_type: {
+                name:"stocks",
+                description:"moneyyyy",
+                exp_annual_return: {
+                    type:"normal",
+                    value:0,
+                    is_percent:true,
+                    mean:5,
+                    stdev:3
+                },
+                expense_ratio: 0.2,
+                exp_annual_income: {
+                    type:"fixed",
+                    value:1000,
+                    is_percent:false,
+                    mean:0,
+                    stdev:1
+                },
+                taxability:true
+            },
+            value: 34000,
+            tax_status:"pre-tax"
         }], 
         roth_optimizer: {
-
+            is_enable:true,
+            start_year:2037,
+            end_year:2066
         },
         r_only_share:  [],
         wr_only_share: [],
@@ -237,18 +365,19 @@ const Scenario = ({}) => {
                 <div><b>Financial Goal:</b> ${scenario.fin_goal}</div>
                 <div><b>State:</b> {scenario.state}</div>
                 <div><b>Birth Year:</b> {scenario.birth_year[0]}</div>
-                <div><b>Life Expectancy:</b> {handleYear(scenario.life_expectancy[0])}</div>
+                <div><b>Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[0])} years</div>
                 <div><b>Marital Status:</b> {scenario.marital}</div>
                 {scenario.marital === "couple" && <div>
                     <div><b>Spouse Birth Year:</b> {scenario.birth_year[1]}</div>
-                    <div><b>Spouse Life Expectancy:</b> {handleYear(scenario.life_expectancy[1])}</div>
+                    <div><b>Spouse Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[1])}</div>
                 </div>}
+                <div><b>Inflation Assumption:</b> {handleNotPercent(scenario.inflation_assume)}%</div>
             </div>
             <div className="flex flex-col gap-3">
                 <h1 className="text-3xl font-medium">Investment Types</h1>
                 <div className="flex flex-col gap-2">
                     {scenario.investment_types.map((investment,i) =>
-                        <div >
+                        <div>
                             <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("investment_types",i)}>{investment.name}</div>
                             {collapse.investment_types[i] && 
                             <div className="p-4 gap-3 w-140">
@@ -268,7 +397,7 @@ const Scenario = ({}) => {
                 <div className="flex flex-col gap-2">
                     {scenario.investment.map((investment,i) =>
                         <div className="font-medium bg-white shadow-md rounded-lg flex flex-col pl-4 py-4 gap-1 w-140 h-30">
-                            <div><b>Invest Type:</b> {investment.invest_type}</div>
+                            <div><b>Invest Type:</b> {investment.invest_type.name}</div>
                             <div><b>Value:</b> ${investment.value}</div>
                             <div><b>Tax Status:</b> {investment.tax_status}</div>
                         </div>
@@ -285,8 +414,8 @@ const Scenario = ({}) => {
                             {collapse.investment_types[i] && 
                             <div className="flex flex-col p-4 gap-1 w-140">
                                 <div><b>Description:</b> {es.description}</div>
-                                <div><b>Start year:</b> {handleYear(es.start)}</div>
-                                <div><b>Duration:</b> {handleYear(es.duration)} years</div>
+                                <div><b>Start year:</b> {handleNotPercent(es.start)}</div>
+                                <div><b>Duration:</b> {handleNotPercent(es.duration)} years</div>
                                 {es.type === "income" && <div className="flex flex-col gap-1">
                                     <div><b>Initial Amount:</b> ${es.details.initial_amt}</div>
                                     <div><b>Annual Change:</b> {handlePercent(es.details.exp_annual_change)}</div>
@@ -302,13 +431,25 @@ const Scenario = ({}) => {
                                     <div><b>Discretionary:</b> {es.details.is_discretionary ? "yes" : "no"}</div>
                                 </div>}
                                 {es.type === "invest" && <div className="flex flex-col gap-1">
-                                    <div><b>Glide path:</b> {es.details.is_glide ? "yes" : "no"}</div>
                                     <div><b>Max cash:</b> ${es.details.max_cash}</div>
-                                    <div><b>Assets:</b> {es.details.assets}</div>
+                                    <div>
+                                        <b>Assets:</b> 
+                                        <ul>
+                                            {es.details.assets?.map(asset => 
+                                                <li>{asset.invest_id}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
+                                            )}
+                                        </ul>
+                                    </div>
                                 </div>}
                                 {es.type === "rebalance" && <div className="flex flex-col gap-1">
-                                    <div><b>Glide path:</b> {es.details.is_glide ? "yes" : "no"}</div>
-                                    <div><b>Assets:</b> {es.details.assets}</div>
+                                    <div>
+                                        <b>Assets:</b> 
+                                        <ul>
+                                            {es.details.assets?.map(asset => 
+                                                <li>{asset.invest_id}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
+                                            )}
+                                        </ul>
+                                    </div>
                                 </div>}
                             </div>}
                         </div>
@@ -318,26 +459,51 @@ const Scenario = ({}) => {
 
             <div className="flex flex-col gap-3">
                 <h1 className="text-3xl font-medium">Strategies</h1>
-                <div className="flex flex-col gap-2">
+                <div className="text-xl font-medium bg-white shadow-md rounded-lg flex flex-col p-4 gap-3 w-140">
+                    <h2 className="text-xl font-medium">Spending Strategy</h2>
+                    {scenario.spending_strat.map((expense_series,i) => 
+                         (<div className="flex items-center">
+                            <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{expense_series.name}</div>
+                        </div>))}
+                </div>
+                <div className="text-xl font-medium bg-white shadow-md rounded-lg flex flex-col p-4 gap-3 w-140">
+                    <h2 className="text-xl font-medium">Withdrawal Strategy</h2>
+                    {scenario.expense_withdraw.map((investment,i) => 
+                         (<div className="flex items-center">
+                            <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                        </div>))}
                     
                 </div>
-                <div className="flex flex-col gap-2">
-                    
+                <div className="text-xl font-medium bg-white shadow-md rounded-lg flex flex-col p-4 gap-3 w-140">
+                    <h2 className="text-xl font-medium">RMD Strategy</h2>
+                    {scenario.rmd_strat.map((investment,i) => 
+                         (<div className="flex items-center">
+                            <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                        </div>))}
+
                 </div>
                 <div className="flex flex-col gap-2">
+                    <div><b>Roth Conversion:</b> {scenario.roth_optimizer.is_enable ? "yes" : "no"}</div>
+                    {scenario.roth_optimizer.is_enable && <div>
+                            <div><b>Year Range:</b> {scenario.roth_optimizer.start_year}-{scenario.roth_optimizer.end_year}</div>
+                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex flex-col p-4 gap-3 w-140">
+                                <h2 className="text-xl font-medium">Roth Conversion Strategy</h2>
+                                {scenario.roth_conversion_strat.map((investment,i) => 
+                                (<div className="flex items-center">
+                                    <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
+                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                                </div>))}
+                            </div>
+                            
+
+                        </div>}
                     
-                </div>
-                <div className="flex flex-col gap-2">
-                    
+
                 </div>
             </div>
-
-
-            
-
-            
-
-            
         </div>
     )
 }
