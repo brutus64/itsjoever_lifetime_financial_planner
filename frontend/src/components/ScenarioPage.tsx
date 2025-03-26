@@ -77,14 +77,14 @@ const ScenarioPage: React.FC = () => {
             <div className='flex item justify-between'>
                 <p className="text-5xl">Scenario Page</p>
                 <div className='flex '>
-                    <div className="flex items-center bg-gray-200 rounded-full px-4 py-2 ml-4">
+                    {/* <div className="flex items-center bg-gray-200 rounded-full px-4 py-2 ml-4">
                         <img src="./menu_icons/explore.png" alt="Search" className="w-5 h-5 mr-2"/>
                         <input
                             type="text"
                             placeholder="Search Scenarios"
                             className="bg-transparent outline-none text-sm"
                         />
-                    </div>
+                    </div> */}
                     <button className="bg-gray-900 text-white rounded-full px-4 py-2 ml-4 hover:bg-gray-700 cursor-pointer"
                         onClick={handleNewScenario}>
                         New Scenario
