@@ -9,7 +9,7 @@ const defaultRebalanceEventForm = {
     description: "",
     start_year: {
         type: "", //  "fixed", "uniform", "normal", "same_year", "year_after"
-        fixed: 0,
+        fixed: 2025,
         min: 0,
         max: 100,
         mean: 0,

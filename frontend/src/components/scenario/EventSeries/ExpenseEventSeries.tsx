@@ -9,7 +9,7 @@ const defaultExpenseEventForm = {
     description: "",
     start_year: {
         type: "", //  fixed, uniform, normal, same year, year after:
-        fixed: 0,
+        fixed: 2025,
         min: 0,
         max: 0,
         mean: 0,
@@ -213,33 +213,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
                     <h1 className="text-2xl font-bold">New Expense Event Series</h1>
                     <Name handleChange={handleChange} eventData={expenseEventData} />
                     <Description handleChange={handleChange} eventData={expenseEventData} />
-                    <StartYear handleStartYearChange={handleStartYearChange} eventData={expenseEventData} formData={formData} />
-                    <Duration handleDurationChange={handleDurationChange} eventData={expenseEventData} />
-                    <div className='flex gap-4'>
-                        <h2 className="font-medium">Initial Amount</h2>
-                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
-                            name="initial_amount" 
-                            onChange={handleChange} 
-                            value={expenseEventData.initial_amount} 
-                            type="number" min="0"/> 
-                    </div>
-                    
-                    <div className="flex gap-5 align-middle">
-                        <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
-                        <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={expenseEventData.inflation_adjust}/>  
-                    </div>
-
-                    <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={expenseEventData}/>
-
-                    <div className='flex gap-4'>
-                        <h2 className="font-medium">Percentage Associated With User</h2>
-                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
-                            name="percent_associated"
-                            value={expenseEventData.percent_associated}
-                            onChange={handleChange}
-                            type="number" min="0"/> %
-                    </div>
-                    
                     <div className='flex gap-4'>
                         <h2 className="font-medium">Expense is</h2>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
@@ -250,6 +223,31 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
                             <option value="Discretionary">Discretionary</option>
                         </select>
                     </div>
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Initial Amount</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
+                            name="initial_amount" 
+                            onChange={handleChange} 
+                            value={expenseEventData.initial_amount} 
+                            type="number" min="0"/> 
+                    </div>
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Percentage Associated With User</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
+                            name="percent_associated"
+                            value={expenseEventData.percent_associated}
+                            onChange={handleChange}
+                            type="number" min="0"/> %
+                    </div>
+                    <StartYear handleStartYearChange={handleStartYearChange} eventData={expenseEventData} formData={formData} />
+                    <Duration handleDurationChange={handleDurationChange} eventData={expenseEventData} />
+                    
+                    <div className="flex gap-5 align-middle">
+                        <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
+                        <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={expenseEventData.inflation_adjust}/>  
+                    </div>
+
+                    <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={expenseEventData}/>
                     
                     <div className="flex justify-between">
                         <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => handleClose(true)}>Cancel</button>

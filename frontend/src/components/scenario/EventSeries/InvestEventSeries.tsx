@@ -252,9 +252,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                     <h1 className="text-2xl font-bold">New Invest Event Series</h1>
                     <Name handleChange={handleChange} eventData={investEventData} />
                     <Description handleChange={handleChange} eventData={investEventData} />
-                    <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} formData={formData} />
-                    <Duration handleDurationChange={handleDurationChange} eventData={investEventData} />
-                    
                     <div className='flex gap-4'>
                         <h2 className="font-medium">Maximum Cash</h2>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-40" 
@@ -263,6 +260,8 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                             onChange={handleChange}
                             type="number" min="0"/>
                     </div>
+                    <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} formData={formData} />
+                    <Duration handleDurationChange={handleDurationChange} eventData={investEventData} />
 
                     <div>
                         <h1 className="font-medium">Asset Allocation</h1>
