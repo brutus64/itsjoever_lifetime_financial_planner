@@ -35,3 +35,13 @@ def test_export_scenario(client):
     res = client.get("/api/scenario/export/Retirement Planning Scenario")
     # assert res.headers.get("content-type") == "application/x-yaml"
     assert res.status_code == 200
+
+
+
+
+# def test_submit_scenario(client):
+#     response = client.post(
+#         "/api/scenario/create_scenario",
+#         json=scenario_data  # Send the data as JSON
+#     )
+#     assert True
