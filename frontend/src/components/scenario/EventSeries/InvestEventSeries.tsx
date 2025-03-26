@@ -82,7 +82,10 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             setError("Please fill out Duration fields");
             return;
         }
-
+        if(d_type === 'fixed' && d_fixed == 0) {
+            setError("Fixed year for duration cannot be 0.");
+            return;
+        }
 
         let num_not_pretax = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== "pre-tax-retirement").length;
         if (num_not_pretax == 0) {
@@ -253,7 +256,7 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                     <Name handleChange={handleChange} eventData={investEventData} />
                     <Description handleChange={handleChange} eventData={investEventData} />
                     <div className='flex gap-4'>
-                        <h2 className="font-medium">Maximum Cash</h2>
+                        <h2 className="font-medium">Maximum Cash to Hold</h2>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-40" 
                             name="maximum_cash"
                             value={investEventData.maximum_cash}

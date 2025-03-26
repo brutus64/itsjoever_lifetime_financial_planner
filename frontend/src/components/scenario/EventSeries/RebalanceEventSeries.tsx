@@ -82,6 +82,10 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             setError("Please fill out Duration fields");
             return;
         }
+        if(d_type === 'fixed' && d_fixed == 0) {
+            setError("Fixed year for duration cannot be 0.");
+            return;
+        }
 
         console.log(rebalanceEventData.initial_allocation);
         let num_tax_status = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status == rebalanceEventData.tax_status).length;

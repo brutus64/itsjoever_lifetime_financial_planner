@@ -89,6 +89,10 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
             setError("Please fill out Duration fields");
             return;
         }
+        if(d_type === 'fixed' && d_fixed == 0) {
+            setError("Fixed year for duration cannot be 0.");
+            return;
+        }
 
         let { is_percent: e_is_percent, type: e_type, fixed: e_fixed, mean: e_mean, stddev: e_stddev, min: e_min, max: e_max } = expenseEventData.exp_annual_change;
         if (
