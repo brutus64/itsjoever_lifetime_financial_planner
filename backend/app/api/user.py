@@ -54,7 +54,7 @@ async def delete_user_scenario(user_id: str, scenario_name: str):
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
 #NOT TESTED
-@router.get("/{user_id}/{scenario_name}")
+@router.get("/scenarios/{user_id}/{scenario_name}")
 async def fetch_user_scenario(user_id:str, scenario_name: str):
     try:
         user_obj_id = PydanticObjectId(user_id)
