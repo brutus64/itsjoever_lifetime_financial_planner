@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.scenario import Scenario
 from beanie import PydanticObjectId
 import yaml
+from bson import DBRef
 
 router = APIRouter()
 
@@ -76,12 +77,27 @@ async def fetch_user_scenario(scenario_id: str):
 #NOT TESTED
 @router.get("/scenarios/{user_id}")
 async def fetch_user_scenarios(user_id: str):
-    user_obj_id = PydanticObjectId(user_id)
-    user = await User.get(user_obj_id, fetch_links=True)
-    if not user:
-        raise HTTPException(status_code=404, detail="User does not exist")
-    return {"scenarios": [scenario.model_dump() for scenario in user.scenarios]} #returns just the user's scenarios in dictionary form
-
+    try:
+        user_obj_id = PydanticObjectId(user_id)
+        print("USER", user_obj_id)
+        user = await User.get(user_obj_id, fetch_links=True)
+        print("PRINT", user)
+        if not user:
+            raise HTTPException(status_code=404, detail="User does not exist")
+        
+        for scenario in user.scenarios:
+            await scenario.fetch_all_links()
+        scenarios = [scenario.model_dump(exclude={
+                    "user": {"scenarios"}},mode="json")  #scenario's user field ignores user's scenario so no circular dependency
+                    #mode='json' means format to json or try to at least, if its DBRef shown it will error I think
+                for scenario in user.scenarios] 
+        #need to avaoid user since it does a circular link_grab between user and scenario
+        print("WOW", scenarios)
+        return {"scenario": scenarios}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    
 @router.post("/{user_id}/state_tax")
 async def yaml_parse():
     
