@@ -17,8 +17,7 @@ const investmentModalStyling = {
 };
 
 
-// Todo:         
-// Handle form submits      
+// Todo:              
 // Repurpose for editing    
 // Deleting ability
 
@@ -62,6 +61,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
     const [ open, setOpen ] = useState(false);
     const [ investmentTypeData, setInvestmentTypeData ] = useState(defaultInvestmentTypeForm);
     const [ error, setError ] = useState("");
+    const [ editing, setEditing ] = useState(-1);
 
     // annoying radio buttons
     const handleRetPercentRadio = (e) => {
@@ -118,8 +118,9 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
 
     // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
-        if (clear)
+        if (clear || editing !== -1)
             setInvestmentTypeData(defaultInvestmentTypeForm)
+        setEditing(-1);
         setOpen(false)
         setError("")
     }
@@ -164,8 +165,6 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             return;
         }
 
-        // should check for duplicate name
-
         if (investmentTypeData.exp_annual_income.stddev <= 0 || investmentTypeData.exp_annual_return.stddev <= 0) {
             setError("Only positive values for stddev")
             return;
@@ -174,12 +173,30 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             setError("Only nonnegative value for expense ratio")
             return;
         }
-        setFormData({
-            ...formData,
-            investment_types: [...formData.investment_types,investmentTypeData]
-        })
+
+        if (editing !== -1) {
+            setFormData({
+                ...formData,
+                investment_types: formData.investment_types.map((investment,i) =>
+                    i === editing ? investmentTypeData : investment)
+            })
+            console.log("edited")
+        }
+        else {// if adding, append to end
+            setFormData({
+                ...formData,
+                investment_types: [...formData.investment_types,investmentTypeData]
+            })
+            console.log("added")
+        }        
         handleClose(true)
-        console.log("added")
+    }
+
+    const handleEdit = (index) => {
+        console.log(index)
+        setEditing(index);
+        setInvestmentTypeData(formData.investment_types[index])
+        setOpen(true);
     }
 
     return (
@@ -190,8 +207,8 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                 + Add an Investment Type
             </div>
             <div className="flex flex-col gap-3 overflow-y-scroll h-100">
-                {formData.investment_types.map(investment_type => 
-                    <InvestmentTypeItem key={investment_type.name} name={investment_type.name} description={investment_type.description}/>
+                {formData.investment_types.map((investment_type,i) => 
+                    <InvestmentTypeItem key={investment_type.name} name={investment_type.name} description={investment_type.description} i={i} handleEdit={handleEdit}/>
                 )}
             </div>
             <Popup open={open} position="right center" modal contentStyle={investmentTypeModalStyling} onClose={() => handleClose(false)}>
@@ -275,7 +292,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     <div className="flex justify-between">
                         <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => handleClose(true)}>Cancel</button>
                         <div className="text-red-600 font-bold">{error}</div>
-                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestmentType}>Add</button>
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestmentType}>{editing === -1 ? "Add" : "Save"}</button>
                     </div>
                 </div>
             </Popup>
@@ -293,6 +310,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
     const [ open, setOpen ] = useState(false);
     const [ investmentData, setInvestmentData ] = useState(defaultInvestmentForm);
     const [ error, setError ] = useState("");
+    const [ editing, setEditing ] = useState(-1); // -1 means not currently editing
 
     const handleTaxRadio = (e) => {
         const {value} = e.target
@@ -304,9 +322,10 @@ const InvestmentPopup = ({formData,setFormData}) => {
 
     // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
-        if (clear)
+        if (clear || editing !== -1)
             setInvestmentData(defaultInvestmentForm)
         setOpen(false)
+        setEditing(-1)
         setError("")
     }
 
@@ -317,8 +336,6 @@ const InvestmentPopup = ({formData,setFormData}) => {
             [name]:value,
         })
     }
-
-
     
     const handleAddInvestment = () => {
         console.log(investmentData)
@@ -326,12 +343,27 @@ const InvestmentPopup = ({formData,setFormData}) => {
             setError("Please fill out all fields")
             return;
         }
-        setFormData({
-            ...formData,
-            investment: [...formData.investment,investmentData] // do i have to deepcopy?
-        })
+        if (editing !== -1) {
+            setFormData({
+                ...formData,
+                investment: formData.investment.map((investment,i) =>
+                    i === editing ? investmentData : investment)
+            })
+        }
+        else {
+            setFormData({
+                ...formData,
+                investment: [...formData.investment,investmentData] // do i have to deepcopy?
+            })
+        }
         handleClose(true)
     }
+    const handleEdit = (index) => {
+        setEditing(index);
+        setInvestmentData(formData.investment[index])
+        setOpen(true)
+    }
+
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 h-130">
             <h1 className="text-2xl font-bold">My Investments</h1>
@@ -339,8 +371,8 @@ const InvestmentPopup = ({formData,setFormData}) => {
                 + Add an Investment
             </div>
             <div className="flex flex-col gap-3 overflow-y-scroll h-100">
-                {formData.investment.map(inv =>
-                    <InvestmentItem investment={inv}/>
+                {formData.investment.map((inv,i) =>
+                    <InvestmentItem investment={inv} handleEdit={handleEdit} i={i}/>
                 )}
                 
             </div>
@@ -390,9 +422,9 @@ const InvestmentPopup = ({formData,setFormData}) => {
 }
 
 // click to edit
-const InvestmentTypeItem = ({name, description}) => {
+const InvestmentTypeItem = ({name, description,i,handleEdit}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer">
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
             <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{name}</h2>
             <p className="overflow-ellipsis w-85 overflow-hidden">{description}</p>
             {/* <button>Edit</button> */}
@@ -400,9 +432,9 @@ const InvestmentTypeItem = ({name, description}) => {
     )
 }
 
-const InvestmentItem = ({investment}) => {
+const InvestmentItem = ({investment,i,handleEdit}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer">
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
             <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.investment_type}</h2>
             <p className="overflow-ellipsis w-85 overflow-hidden">{investment.tax_status} - ${investment.value}</p>
             {/* <button>Edit</button> */}
