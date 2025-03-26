@@ -141,8 +141,8 @@ def parse_glide_investment(initial, final):
     return assets
     
 async def parse_events(event):
-    print("Parse events currently")
-    print(event)
+    # print("Parse events currently")
+    # print(event)
     
     
     #processing needed:
@@ -215,8 +215,8 @@ async def parse_events(event):
     }
 
 def parse_life_expectancy(life_expect):
-    print("LIFE EXPECTANCY")
-    print(life_expect)
+    # print("LIFE EXPECTANCY")
+    # print(life_expect)
     res = []
     
     for life in life_expect:
@@ -242,8 +242,8 @@ def parse_life_expectancy(life_expect):
     return res
 
 def parse_inflation(inflation):
-    print("INFLATION")
-    print(inflation)
+    # print("INFLATION")
+    # print(inflation)
     inflation_type = inflation.get('type', 'fixed')
     res = {'type': inflation_type}
     
@@ -259,8 +259,8 @@ def parse_inflation(inflation):
     
     return res
 def parse_roth_optimizer(optimizer):
-    print("OPTIMIZER")
-    print(optimizer)
+    # print("OPTIMIZER")
+    # print(optimizer)
     is_enable = optimizer.get('is_enable', False)
     if isinstance(is_enable, str): #could be string for all I know
         is_enable = is_enable.lower() == 'true'
