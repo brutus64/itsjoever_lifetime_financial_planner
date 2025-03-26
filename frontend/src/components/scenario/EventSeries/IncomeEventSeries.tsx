@@ -1,3 +1,4 @@
+import Popup from "reactjs-popup"
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration, ExpectedAnnualChange } from './EventSeries'
 
@@ -7,7 +8,7 @@ const defaultIncomeEventForm = {
     description: "",
     start_year: {
         type: "", //  "fixed", "uniform", "normal", "same_year", "year_after"
-        fixed: 0,
+        fixed: 2025,
         min: 0,
         max: 100,
         mean: 0,
@@ -38,16 +39,25 @@ const defaultIncomeEventForm = {
     income: 'Wages'
 }
 
-const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formData:any, setFormData:any}) => {
+const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}: {eventSeriesModalStyling:any, formData:any, setFormData:any}) => {
+    const [open, setOpen] = useState(false);
     const [ incomeEventData, setIncomeEventData ] = useState(defaultIncomeEventForm);
     const [ error, setError ] = useState("");
+    const [ editing, setEditing ] = useState(-1); // -1 means not currently editing
 
     // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
-        if (clear)
+        if (clear || editing !== -1)
             setIncomeEventData(defaultIncomeEventForm)
         setOpen(false)
+        setEditing(-1)
         setError("")
+    }
+    
+    const handleEdit = (index) => {
+        setEditing(index);
+        setIncomeEventData(formData.event_series[index])
+        setOpen(true)
     }
     
     function handleAddIncomeEvent() {
@@ -83,6 +93,7 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
         let { is_percent: e_is_percent, type: e_type, fixed: e_fixed, mean: e_mean, stddev: e_stddev, min: e_min, max: e_max } = incomeEventData.exp_annual_change;
         if (
             e_is_percent == "" ||
+            e_type == "" ||
             e_type == 'fixed' && e_fixed < 0||
             e_type == 'normal' && (e_mean < 0 || e_stddev < 0)||
             e_type == 'uniform' && (e_min < 0 || e_max < 0)
@@ -91,10 +102,19 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             return;
         }
 
-        setFormData({
-            ...formData,
-            event_series: [...formData.event_series,incomeEventData] 
-        })
+        if(editing !== -1) {
+            setFormData({
+                ...formData,
+                event_series: formData.event_series.map((event_serie,i) =>
+                    i === editing ? incomeEventData : event_serie)
+            })
+
+        } else {
+            setFormData({
+                ...formData,
+                event_series: [...formData.event_series,incomeEventData] 
+            })
+        }
         handleClose(true)
     }
 
@@ -168,70 +188,89 @@ const IncomeEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
     };
 
     return (
-        <div className="rounded-lg m-10 flex flex-col gap-2 overflow-y-auto h-full">
-            <h1 className="text-2xl font-bold">New Income Event Series</h1>
-            <Name handleChange={handleChange} eventData={incomeEventData} />
-            <Description handleChange={handleChange} eventData={incomeEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={incomeEventData} formData={formData}/>
-            <Duration handleDurationChange={handleDurationChange} eventData={incomeEventData} />
-            <div className='flex gap-4'>
-                <h2 className="font-medium">Initial Amount</h2>
-                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
-                    name="initial_amount" 
-                    onChange={handleChange} 
-                    value={incomeEventData.initial_amount} 
-                    type="number" 
-                    min="0"/> 
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-6 overflow-y-auto w-fit">
+            <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-fit hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(true)}>
+                + Add Income
             </div>
 
-            <div className="flex gap-5 align-middle">
-                <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
-                <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={incomeEventData.inflation_adjust}/>  
+            <div className="flex flex-col gap-3 h-60 overflow-y-scroll py-2">
+            {formData.event_series
+                .map((event_series, index) => ({ ...event_series, index }))  // Add index to each item
+                .filter(event_series => event_series.type === 'income')  // Only keep items with type 'income'
+                .map((event_series) => 
+                <IncomeEventItem 
+                    event_series={event_series} 
+                    handleEdit={handleEdit} 
+                    i = {event_series.index}
+                />
+                )}
             </div>
 
-            <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={incomeEventData}/>
+            <Popup open={open} onClose={() => setOpen(false)} position="right center" contentStyle={eventSeriesModalStyling}>
+                <div className="rounded-lg p-3 flex flex-col gap-2 overflow-y-auto h-full">
+                    <h1 className="text-2xl font-bold">New Income Event Series</h1>
+                    <Name handleChange={handleChange} eventData={incomeEventData} />
+                    <Description handleChange={handleChange} eventData={incomeEventData} />
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Income is</h2>
+                        <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
+                            name="income"
+                            value={incomeEventData.income}
+                            onChange={handleChange}>
+                            <option value="Wages">Wages</option>
+                            <option value="Social Security">Social Security</option>
+                        </select>
+                    </div>
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Initial Amount</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
+                            name="initial_amount" 
+                            onChange={handleChange} 
+                            value={incomeEventData.initial_amount} 
+                            type="number" 
+                            min="0"/> 
+                    </div>
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Percentage Associated With User</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
+                            name="percent_associated"
+                            value={incomeEventData.percent_associated}
+                            onChange={handleChange}
+                            type="number" 
+                            min="0"/> %
+                    </div>
+                    <StartYear handleStartYearChange={handleStartYearChange} eventData={incomeEventData} formData={formData}/>
+                    <Duration handleDurationChange={handleDurationChange} eventData={incomeEventData} />
 
-            <div className='flex gap-4'>
-                <h2 className="font-medium">Percentage Associated With User</h2>
-                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
-                    name="percent_associated"
-                    value={incomeEventData.percent_associated}
-                    onChange={handleChange}
-                    type="number" 
-                    min="0"/> %
-            </div>
+                    <div className="flex gap-5 align-middle">
+                        <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
+                        <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={incomeEventData.inflation_adjust}/>  
+                    </div>
 
-            <div className='flex gap-4'>
-                <h2 className="font-medium">Income is</h2>
-                <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
-                    name="income"
-                    value={incomeEventData.income}
-                    onChange={handleChange}>
-                    <option value="Wages">Wages</option>
-                    <option value="Social Security">Social Security</option>
-                </select>
-            </div>
-            
-            <div className="flex justify-between">
-                <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
-                <div className="text-red-600 font-bold">{error}</div>
-                <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddIncomeEvent}>Add</button>
-            </div>
+                    <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={incomeEventData}/>
+                    
+                    <div className="flex justify-between">
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => handleClose(true)}>Cancel</button>
+                        <div className="text-red-600 font-bold">{error}</div>
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddIncomeEvent}>Add</button>
+                    </div>
+                </div>
+            </Popup>
         </div>
     );
 };
 
 
-const IncomeEventItem = ({ name, description }) => {
+const IncomeEventItem = ({ event_series, handleEdit, i }) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col gap-3 w-full hover:bg-sky-100 cursor-pointer">
-            <h2 className="text-xl font-medium overflow-ellipsis overflow-hidden">{name}</h2>
-            <p className="overflow-ellipsis overflow-hidden">{description}</p>
-            {/* <button>Edit</button> */}
+        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
+            <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.initial_amount}</p>
+            <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+            <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
         </div>
     );
 }
 
 
-export default IncomeEventSeries;
+export default IncomeEventSeriesPopup;
 export { IncomeEventItem };

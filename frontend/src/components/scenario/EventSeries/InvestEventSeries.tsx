@@ -1,3 +1,4 @@
+import Popup from "reactjs-popup"
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration } from './EventSeries'
 import InvestmentCard from './InvestmentCard';
@@ -28,18 +29,28 @@ const defaultInvestEventForm = {
     is_glide: false,
     initial_allocation: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation1
     final_allocation: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation2
+    initial_allocation_data: {}, // used to display % in frontend
+    final_allocation_data: {}, 
 }
 
-const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formData:any, setFormData:any}) => {
+const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}: {eventSeriesModalStyling:any, formData:any, setFormData:any}) => {
+    const [open, setOpen] = useState(false);
     const [ investEventData, setInvestEventData ] = useState(defaultInvestEventForm);
     const [ error, setError ] = useState("");
+    const [ editing, setEditing ] = useState(-1); // -1 means not currently editing
     
   // Clear fields if successfully added or cancel button clicked or if editing
     const handleClose = (clear:boolean) => {
-        if (clear)
+        if (clear || editing !== -1)
             setInvestEventData(defaultInvestEventForm)
         setOpen(false)
+        setEditing(-1)
         setError("")
+    }
+    const handleEdit = (index) => {
+        setEditing(index);
+        setInvestEventData(formData.event_series[index])
+        setOpen(true)
     }
 
     function handleAddInvestEvent() {
@@ -74,6 +85,11 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
 
 
         let num_not_pretax = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== "pre-tax-retirement").length;
+        if (num_not_pretax == 0) {
+            setError("Please create Investments first");
+            return;
+        }
+
         if (
             Object.keys(investEventData.initial_allocation).length != num_not_pretax ||
             investEventData.is_glide && (Object.keys(investEventData.final_allocation).length != num_not_pretax)
@@ -92,8 +108,8 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             return;
         }
 
-        cumulative_percentages = 0.0
         if(investEventData.is_glide) {
+            cumulative_percentages = 0.0
             for (let key in investEventData.final_allocation)  {
                 const value = investEventData.final_allocation[key];
                 cumulative_percentages += value
@@ -105,10 +121,20 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             }
         }
 
-        setFormData({
-            ...formData,
-            event_series: [...formData.event_series,investEventData] 
-        })
+        if(editing !== -1) {
+            setFormData({
+                ...formData,
+                event_series: formData.event_series.map((event_serie,i) =>
+                    i === editing ? investEventData : event_serie)
+            })
+
+        } else {
+            setFormData({
+                ...formData,
+                event_series: [...formData.event_series,investEventData] 
+            })
+
+        }
         handleClose(true)
 
         console.log(investEventData)
@@ -160,12 +186,16 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
         let { name, value } = e.target;
         let split = name.split(':');
         let initial_or_final = split[0];
-        name = split[1];
+        let rname = split[1];
         if(initial_or_final == 'initial') {
             setInvestEventData({
                 ...investEventData,
                 initial_allocation: {
                     ...investEventData.initial_allocation,
+                    [rname]: parseFloat(value),  
+                },
+                initial_allocation_data: {
+                    ...investEventData.initial_allocation_data,
                     [name]: parseFloat(value),  
                 }
             });
@@ -176,6 +206,10 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
                 ...investEventData,
                 final_allocation: {
                     ...investEventData.final_allocation,  
+                    [rname]: parseFloat(value),  
+                },
+                final_allocation_data: {
+                    ...investEventData.final_allocation_data,  
                     [name]: parseFloat(value),  
                 }
             });
@@ -194,107 +228,128 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
     };
 
     return (
-        <div className="rounded-lg m-10 flex flex-col gap-2 overflow-y-auto h-full">
-            <h1 className="text-2xl font-bold">New Invest Event Series</h1>
-            <Name handleChange={handleChange} eventData={investEventData} />
-            <Description handleChange={handleChange} eventData={investEventData} />
-            <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} formData={formData} />
-            <Duration handleDurationChange={handleDurationChange} eventData={investEventData} />
-            
-            <div className='flex gap-4'>
-                <h2 className="font-medium">Maximum Cash</h2>
-                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-40" 
-                    name="maximum_cash"
-                    value={investEventData.maximum_cash}
-                    onChange={handleChange}
-                    type="number" min="0"/>
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-6 overflow-y-auto w-fit">
+
+            <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-fit hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(true)}>
+                + Add Invest
             </div>
 
-            <div>
-                <h1 className="font-medium">Asset Allocation</h1>
+            <div className="flex flex-col gap-3 h-60 overflow-y-scroll py-2">
+            {formData.event_series
+                .map((event_series, index) => ({ ...event_series, index }))  // Add index to each item
+                .filter(event_series => event_series.type === 'invest')  // Only keep items with type 'income'
+                .map((event_series) => 
+                <InvestEventItem 
+                    event_series={event_series} 
+                    handleEdit={handleEdit} 
+                    i = {event_series.index}
+                />
+                )}
+            </div>
 
-                <div className="flex gap-5 align-middle">
-                    <h2 className="font-medium self-cener">Glide Path:</h2>
-                    <input type="checkbox" name="is_glide" onChange={handleGlide} checked={investEventData.is_glide}/>  
-                </div>
+            <Popup open={open} onClose={() => setOpen(false)} position="right center" contentStyle={eventSeriesModalStyling}>
+                <div className="rounded-lg p-3 flex flex-col gap-2 overflow-y-auto h-full">
+                    <h1 className="text-2xl font-bold">New Invest Event Series</h1>
+                    <Name handleChange={handleChange} eventData={investEventData} />
+                    <Description handleChange={handleChange} eventData={investEventData} />
+                    <div className='flex gap-4'>
+                        <h2 className="font-medium">Maximum Cash</h2>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-40" 
+                            name="maximum_cash"
+                            value={investEventData.maximum_cash}
+                            onChange={handleChange}
+                            type="number" min="0"/>
+                    </div>
+                    <StartYear handleStartYearChange={handleStartYearChange} eventData={investEventData} formData={formData} />
+                    <Duration handleDurationChange={handleDurationChange} eventData={investEventData} />
 
-                <div className="flex gap-4">
-                    {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
-                        <h1 className="text-center">No investments to allocate</h1>
-                    )}
+                    <div>
+                        <h1 className="font-medium">Asset Allocation</h1>
 
-                    <div className="flex flex-col">
-                        {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
-                            <h1 className="text-center">{investEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
-                        )}
-                        <div className="flex flex-col  gap-3">
-                            {formData.investment
-                            .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
-                            .map((investment: unknown) =>
-                                <div className="flex flex-col gap-1">
-                                    <InvestmentCard investment={investment}/>
-                                    <div className='flex gap-3'>
-                                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
-                                            name={"initial:"+investment.investment_type+'|'+investment.tax_status} 
-                                            value={(investEventData.final_allocation["initial:"+investment.investment_type+'|'+investment.tax_status])} 
-                                            onChange={handleAssetAllocation} 
-                                            min="0" max="100"/> %
+                        <div className="flex gap-5 align-middle">
+                            <h2 className="font-medium self-cener">Glide Path:</h2>
+                            <input type="checkbox" name="is_glide" onChange={handleGlide} checked={investEventData.is_glide}/>  
+                        </div>
+
+                        <div className="flex gap-4">
+                            {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
+                                <h1 className="text-center">No investments to allocate</h1>
+                            )}
+
+                            <div className="flex flex-col">
+                                {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                                    <h1 className="text-center">{investEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
+                                )}
+                                <div className="flex flex-col  gap-3">
+                                    {formData.investment
+                                    .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
+                                    .map((investment: unknown) =>
+                                        <div className="flex flex-col gap-1">
+                                            <InvestmentCard investment={investment}/>
+                                            <div className='flex gap-3'>
+                                                <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
+                                                    name={"initial:"+investment.investment_type+'|'+investment.tax_status} 
+                                                    value={(investEventData.initial_allocation_data["initial:"+investment.investment_type+'|'+investment.tax_status])} 
+                                                    onChange={handleAssetAllocation} 
+                                                    min="0" max="100"/> %
+                                            </div>
+                                        </div> 
+                                    )}
+                                </div>
+                            </div>
+
+                            {investEventData.is_glide && (
+                                <div className="flex flex-col">
+                                    {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                                        <h1 className="text-center">Final Percentages</h1>
+                                    )}
+                                    
+                                    <div className="flex flex-col gap-3">
+                                    {formData.investment
+                                        .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
+                                        .map((investment: unknown) => (
+                                            <div className="flex flex-col gap-1" key={investment.name}>
+                                                <InvestmentCard investment={investment} />
+                                                <div className="flex gap-3">
+                                                    <input
+                                                        type="number"
+                                                        className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
+                                                        name={"final:"+investment.investment_type+'|'+investment.tax_status}
+                                                        value={investEventData.final_allocation_data["final:"+investment.investment_type+'|'+investment.tax_status]}
+                                                        onChange={handleAssetAllocation}
+                                                        min="0"
+                                                        max="100"
+                                                    /> %
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                </div> 
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    {investEventData.is_glide && (
-                        <div className="flex flex-col">
-                            {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
-                                <h1 className="text-center">Final Percentages</h1>
-                            )}
-                            
-                            <div className="flex flex-col gap-3">
-                            {formData.investment
-                                .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
-                                .map((investment: unknown) => (
-                                    <div className="flex flex-col gap-1" key={investment.name}>
-                                        <InvestmentCard investment={investment} />
-                                        <div className="flex gap-3">
-                                            <input
-                                                type="number"
-                                                className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                                                name={"final:"+investment.investment_type+'|'+investment.tax_status}
-                                                value={investEventData.initial_allocation["final:"+investment.investment_type+'|'+investment.tax_status]}
-                                                onChange={handleAssetAllocation}
-                                                min="0"
-                                                max="100"
-                                            /> %
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <div className="flex justify-between">
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => handleClose(true)}>Cancel</button>
+                        <div className="text-red-600 font-bold">{error}</div>
+                        <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestEvent}>Add</button>
+                    </div>
                 </div>
-            </div>
-
-            <div className="flex justify-between">
-                <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-red-600 w-20" onClick={() => setOpen(false)}>Cancel</button>
-                <div className="text-red-600 font-bold">{error}</div>
-                <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-20" onClick={handleAddInvestEvent}>Add</button>
-            </div>
+            </Popup>
         </div>
     );
 };
 
 
-const InvestEventItem = ({ name, description }) => {
+const InvestEventItem = ({ event_series, handleEdit, i }) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col gap-3 w-full hover:bg-sky-100 cursor-pointer">
-            <h2 className="text-xl font-medium overflow-ellipsis overflow-hidden">{name}</h2>
-            <p className="overflow-ellipsis overflow-hidden">{description}</p>
+        <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
+            <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+            <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
             {/* <button>Edit</button> */}
         </div>
     );
 }
 
-export default InvestEventSeries;
+export default InvestEventSeriesPopup;
 export { InvestEventItem };
