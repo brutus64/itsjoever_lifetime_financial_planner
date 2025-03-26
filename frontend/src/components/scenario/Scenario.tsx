@@ -100,7 +100,7 @@ const Scenario = ({}) => {
                 <div><b>Birth Year:</b> {scenario.birth_year[0]}</div>
                 <div><b>Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[0])} years</div>
                 <div><b>Marital Status:</b> {scenario.marital}</div>
-                {scenario.marital === "couple" && <div>
+                {scenario.birth_year.length === 2 && scenario.life_expectancy.length === 2 && <div>
                     <div><b>Spouse Birth Year:</b> {scenario.birth_year[1]}</div>
                     <div><b>Spouse Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[1])}</div>
                 </div>}
@@ -205,7 +205,7 @@ const Scenario = ({}) => {
                     {scenario.expense_withdraw.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
                         </div>))}
                     
                 </div>
