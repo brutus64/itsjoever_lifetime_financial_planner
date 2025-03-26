@@ -92,7 +92,7 @@ def create_exp_annual(data): #for income and expense
     elif dist_type == 'normal':
         exp_ann.mean = dist.get('mean')
         exp_ann.stdev = dist.get('stdev')
-    print("EXPECTED ANNUAL:", exp_ann)
+    # print("EXPECTED ANNUAL:", exp_ann)
     return exp_ann
 
 def event_date_parse(data):
@@ -120,7 +120,7 @@ def create_assetalloc(data):
     glide = data.get('glidePath')
     asset1 = data.get('assetAllocation')
     asset2 = data.get('assetAllocation2')
-    print("ASSETTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT:", asset1)
+    # print("ASSETTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT:", asset1)
     arr = []
     for key, value in asset1.items():
         invest = None
@@ -231,7 +231,7 @@ async def create_event_from_yaml(data):
             # Insert new document
             await rebalance.save()
             detail_id = rebalance
-    print("ID IN THE END:", detail_id)
+    # print("ID IN THE END:", detail_id)
     # print("EVENTFROMYAML START/DURATION", data.get('start'), data.get('duration'))
     event = EventSeries(
         name=data.get('name'),
@@ -246,9 +246,9 @@ async def create_event_from_yaml(data):
 '''-----------------------SCENARIO PARSING-----------------------'''
 def parse_life(data):
     life_data = data.get('lifeExpectancy')
-    print("\n\n\n LIFE DATA:", life_data, "\n\n\n")
+    # print("\n\n\n LIFE DATA:", life_data, "\n\n\n")
     length = 2 if data.get('maritalStatus') == 'couple' else 1
-    print(length)
+    # print(length)
     arr = []
     for i in range(length):
         dist_type = life_data[i].get('type')
@@ -261,7 +261,7 @@ def parse_life(data):
             life.mean = life_data[i].get('mean')
             life.stdev = life_data[i].get('stdev')
         arr.append(life)
-    print(arr)
+    # print(arr)
     return arr
 
 def parse_inflation_assumption(data):
@@ -289,9 +289,9 @@ def parse_roth_opt(data):
 
 #investment type -> yaml format
 def invest_type_to_yaml(invest_type):
-    print("HI YO")
+    # print("HI YO")
     #invest type is a beanie document don't use .get() since it queries for id
-    print(invest_type.name)
+    # print(invest_type.name)
     res = { #basic fields
         'name':invest_type.name,
         'description':invest_type.description,
