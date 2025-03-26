@@ -23,6 +23,7 @@ function App() {
           <Route path="/shared" element={<SharedPage/>}/>
           <Route path="/profile" element={<ProfilePage/>}/>
           <Route path="/scenario/new" element={<ScenarioForm/>}/>
+          <Route path="/scenario/edit/:id" element={<ScenarioForm/>}/>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>

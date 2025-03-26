@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
+import { useParams, useLocation } from "react-router-dom";
 import Investments from "./Investments";
 import EventSeries from "./EventSeries/EventSeries";
 import RMDRoth from "./RMDRoth/RMDRoth";
 import SpendingWithdrawal from "./SpendingWithdrawalStrategy/SpendingWithdrawal";
 import Summary from "./Summary";
 import MainInfo from "./MainInfo";
+import axios from "axios";
 
 // should there be some mechanism on saving form progress,
 // so that the user doesn't have to start over if they
 // accidentally leave the form?
 // Solution: "incomplete" scenarios?
-const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to edit, use parameter
+const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
+    const params = useParams();
+    const location = useLocation();
     const [formData, setFormData] = useState({
         name: "",
         is_married: false,
@@ -55,8 +59,88 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
     
 
     useEffect(() => { // if editing a scenario
+        const fetchScenario = async () => {
+            console.log("Fetching scenario")
+            try{
+                const res = await axios.get(`http://localhost:8000/api/scenarios/view/${params.id}`);
+                console.log(res.data);
+                const scenario = res.data.scenario;
+                // convert to form format
+                const formFormat = {
+                    name: scenario.name,
+                    is_married: scenario.marital === "couple",
+                    birth_year: scenario.birth_year[0],
+                    spouse_birth_year: scenario.martial === "couple" ? scenario.birth_year[1] : "",
+                    fin_goal: scenario.fin_goal,
+                    state: scenario.state,
+                    life_expectancy: {
+                        ...scenario.life_expectancy[0],
+                        fixed: scenario.life_expectancy[0].value,
+                    },
+                    spouse_life_expectancy: scenario.life_expectancy.length === 2 ? {
+                        ...scenario.life_expectancy[1],
+                        fixed: scenario.life_expectancy[1].value,
+                    } : {
+                        type: "fixed",
+                        fixed: 0,
+                        mean: 0,
+                        stddev: 1,
+                    },
+                    investment_types: scenario.investment_types.map(inv_type => {
+                        return {
+                            ...inv_type,
+                            is_tax_exempt: inv_type.taxability,
+                            exp_annual_income: {
+                                ...inv_type.exp_annual_income,
+                                fixed:inv_type.exp_annual_income.value
+                            },
+                            exp_annual_return: {
+                                ...inv_type.exp_annual_return,
+                                fixed:inv_type.exp_annual_return.value
+                            }
+                        }
+                    }),
+                    investment: scenario.investment.map(inv => {
+                        return {
+                            ...inv,
+                            investment_type:inv.invest_type,
+                            tax_status:(inv.tax_status === "non-retirement") ? inv.tax_status : inv.tax_status+"-retirement"
+                        }
+                    }),
+                    event_series: [],
+                    inflation_assume: {
+                        ...scenario.inflation_assume,
+                        fixed: scenario.inflation_assume.value,
+                    },
+                    spending_strat: scenario.spending_strat.map(spend => spend.name),
+                    expense_withdraw: scenario.expense_withdraw.map(exp => {
+                        if (exp.tax_status === "non-retirement")
+                            return exp.invest_id;
+                        return exp.invest_id+"-retirement"
+                    }),
+                    rmd_strat: scenario.rmd_strat.map(inv => {
+                        const last_index = inv.lastIndexOf(" ");
+                        return inv.slice(0,last_index)
+                    }),
+                    roth_conversion_strat: scenario.roth_conversion_strat.map(inv => {
+                        const last_index = inv.lastIndexOf(" ");
+                        return inv.slice(0,last_index)
+                    }),
+                    roth_optimizer: scenario.roth_optimizer,
+                }
+                console.log("form",formData)
+                setFormData(formFormat)
+            }
+            catch(err){
+                console.log("Could not fetch scenario: ", err);
+            }
+        }
+        if (location.pathname.startsWith("/scenario/edit/")) //if editing
+            fetchScenario();
+        else
+            console.log("Not editing")
         //todo
-    },[scenario])
+    },[params])
 
     const pages = [
         <MainInfo formData={formData} setFormData={setFormData} />,
@@ -64,7 +148,7 @@ const ScenarioForm = ({scenario}:any) => { // if want to pass in a scenario to e
         <EventSeries formData={formData} setFormData={setFormData} />,
         <RMDRoth formData={formData} setFormData={setFormData} />,
         <SpendingWithdrawal formData={formData} setFormData={setFormData} />,
-        <Summary formData={formData} setFormData={setFormData} />,
+        <Summary formData={formData} setFormData={setFormData} editing={location.pathname.startsWith("/scenario/edit/")}/>,
     ];
     
     return (
