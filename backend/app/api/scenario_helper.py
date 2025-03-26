@@ -158,7 +158,7 @@ async def parse_events(event):
             exp_annual_change= EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
             user_split=float(event.get('percent_associated', 0)),
             social_security= False if event.get('income') == 'Wages' else True,
-            inflation_adjust= event.get('inflation_adjust', 0) #NOTHING
+            inflation_adjust= event.get('inflation_adjust', False) #NOTHING
         )
     elif event_type == 'expense':
         details = Expense(
@@ -166,7 +166,7 @@ async def parse_events(event):
             exp_annual_change=EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
             user_split=float(event.get('percent_associated', 0)),
             is_discretionary=event.get('expense') == 'Discretionary',
-            inflation_adjust=event.get('inflation_adjust', 0)#NOTHING
+            inflation_adjust=event.get('inflation_adjust', False)#NOTHING
 
         )
         

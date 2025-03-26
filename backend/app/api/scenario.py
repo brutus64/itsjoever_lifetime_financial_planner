@@ -9,6 +9,7 @@ from app.db.db_utils import *
 import yaml
 import os
 from fastapi.responses import FileResponse
+from beanie import PydanticObjectId
 
 router = APIRouter(prefix="/scenario")
 
@@ -27,19 +28,10 @@ async def create_investment():
     except Exception as e:
         pass
     
-# @router.post("/create_scenario")
-# async def create_scenario(scenario: Scenario):
-#     try:
-        
-#         created_scenario = await scenario.insert()
-#         return {"message": "success"}
-#     except Exception as e:
-#         print(f"Error in create_scenario: {e}")  # Actually print the exception
-#         raise 
+
 @router.post("/create_scenario")
 async def create_scenario(scenario:  dict):
     try:
-        #
         print(scenario)
 
         investment_types = scenario['investment_types']
@@ -115,8 +107,13 @@ async def create_scenario(scenario:  dict):
         # # state
         
         # #No need: r_only_share, wr_only_share at creation is empty
+        # user_id = scenario.get('user')
+        user = await User.get(scenario.get('user'))
+        if not user:
+            raise ValueError("User not found")
+        print(user)
         scenario_obj = Scenario(
-            user=scenario.get('user'),
+            user=user,
             name=scenario.get('name'),
             marital=scenario.get('marital'),
             birth_year=[int(year) for year in scenario.get('birth_year', [])],
@@ -138,7 +135,13 @@ async def create_scenario(scenario:  dict):
         )
         await scenario_obj.save()
         print("saved id", scenario_obj.id)
-        
+        user.scenarios.append(scenario_obj)
+        await user.save()
+        print(user)
+        # print(us)
+        # us.scenarios.append(scenario_obj.id)
+        # await us.save()
+        # print("AFTER SAVE", us)
         return {"message":"success"}
     except Exception as e:
         print(f"Error in create_scenario: {e}")  # Actually print the exception
