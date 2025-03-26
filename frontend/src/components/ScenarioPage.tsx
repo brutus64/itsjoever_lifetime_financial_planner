@@ -26,14 +26,14 @@ const ScenarioPage: React.FC = () => {
     useEffect(() => {
         const fetchUserAndScenarios = async () => {
             try {
-                // Get the access token from cookies
+                // get the access token from cookies
                 const accessToken = Cookies.get("access_token");
                 if (!accessToken) {
                     setLoading(false);
                     return;
                 }
                 
-                // Fetch user info from Google
+                // fetch user info, mainly want email
                 const googleResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
                     method: "GET",
                     headers: {
@@ -42,14 +42,14 @@ const ScenarioPage: React.FC = () => {
                 });
                 const googleData = await googleResponse.json();
                 
-                // Fetch user from your backend using email
+                // fetch user from your backend using email
                 const userResponse = await fetch(`http://localhost:8000/api/get_user?email=${googleData.email}`);
                 const userData = await userResponse.json();
                 console.log("USERDATA", userData)
                 if (userData.user) {
                     setUser(userData.user);
                     
-                    // Now fetch scenarios for this user
+                    // fetch scenarios for this user
                     const scenariosResponse = await fetch(`http://localhost:8000/api/scenarios/${userData.user._id}`);
                     const scenariosData = await scenariosResponse.json();
                     console.log(scenariosData)
