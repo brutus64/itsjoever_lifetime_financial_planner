@@ -174,12 +174,74 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             return;
         }
 
+        // must change all locations on the form too
         if (editing !== -1) {
-            setFormData({
-                ...formData,
-                investment_types: formData.investment_types.map((investment,i) =>
-                    i === editing ? investmentTypeData : investment)
-            })
+            // change investment type array
+            const new_investment_types = formData.investment_types.map((investment,i) =>
+                i === editing ? investmentTypeData : investment);
+
+            // if the name has changed, change all investments and strategies that reference this 
+            // investment type, and also change any event series
+            const old_name = formData.investment_types[editing].name;
+            const new_name = investmentTypeData.name;
+            if (new_name !== old_name) {
+                const new_investment = formData.investment.map((inv) =>
+                    inv.investment_type === old_name ? {...inv,investment_type:new_name} : inv);
+                const new_event_series = formData.event_series.map(es => {
+                    if (es.type === "expense" || es.type === "income")
+                        return es;
+                    const new_initial = {}
+                    const new_final = {}
+    
+                    // check if investment name is used in any allocation
+                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        if (type === old_name)
+                            new_initial[`${new_name}|${key.slice(last_index+1)}`] = val
+                        else
+                            new_initial[key] = val;
+                    }
+                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        if (type === old_name)
+                            new_final[`${new_name}|${key.slice(last_index+1)}`] = val
+                        else
+                            new_final[key] = val;
+                    }
+    
+                    return {...es,initial_allocation:new_initial,final_allocation:new_final}
+                });
+    
+                const new_withdrawal = formData.expense_withdraw.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_name)
+                        return `${new_name} ${tax}`
+                    return inv
+                })
+                const new_rmd = formData.rmd_strat.map((inv) =>
+                    inv === old_name ? new_name : inv);
+                const new_roth = formData.roth_conversion_strat.map((inv) =>
+                    inv === old_name ? new_name : inv);
+                setFormData({
+                    ...formData,
+                    investment_types: new_investment_types,
+                    investment: new_investment,
+                    event_series: new_event_series,
+                    expense_withdraw: new_withdrawal,
+                    rmd_strat: new_rmd,
+                    roth_conversion_strat: new_roth
+                })
+            }
+            else {
+                setFormData({
+                    ...formData,
+                    investment_types: new_investment_types
+                })
+            }
             console.log("edited")
         }
         else {// if adding, append to end
@@ -343,12 +405,144 @@ const InvestmentPopup = ({formData,setFormData}) => {
             setError("Please fill out all fields")
             return;
         }
+
+        // must change all locations on the form too
         if (editing !== -1) {
-            setFormData({
-                ...formData,
-                investment: formData.investment.map((investment,i) =>
-                    i === editing ? investmentData : investment)
-            })
+            // change investment array
+            const new_investment = formData.investment.map((investment,i) =>
+                i === editing ? investmentData : investment);
+            
+            
+            // if the tax status changed, check to make sure it is not
+            // part of any event series, becaues that will mess up the 
+            // allocations and the percents will not sum to 100.
+            // Then, if it has changed from pre-tax to any other tax, 
+            // remove it from strategies
+            const old_tax = formData.investment[editing].tax_status;
+            const new_tax = investmentData.tax_status;
+            const old_type = formData.investment[editing].investment_type;
+            const new_type = investmentData.investment_type;
+            if (old_tax !== new_tax) {
+                for (const es of formData.event_series) {
+                    if (es.type === "expense" || es.type === "income")
+                        continue;
+                    // check if investment type is used in any allocation
+                    console.log(formData)
+                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1)
+                        if (type === old_type && tax === old_tax) {
+                            setError("Tax status cannot be changed")
+                            return
+                        }
+                    }
+                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1)
+                        if (type === old_type && tax === old_tax) {
+                            setError("Tax status cannot be changed")
+                            return
+                        }
+                    }
+                }
+                let new_withdrawal = formData.expense_withdraw;
+                let new_rmd = formData.rmd_strat;
+                let new_roth = formData.roth_conversion_strat;
+                if (old_tax === "pre-tax-retirement") { // remove from strategies
+                    new_roth = new_roth.filter(inv => inv !== old_type)
+                    new_rmd = new_rmd.filter(inv => inv !== old_type)
+                }
+
+                // make sure to only update (old_type,old_tax) pairs
+                new_withdrawal = new_withdrawal.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_type && tax === old_tax)
+                        return `${new_type} ${new_tax}`
+                    return inv
+                });
+                setFormData({
+                    ...formData,
+                    investment: new_investment,
+                    expense_withdraw: new_withdrawal,
+                    rmd_strat: new_rmd,
+                    roth_conversion_strat: new_roth
+                })
+            }
+
+            // if only the investment type has changed, change corresponding
+            // event series and strategies
+            else if (old_type !== new_type) {
+                const new_event_series = formData.event_series.map(es => {
+                    if (es.type === "expense" || es.type === "income")
+                        return es;
+                    const new_initial = {}
+                    const new_final = {}
+    
+                    // check if investment name is used in any allocation
+                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1);
+                        if (type === old_type && tax === old_tax)
+                            new_initial[`${new_type}|${new_tax}`] = val
+                        else
+                            new_initial[key] = val;
+                    }
+                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1);
+                        if (type === old_type && tax === old_tax)
+                            new_initial[`${new_type}|${new_tax}`] = val
+                        else
+                            new_initial[key] = val;
+                    }
+    
+                    return {...es,initial_allocation:new_initial,final_allocation:new_final}
+                });
+    
+                const new_withdrawal = formData.expense_withdraw.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_type && tax === old_tax)
+                        return `${new_type} ${tax}`
+                    return inv
+                })
+                
+                if (old_tax === "pre-tax-retirement") {
+                    const new_rmd = formData.rmd_strat.map((inv) =>
+                        inv === old_type ? new_type : inv);
+                    const new_roth = formData.roth_conversion_strat.map((inv) =>
+                        inv === old_type ? new_type : inv);
+                    setFormData({
+                        ...formData,
+                        investment: new_investment,
+                        event_series: new_event_series,
+                        expense_withdraw: new_withdrawal,
+                        rmd_strat: new_rmd,
+                        roth_conversion_strat: new_roth
+                    })
+                }
+                else { //no need to update rmd and roth
+                    setFormData({
+                        ...formData,
+                        investment: new_investment,
+                        event_series: new_event_series,
+                        expense_withdraw: new_withdrawal,
+                    })
+                }
+            }
+            else {
+                setFormData({
+                    ...formData,
+                    investment: new_investment
+                })
+            }
         }
         else {
             setFormData({

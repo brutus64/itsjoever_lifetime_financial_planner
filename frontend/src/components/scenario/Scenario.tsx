@@ -267,78 +267,9 @@ const Scenario = ({}) => {
             }
 
         }], 
-        expense_withdraw: [{
-            invest_type: {
-                name:"stocks",
-                description:"moneyyyy",
-                exp_annual_return: {
-                    type:"normal",
-                    value:0,
-                    is_percent:true,
-                    mean:5,
-                    stdev:3
-                },
-                expense_ratio: 0.2,
-                exp_annual_income: {
-                    type:"fixed",
-                    value:1000,
-                    is_percent:false,
-                    mean:0,
-                    stdev:1
-                },
-                taxability:true
-            },
-            value: 34000,
-            tax_status:"pre-tax"
-        }], 
-        rmd_strat: [{
-            invest_type: {
-                name:"stocks",
-                description:"moneyyyy",
-                exp_annual_return: {
-                    type:"normal",
-                    value:0,
-                    is_percent:true,
-                    mean:5,
-                    stdev:3
-                },
-                expense_ratio: 0.2,
-                exp_annual_income: {
-                    type:"fixed",
-                    value:1000,
-                    is_percent:false,
-                    mean:0,
-                    stdev:1
-                },
-                taxability:true
-            },
-            value: 34000,
-            tax_status:"pre-tax"
-        }] ,
-        roth_conversion_strat: [{
-            invest_type: {
-                name:"stocks",
-                description:"moneyyyy",
-                exp_annual_return: {
-                    type:"normal",
-                    value:0,
-                    is_percent:true,
-                    mean:5,
-                    stdev:3
-                },
-                expense_ratio: 0.2,
-                exp_annual_income: {
-                    type:"fixed",
-                    value:1000,
-                    is_percent:false,
-                    mean:0,
-                    stdev:1
-                },
-                taxability:true
-            },
-            value: 34000,
-            tax_status:"pre-tax"
-        }], 
+        expense_withdraw: ["stocks pre-tax"], 
+        rmd_strat: ["stocks pre-tax"] ,
+        roth_conversion_strat: ["stocks pre-tax"], 
         roth_optimizer: {
             is_enable:true,
             start_year:2037,
@@ -472,7 +403,7 @@ const Scenario = ({}) => {
                     {scenario.expense_withdraw.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
                         </div>))}
                     
                 </div>
@@ -481,7 +412,7 @@ const Scenario = ({}) => {
                     {scenario.rmd_strat.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
                         </div>))}
 
                 </div>
@@ -494,7 +425,7 @@ const Scenario = ({}) => {
                                 {scenario.roth_conversion_strat.map((investment,i) => 
                                 (<div className="flex items-center">
                                     <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
+                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment}</div>
                                 </div>))}
                             </div>
                             

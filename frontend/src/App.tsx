@@ -1,6 +1,7 @@
 import LandingPage from './components/LandingPage';
 import ProfilePage from './components/ProfilePage';
 import ScenarioPage from './components/ScenarioPage';
+import Scenario from './components/scenario/Scenario';
 import SharedPage from './components/SharedPage';
 import ExplorationPage from './components/ExplorationPage';
 import SimulationLogPage from './components/SimulationLogPage';
@@ -16,6 +17,7 @@ function App() {
         
         <Route path="/" element={<AppLayout />}>
           <Route path="scenario" element={<ScenarioPage />} />
+          <Route path="/scenario/:id" element={<Scenario />} />
           <Route path="/exploration" element={<ExplorationPage/>}/>
           <Route path="/simulation" element={<SimulationLogPage/>}/>
           <Route path="/shared" element={<SharedPage/>}/>
