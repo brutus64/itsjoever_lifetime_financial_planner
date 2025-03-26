@@ -26,7 +26,6 @@ const ProfilePage: React.FC = () => {
   const scenariosFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(()=>{
-    console.log("hi");
     const accessToken = Cookies.get("access_token");
     console.log(accessToken);
   

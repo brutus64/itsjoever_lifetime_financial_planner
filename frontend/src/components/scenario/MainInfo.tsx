@@ -1,6 +1,5 @@
 import { useState } from "react";
 const MainInfo = ({formData,setFormData}:any) => {
-    console.log(formData)
     const handleChange = (e) => { // Not for radio  
         const { name, value } = e.target;
         setFormData({

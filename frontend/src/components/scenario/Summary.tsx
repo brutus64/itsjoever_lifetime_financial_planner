@@ -20,7 +20,6 @@ const Summary = ({formData,setFormData,editing}:any) => {
     const params = useParams();
     const [user, setUser] = useState<User | null>(null);
     useEffect(()=>{
-        console.log(formData);
         const accessToken = Cookies.get("access_token");
         console.log(accessToken);
         fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -31,11 +30,9 @@ const Summary = ({formData,setFormData,editing}:any) => {
         })
         .then((response) => response.json())
         .then(async (data) => {
-            console.log(data);
             const response = (await fetch(`http://localhost:8000/api/get_user?email=${data.email}`));
             const user = await response.json();
             setUser(user.user);
-            console.log(user.user);
         })
         .catch((error) => {
             console.error("Error fetching user info", error);
@@ -50,8 +47,6 @@ const Summary = ({formData,setFormData,editing}:any) => {
             return
         }
         const user_id = user?._id;
-        console.log(user_id);
-        console.log(formData);
         
         const scenario_data = {
             user: user_id,
