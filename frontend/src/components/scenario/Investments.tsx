@@ -112,10 +112,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
         const {value} = e.target
         setInvestmentTypeData({
             ...investmentTypeData,
-            exp_annual_income: {
-                ...investmentTypeData.exp_annual_income,
-                is_tax_exempt:(value==="true"),
-            }
+            is_tax_exempt:(value==="true"),
         })
     }
 
