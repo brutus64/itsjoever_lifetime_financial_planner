@@ -72,6 +72,39 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
             return;
         }
 
+
+        let num_not_pretax = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== "pre-tax-retirement").length;
+        if (
+            Object.keys(investEventData.initial_allocation).length != num_not_pretax ||
+            investEventData.is_glide && (Object.keys(investEventData.final_allocation).length != num_not_pretax)
+        ) {
+            setError("Please fill out Asset Allocation fields");
+            return;
+        }
+
+        let cumulative_percentages = 0.0
+        for (let key in investEventData.initial_allocation) {
+            const value = investEventData.initial_allocation[key];
+            cumulative_percentages += value
+        }
+        if(cumulative_percentages != 100.0) {
+            setError("Please make sure percentages sum to 100");
+            return;
+        }
+
+        cumulative_percentages = 0.0
+        if(investEventData.is_glide) {
+            for (let key in investEventData.final_allocation)  {
+                const value = investEventData.final_allocation[key];
+                cumulative_percentages += value
+                console.log(`${key}: ${value}`);
+            }
+            if(cumulative_percentages != 100.0) {
+                setError("Please make sure percentages sum to 100");
+                return;
+            }
+        }
+
         setFormData({
             ...formData,
             event_series: [...formData.event_series,investEventData] 
@@ -186,18 +219,18 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
                 </div>
 
                 <div className="flex gap-4">
-                    {formData.investment.filter(investment => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
+                    {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
                         <h1 className="text-center">No investments to allocate</h1>
                     )}
 
                     <div className="flex flex-col">
-                        {formData.investment.filter(investment => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                        {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
                             <h1 className="text-center">{investEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
                         )}
                         <div className="flex flex-col  gap-3">
                             {formData.investment
-                            .filter(investment => investment.tax_status != 'pre-tax-retirement')
-                            .map(investment =>
+                            .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
+                            .map((investment: unknown) =>
                                 <div className="flex flex-col gap-1">
                                     <InvestmentCard investment={investment}/>
                                     <div className='flex gap-3'>
@@ -214,14 +247,14 @@ const InvestEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, formD
 
                     {investEventData.is_glide && (
                         <div className="flex flex-col">
-                            {formData.investment.filter(investment => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                            {formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
                                 <h1 className="text-center">Final Percentages</h1>
                             )}
                             
                             <div className="flex flex-col gap-3">
                             {formData.investment
-                                .filter(investment => investment.tax_status !== 'pre-tax-retirement')
-                                .map(investment => (
+                                .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
+                                .map((investment: unknown) => (
                                     <div className="flex flex-col gap-1" key={investment.name}>
                                         <InvestmentCard investment={investment} />
                                         <div className="flex gap-3">
