@@ -71,6 +71,40 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
             setError("Please fill out Duration fields");
             return;
         }
+
+        let num_tax_status = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status == rebalanceEventData.tax_status).length;
+        if (
+            Object.keys(rebalanceEventData.initial_allocation).length != num_tax_status ||
+            rebalanceEventData.is_glide && (Object.keys(rebalanceEventData.final_allocation).length != num_tax_status)
+        ) {
+            setError("Please fill out Asset Allocation fields");
+            return;
+        }
+
+        let cumulative_percentages = 0.0
+        for (let key in rebalanceEventData.initial_allocation) {
+            const value = rebalanceEventData.initial_allocation[key];
+            cumulative_percentages += value
+        }
+        if(cumulative_percentages != 100.0) {
+            setError("Please make sure percentages sum to 100");
+            return;
+        }
+
+        cumulative_percentages = 0.0
+        if(rebalanceEventData.is_glide) {
+            for (let key in rebalanceEventData.final_allocation)  {
+                const value = rebalanceEventData.final_allocation[key];
+                cumulative_percentages += value
+                console.log(`${key}: ${value}`);
+            }
+            if(cumulative_percentages != 100.0) {
+                setError("Please make sure percentages sum to 100");
+                return;
+            }
+        }
+
+
         setFormData({
             ...formData,
             event_series: [...formData.event_series,rebalanceEventData] 
@@ -149,6 +183,21 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
         }
     };
 
+    const handleTaxStatusChange = (e: any) => {
+        const { name, value } = e.target;
+        setRebalanceEventData({
+            ...rebalanceEventData,
+            initial_allocation: {},
+            final_allocation: {}
+        });
+        setRebalanceEventData({
+            ...rebalanceEventData,
+            [name]:value,
+        });
+        console.log(`holy shit ${name} ${value}`)
+    };
+    
+
     const handleChange = (e: any) => {
         const { name, value } = e.target;
         setRebalanceEventData({
@@ -174,7 +223,7 @@ const RebalanceEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, fo
                     <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                         name="tax_status"
                         value={rebalanceEventData.tax_status}
-                        onChange={handleChange}>
+                        onChange={handleTaxStatusChange}>
                         <option value="non-retirement">Non-retirement</option>
                         <option value="pre-tax-retirement">Pre-tax retirement</option>
                         <option value="after-tax-retirement">After-tax retirement</option>
