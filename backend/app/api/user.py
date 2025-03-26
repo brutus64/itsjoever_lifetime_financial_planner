@@ -32,25 +32,31 @@ async def find_user_email(email: str):
         raise HTTPException(status_code=400, detail=f"Error finding user: {e}")
 
 #NOT TESTED
-@router.delete("/{user_id}/{scenario_name}")
-async def delete_user_scenario(user_id: str, scenario_name: str):
+@router.delete("/{user_id}/{scenario_id}")
+async def delete_user_scenario(user_id: str, scenario_id: str):
     try:
         user_obj_id = PydanticObjectId(user_id)
+        scenario_obj_id = PydanticObjectId(scenario_id)
         user = await User.get(user_obj_id, fetch_links=True)
         if not user:
             raise HTTPException(status_code=404, detail="User does not exist")
         scenario = await Scenario.find_one(
-            Scenario.user._id == user_obj_id,
-            Scenario.name == scenario_name
+            Scenario.id == scenario_obj_id,
+            Scenario.user.id == user_obj_id  # Match linked user reference
         )
+        print("USER", user)
+        print("SCENARIO", scenario)
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
         await scenario.delete()
         user = await User.get(user_obj_id)
         if user:
-            user.scenarios = [s for s in user.scenarios if s.id != scenario.id]
+            user.scenarios = [
+                link for link in user.scenarios 
+                if link.ref.id != scenario_obj_id
+            ]
             await user.save()
-        return {"message": f"Scenario {scenario_name} deleted."}
+        return {"message": f"Scenario {scenario_id} deleted."}
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
