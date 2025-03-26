@@ -307,7 +307,7 @@ const Scenario = ({}) => {
             <div className="flex justify-between items-center pb-5 mr-7 border-b-black border-b-2">
                 <div className="flex gap-4 items-end">
                     <h1 className="text-5xl font-bold text-wrap break-words">{scenario.name}</h1>
-                    <h2 className="text-3xl font-medium">By {scenario.user}</h2>
+                    <h2 className="text-3xl font-medium">By {scenario.user.name}</h2>
                 </div>
                 <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" >Edit</button>
             </div>

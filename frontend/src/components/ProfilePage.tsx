@@ -133,7 +133,7 @@ const ProfilePage: React.FC = () => {
           {user.scenarios.length > 0 ? (
             user.scenarios.map((scenario, index) => (
               <div key={index} className="flex items-center gap-2 bg-white shadow p-2 rounded-md">
-                {scenario}
+                {scenario.name}
               </div>
             ))
           ) : (

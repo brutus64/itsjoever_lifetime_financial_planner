@@ -105,7 +105,7 @@ const ScenarioCard: React.FC = ({ scenario }) => {
     const navigate = useNavigate();
 
     const handleClick = () => {
-        navigate(`/scenario/${scenario._id}`);
+        navigate(`/scenario/${scenario.id}`);
     };
     return (
         <div className="border rounded-lg p-4 shadow-md hover:shadow-lg cursor-pointer" onClick={handleClick}>
