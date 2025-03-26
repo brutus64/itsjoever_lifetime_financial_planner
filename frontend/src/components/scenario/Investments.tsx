@@ -214,8 +214,14 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     return {...es,initial_allocation:new_initial,final_allocation:new_final}
                 });
     
-                const new_withdrawal = formData.expense_withdraw.map((inv) =>
-                    inv === old_name ? new_name : inv);
+                const new_withdrawal = formData.expense_withdraw.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_name)
+                        return `${new_name} ${tax}`
+                    return inv
+                })
                 const new_rmd = formData.rmd_strat.map((inv) =>
                     inv === old_name ? new_name : inv);
                 const new_roth = formData.roth_conversion_strat.map((inv) =>
@@ -417,10 +423,11 @@ const InvestmentPopup = ({formData,setFormData}) => {
             const old_type = formData.investment[editing].investment_type;
             const new_type = investmentData.investment_type;
             if (old_tax !== new_tax) {
-                for (const es in formData.event_series) {
+                for (const es of formData.event_series) {
                     if (es.type === "expense" || es.type === "income")
                         continue;
                     // check if investment type is used in any allocation
+                    console.log(formData)
                     for (const [key,val] of Object.entries(es.initial_allocation)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);
@@ -449,26 +456,93 @@ const InvestmentPopup = ({formData,setFormData}) => {
                 }
 
                 // make sure to only update (old_type,old_tax) pairs
-                new_withdrawal = new_withdrawal.map((inv) =>
-                    inv === old_type ? new_type : inv);
+                new_withdrawal = new_withdrawal.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_type && tax === old_tax)
+                        return `${new_type} ${new_tax}`
+                    return inv
+                });
                 setFormData({
                     ...formData,
                     investment: new_investment,
-                    event_series: new_event_series,
                     expense_withdraw: new_withdrawal,
                     rmd_strat: new_rmd,
                     roth_conversion_strat: new_roth
                 })
-                return;
             }
 
-            // if the investment type has changed, change corresponding
+            // if only the investment type has changed, change corresponding
             // event series and strategies
-
-            setFormData({
-                ...formData,
-                investment: new_investment
-            })
+            else if (old_type !== new_type) {
+                const new_event_series = formData.event_series.map(es => {
+                    if (es.type === "expense" || es.type === "income")
+                        return es;
+                    const new_initial = {}
+                    const new_final = {}
+    
+                    // check if investment name is used in any allocation
+                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1);
+                        if (type === old_type && tax === old_tax)
+                            new_initial[`${new_type}|${new_tax}`] = val
+                        else
+                            new_initial[key] = val;
+                    }
+                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                        const last_index = key.lastIndexOf("|")
+                        const type = key.slice(0,last_index);
+                        const tax = key.slice(last_index+1);
+                        if (type === old_type && tax === old_tax)
+                            new_initial[`${new_type}|${new_tax}`] = val
+                        else
+                            new_initial[key] = val;
+                    }
+    
+                    return {...es,initial_allocation:new_initial,final_allocation:new_final}
+                });
+    
+                const new_withdrawal = formData.expense_withdraw.map((inv) => {
+                    const last_index = inv.lastIndexOf(" ")
+                    const type = inv.slice(0,last_index);
+                    const tax = inv.slice(last_index+1);
+                    if (type === old_type && tax === old_tax)
+                        return `${new_type} ${tax}`
+                    return inv
+                })
+                
+                if (old_tax === "pre-tax-retirement") {
+                    const new_rmd = formData.rmd_strat.map((inv) =>
+                        inv === old_type ? new_type : inv);
+                    const new_roth = formData.roth_conversion_strat.map((inv) =>
+                        inv === old_type ? new_type : inv);
+                    setFormData({
+                        ...formData,
+                        investment: new_investment,
+                        event_series: new_event_series,
+                        expense_withdraw: new_withdrawal,
+                        rmd_strat: new_rmd,
+                        roth_conversion_strat: new_roth
+                    })
+                }
+                else { //no need to update rmd and roth
+                    setFormData({
+                        ...formData,
+                        investment: new_investment,
+                        event_series: new_event_series,
+                        expense_withdraw: new_withdrawal,
+                    })
+                }
+            }
+            else {
+                setFormData({
+                    ...formData,
+                    investment: new_investment
+                })
+            }
         }
         else {
             setFormData({
