@@ -89,7 +89,7 @@ async def update_scenario(scenario_id: str, scenario: dict):
 @router.post("/create_scenario")
 async def create_scenario(scenario:  dict):
     try:
-        print(scenario)
+        # print(scenario)
 
         investment_types = scenario['investment_types']
         investment_type_ids = []
@@ -110,7 +110,7 @@ async def create_scenario(scenario:  dict):
             inv = await inv_db_obj.insert()
             investment_ids.append(inv.id)
             investment_id_map[investment['invest_id']] = inv.id
-        print('\n\n\n INVESTMENT MAPPING', investment_id_map)
+        # print('\n\n\n INVESTMENT MAPPING', investment_id_map)
         
         # print(investment_ids)
 
@@ -136,29 +136,29 @@ async def create_scenario(scenario:  dict):
         #NOT TESTED
         expense_withdraw_ids = []
         for invest_name in scenario.get('expense_withdraw', []):
-            print("invest_name", invest_name)
+            # print("invest_name", invest_name)
             if invest_name in investment_id_map:
                 expense_withdraw_ids.append(investment_id_map[invest_name])
-        print("DID EXPENSE GET ID", expense_withdraw_ids)
+        # print("DID EXPENSE GET ID", expense_withdraw_ids)
         #NOT TESTED
         rmd_strat_ids = []
         for invest_name in scenario.get('rmd_strat', []):
             invest_name = invest_name + " pre-tax"
-            print("RMD_STRAT", invest_name)
+            # print("RMD_STRAT", invest_name)
             if invest_name in investment_id_map:
                 rmd_strat_ids.append(investment_id_map[invest_name])
         #NOT TESTED
         roth_conversion_strat_ids = []
         for invest_name in scenario.get('roth_conversion_strat', []):
             invest_name = invest_name + " pre-tax"
-            print("ROTH_CONVERSION", invest_name)
+            # print("ROTH_CONVERSION", invest_name)
             if invest_name in investment_id_map:
                 roth_conversion_strat_ids.append(investment_id_map[invest_name])
         
         user = await User.get(scenario.get('user'))
         if not user:
             raise ValueError("User not found")
-        print(user)
+        # print(user)
         scenario_obj = Scenario(
             user=user,
             name=scenario.get('name'),
@@ -181,10 +181,10 @@ async def create_scenario(scenario:  dict):
             state=scenario.get('state')
         )
         await scenario_obj.save()
-        print("saved id", scenario_obj.id)
+        # print("saved id", scenario_obj.id)
         user.scenarios.append(scenario_obj)
         await user.save()
-        print(user)
+        # print(user)
         id = PydanticObjectId(scenario_obj.id)
         return {"message":"success","id":str(id)}
     except Exception as e:
@@ -347,7 +347,7 @@ async def export_scenario(scenario_name: str):
         if not scenario:
             raise HTTPException(status_code=404, detail=f"Scenario: {scenario_name} does not exist.")
 
-        print("\n\n\n BEGINNING OF EXPORT")
+        # print("\n\n\n BEGINNING OF EXPORT")
         # print(scenario)
         #handle InvestmentType, Investment, EventSeries
         

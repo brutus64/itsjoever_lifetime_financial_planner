@@ -82,9 +82,9 @@ async def fetch_user_scenario(scenario_id: str):
 async def fetch_user_scenarios(user_id: str):
     try:
         user_obj_id = PydanticObjectId(user_id)
-        print("USER", user_obj_id)
+        # print("USER", user_obj_id)
         user = await User.get(user_obj_id, fetch_links=True)
-        print("PRINT", user)
+        # print("PRINT", user)
         if not user:
             raise HTTPException(status_code=404, detail="User does not exist")
         
@@ -95,7 +95,7 @@ async def fetch_user_scenarios(user_id: str):
                     #mode='json' means format to json or try to at least, if its DBRef shown it will error I think
                 for scenario in user.scenarios] 
         #need to avaoid user since it does a circular link_grab between user and scenario
-        print("WOW", scenarios)
+        # print("WOW", scenarios)
         return {"scenario": scenarios}
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
