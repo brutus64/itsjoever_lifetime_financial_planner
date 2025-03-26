@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams} from "react-router-dom";
 import React, { useState, useRef, useEffect } from 'react';
 import Cookies from "js-cookie";
 
@@ -15,8 +15,9 @@ type User = {
     shared_rw_scenarios: any[];  
     _id: string;                 // The field you need
 };
-const Summary = ({formData,setFormData}:any) => {
+const Summary = ({formData,setFormData,editing}:any) => {
     const navigate = useNavigate();
+    const params = useParams();
     const [user, setUser] = useState<User | null>(null);
     useEffect(()=>{
         console.log(formData);
@@ -51,31 +52,7 @@ const Summary = ({formData,setFormData}:any) => {
         const user_id = user?._id;
         console.log(user_id);
         console.log(formData);
-        // const parse_investment_types = (investment_types:any) => {
-        //     let newData = investment_types.map((item:any) => {
-        //         // Looks like you meant 'type' instead of 'map'
-        //         if (item.type === 'fixed') {
-        //             item.exp_annual_income = {
-        //                 type: "fixed",
-        //                 normal: null,
-        //                 // This needs to be restructured - the nested object should be a direct property
-        //                 amt: item.exp_annual_income.fixed,
-        //                 is_percent: item.exp_annual_income.is_percent
-        //             };
-        //         }
-        //         else if(item.type === 'normal'){
-        //                 item.exp_annual_income = {
-        //                     type: "normal",
-        //                     fixed: null,
-        //                     mean: item.exp_annual_income.mean,
-        //                     stdev: item.exp_annual_income.stddev,
-        //                     is_percent: item.exp_annual_income.is_percent
-        //                 };
-        //         }
-        //         return item; // Don't forget to return the item
-        //     });
-        //     return newData; // Return the transformed array
-        //     };
+        
         const scenario_data = {
             user: user_id,
             name: formData.name,
@@ -83,70 +60,6 @@ const Summary = ({formData,setFormData}:any) => {
             birth_year: [formData.birth_year],
             life_expectancy: [formData.life_expectancy],
             investment_types: formData.investment_types,
-            // investment_types: formData.investment_types.map((item:any) => 
-            //     item.exp_annual_income.type === 'fixed' ?  {
-            //         name: item.name? item.name: "",
-            //         description: item.description,
-            //         expense_ratio: item.expense_ratio,
-            //         taxability: item.is_tax_exempt,
-            //         exp_annual_income: {
-            //             type: "fixed",
-            //             fixed: {
-            //                 amt: item.exp_annual_income.fixed,
-            //                 is_percent: item.exp_annual_income.is_percent
-            //             },
-            //             normal: null
-            //         },
-            //         exp_annual_return: item.exp_annual_return.type === 'fixed'?{
-            //             type: "fixed",
-            //             fixed: {
-            //                 amt: item.exp_annual_return.fixed,
-            //                 is_percent: item.exp_annual_return.is_percent
-            //             },
-            //             normal: null
-            //         }:{
-            //             type: "normal",
-            //             normal: {
-            //                 mean: item.exp_annual_return.mean,
-            //                 stdev: item.exp_annual_return.stddev,
-            //                 is_percent: item.exp_annual_return.is_percent
-            //             },
-            //             fixed: null
-            //         }
-            //     }: 
-            //     {
-            //         name: item.name? item.name: "",
-            //         description: item.description,
-            //         expense_ratio: item.expense_ratio,
-            //         taxability: item.is_tax_exempt,
-            //         exp_annual_income: {
-            //             type: "normal",
-            //             normal: {
-            //                 mean: item.exp_annual_income.mean,
-            //                 stdev: item.exp_annual_income.stddev,
-            //                 is_percent: item.exp_annual_income.is_percent
-            //             },
-            //             fixed: null
-            //         },
-            //         exp_annual_return: item.exp_annual_return.type === 'fixed'?{
-            //             type: "fixed",
-            //             fixed: {
-            //                 amt: item.exp_annual_return.fixed,
-            //                 is_percent: item.exp_annual_return.is_percent
-            //             },
-            //             normal: null
-            //         }:{
-            //             type: "normal",
-            //             normal: {
-            //                 mean: item.exp_annual_return.mean,
-            //                 stdev: item.exp_annual_return.stddev,
-            //                 is_percent: item.exp_annual_return.is_percent
-            //             },
-            //             fixed: null
-            //         }
-            //     }
-                
-            // ),            
             investment: formData.investment,
             event_series: formData.event_series,
             inflation_assume: formData.inflation_assume,
@@ -162,8 +75,24 @@ const Summary = ({formData,setFormData}:any) => {
             fin_goal: parseFloat(formData.fin_goal),
             state: formData.state
         }
-
-        
+        if (editing) { 
+            try{
+                console.log(scenario_data);
+                const response = await axios.put(`http://localhost:8000/api/scenario/update_scenario/${params.id}`, scenario_data);
+                if(response.data.message === "Scenario updated successfully"){
+                    console.log("success",response.data);
+                    navigate(`/scenario/${params.id}`);
+                }
+                else{
+                    console.log("fail");
+                }
+            }
+            catch(error:any){
+                console.log("Error editing the scenario: ", error);
+                
+            }
+            return;
+        }
 
         try{
             console.log(scenario_data);
