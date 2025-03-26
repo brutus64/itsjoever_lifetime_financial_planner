@@ -34,6 +34,7 @@ const defaultExpenseEventForm = {
         min: 0,
         max: 0
     },
+    inflation_adjust: false,
     percent_associated: 0.0,
     expense: 'Non-discretionary'
 }
@@ -95,6 +96,7 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
             event_series: [...formData.event_series,expenseEventData] 
         })
         handleClose(true)
+        console.log(expenseEventData)
     }
 
     const handleStartYearChange = (e: any) => {
@@ -146,6 +148,17 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
         console.log(`${name} is ${value}`)
     }
 
+    const handleInflationChange = (e: any) => {
+        let { name, value } = e.target;
+        setExpenseEventData({
+            ...expenseEventData,
+            [name]:!expenseEventData.inflation_adjust,
+        });
+
+        console.log(`${name} is ${expenseEventData.inflation_adjust}`)
+
+    }
+
     const handleChange = (e: any) => {
         const { name, value } = e.target;
         setExpenseEventData({
@@ -173,6 +186,11 @@ const ExpenseEventSeries = ({setOpen, formData, setFormData}: {setOpen:any, form
                     type="number" min="0"/> 
             </div>
             
+            <div className="flex gap-5 align-middle">
+                <h2 className="font-medium self-cener">Adjust for Inflation:</h2>
+                <input type="checkbox" name="inflation_adjust" onChange={handleInflationChange} checked={expenseEventData.inflation_adjust}/>  
+            </div>
+
             <ExpectedAnnualChange handleAnnualChange={handleAnnualChange} eventData={expenseEventData}/>
 
             <div className='flex gap-4'>

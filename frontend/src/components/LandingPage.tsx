@@ -5,28 +5,24 @@ import Login from './Navigation/Login'
 const LandingPage: React.FC = () => {    
 
     return (        
-      <div className="h-screen flex flex-col py-8">
-          <Header />
-          <div className="flex justify-around items-center absolute top-[33%] w-full custom-media-target">
-              <div className="flex flex-col items-end text-right p-4 max-w-96 overflow-hidden">
-                  <h1 className="text-5xl font-bold mb-4">Lorem ipssum dolor sit amet, adipiscing elit</h1>
-                  <p className="text-lg mb-6">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                  <Login />
-              </div>
-              <div>
-                  <img src="lebron.jpg" alt="lebruhn"/> {/*replace with better pic*/}
-              </div>
-          </div>
-          <style>
-              {`
-                  @media (max-height: 500px) {
-                      .custom-media-target {
-                          display: none;
-                      }
-                  }
-              `}
-          </style>
-      </div>
+        <div className="flex flex-col py-8">
+            <div className="flex flex-col py-8 overflow-x-hidden">
+                <Header />
+                <div className="flex items-center justify-around px-4 md:px-8 lg:px-16 relative mt-16 gap-4 md:gap-10">
+                    <div className="flex flex-col items-end text-right p-4 max-w-md lg:max-w-xl">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Financial Future,<br />Planned Today</h1>
+                        <p className="text-base md:text-lg mb-6">
+                            Take control of your financial future with our all-in-one planner. Model investments, income, expenses, and optimize Roth conversions to make data-driven decisions. Whether planning for retirement or maximizing tax efficiency, our tools give you the clarity and confidence to achieve your goals. Start planning today!
+                        </p>
+                        <div className="text-right">  {/* Ensures Login button aligns right */}
+                            <Login />
+                        </div>
+                    </div>
+                    <img src="buildings.jpeg" className="max-w-[600px] h-auto" />
+                    
+                </div>
+            </div>
+        </div>
     );
   };
   

@@ -19,8 +19,8 @@ class EventDate(BaseModel):
     upper: Optional[float] = None
     mean: Optional[float] = None
     stdev: Optional[float] = None
-    # For references to other event series
-    event_series: Optional[str] = None
+    # For references to other event series, CONSIDER whether keep it as string or not
+    event_series: Optional[str] = None 
     
 # class Duration(BaseModel):
 #     type: Literal['fixed', 'uniform', 'normal']
@@ -107,7 +107,8 @@ class EventSeries(Document):
     start: EventDate
     duration: EventDate
     type: Literal['income', 'expense', 'invest', 'rebalance']
-    details: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
+    # details_links: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
+    details: Union[Income, Expense, Invest, Rebalance]
     class Settings:
         name="event_series"
         keep_nulls=False

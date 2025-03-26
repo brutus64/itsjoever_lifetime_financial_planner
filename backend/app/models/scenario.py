@@ -28,7 +28,7 @@ class Inflation(BaseModel):
     lower_bound: Optional[float] = None
     upper_bound: Optional[float] = None
 class Scenario(Document):
-    user: Link['User'] #DONT HAVE THE DATA RIGHT NOW
+    user: Optional[Link['User']] = None #DONT HAVE THE DATA RIGHT NOW
     name: str
     marital: Literal['couple', 'individual']
     birth_year: List[int]
