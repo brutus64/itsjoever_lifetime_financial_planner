@@ -16,31 +16,32 @@ type User = {
     _id: string;                 // The field you need
 };
 const Summary = ({formData,setFormData}:any) => {
-        const [user, setUser] = useState<User | null>(null);
-        useEffect(()=>{
-            console.log(formData);
-            const accessToken = Cookies.get("access_token");
-            console.log(accessToken);
-            fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-                method: "GET",
-                headers: {
-                Authorization: `Bearer ${accessToken}`,
-                },
-            })
-            .then((response) => response.json())
-            .then(async (data) => {
-                console.log(data);
-                const response = (await fetch(`http://localhost:8000/api/get_user?email=${data.email}`));
-                const user = await response.json();
-                setUser(user.user);
-                console.log(user.user);
-            })
-            .catch((error) => {
-                console.error("Error fetching user info", error);
-            });
-        
+    const navigate = useNavigate();
+    const [user, setUser] = useState<User | null>(null);
+    useEffect(()=>{
+        console.log(formData);
+        const accessToken = Cookies.get("access_token");
+        console.log(accessToken);
+        fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+            method: "GET",
+            headers: {
+            Authorization: `Bearer ${accessToken}`,
+            },
+        })
+        .then((response) => response.json())
+        .then(async (data) => {
+            console.log(data);
+            const response = (await fetch(`http://localhost:8000/api/get_user?email=${data.email}`));
+            const user = await response.json();
+            setUser(user.user);
+            console.log(user.user);
+        })
+        .catch((error) => {
+            console.error("Error fetching user info", error);
+        });
+    
 
-        },[]);
+    },[]);
         
     // must validate fields
     const handleSubmit = async () => { // redirect to page that lets u view, edit, or simulate scenario
@@ -168,7 +169,8 @@ const Summary = ({formData,setFormData}:any) => {
             console.log(scenario_data);
             const response = await axios.post("http://localhost:8000/api/scenario/create_scenario", scenario_data);
             if(response.data.message === "success"){
-                console.log("success");
+                console.log("success",response.data);
+                navigate(`/scenario/${response.data.id}`);
             }
             else{
                 console.log("fail");

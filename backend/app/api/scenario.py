@@ -177,7 +177,8 @@ async def create_scenario(scenario:  dict):
         user.scenarios.append(scenario_obj)
         await user.save()
         print(user)
-        return {"message":"success"}
+        id = PydanticObjectId(scenario_obj.id)
+        return {"message":"success","id":str(id)}
     except Exception as e:
         print(f"Error in create_scenario: {e}")  # Actually print the exception
         raise HTTPException(status_code=400, detail="Error at scenario creation")

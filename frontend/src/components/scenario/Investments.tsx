@@ -275,7 +275,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             </div>
             <Popup open={open} position="right center" modal contentStyle={investmentTypeModalStyling} onClose={() => handleClose(false)}>
                 <div className="rounded-lg m-10 flex flex-col gap-2">
-                    <h1 className="text-2xl font-bold">New Investment Type</h1>
+                    <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment Type</h1>
                     <div className="flex gap-4">
                         <h2 className="font-medium">Name:</h2>
                         <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="name" value={investmentTypeData.name} onChange={handleChange}/>
@@ -573,7 +573,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
             <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={investmentModalStyling} onClose={() => handleClose(false)}>
                 
                 <div className="rounded-lg m-10 flex flex-col gap-3">
-                    <h1 className="text-2xl font-bold">New Investment</h1>
+                    <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment</h1>
                     <div className="flex gap-4 items-center">
                         <h2 className="font-medium">Investment Type:</h2>
                         <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="investment_type" value={investmentData.investment_type} onChange={handleChange}>
