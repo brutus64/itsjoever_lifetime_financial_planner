@@ -8,13 +8,13 @@ const defaultRebalanceEventForm = {
     name: "",
     description: "",
     start_year: {
-        type: "", //  "fixed", "uniform", "normal", "same_year", "year_after"
+        type: "", //  "fixed", "uniform", "normal", "start_with", "end_with"
         fixed: 2025,
         min: 0,
         max: 100,
         mean: 0,
         stddev: 1,
-        event_series: "" // if type is "same_year" or "year_after"
+        event_series: "" // if type is "start_with" or "end_with"
     },
     duration: {
         type: "", //fixed, uniform, normal
@@ -66,7 +66,7 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             s_type === 'fixed' && s_fixed < 0 ||
             s_type === 'uniform' && (s_min < 0 || s_max < 0) || 
             s_type === 'normal' && (s_mean < 0 || s_stddev < 0) ||
-            (s_type === 'same_year' || s_type === 'year_after') && s_event_series === ""
+            (s_type === 'start_with' || s_type === 'end_with') && s_event_series === ""
         ) {
             setError("Please fill out Start Year fields");
             return;

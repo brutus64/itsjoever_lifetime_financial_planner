@@ -8,13 +8,13 @@ const defaultExpenseEventForm = {
     name: "",
     description: "",
     start_year: {
-        type: "", //  fixed, uniform, normal, same year, year after:
+        type: "", //  fixed, uniform, normal, start_with, year after:
         fixed: 2025,
         min: 0,
         max: 0,
         mean: 0,
         stddev: 1,
-        event_series: "" // if type is "same year" or "year after"
+        event_series: "" // if type is "start_with" or "year after"
     },
     duration: {
         type: "", //fixed, uniform, normal
@@ -73,7 +73,7 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
             s_type === 'fixed' && s_fixed < 0 ||
             s_type === 'uniform' && (s_min < 0 || s_max < 0) || 
             s_type === 'normal' && (s_mean < 0 || s_stddev < 0) ||
-            (s_type === 'same_year' || s_type === 'year_after') && s_event_series === ""
+            (s_type === 'start_with' || s_type === 'end_with') && s_event_series === ""
         ) {
             setError("Please fill out Start Year fields");
             return;
