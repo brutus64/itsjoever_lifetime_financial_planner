@@ -187,8 +187,9 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <input className="ml-1" type="radio" name="start_year-type" value="same_year" onChange={handleStartYearChange}/>
                         <div className="">Same year event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
-                            name="event_series"
-                            value={eventData.event_series}>
+                            name="start_year-event_series"
+                            value={eventData.event_series}
+                            onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {formData.event_series
                             .map(event_series => 
@@ -201,8 +202,9 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <input className="ml-1" type="radio" name="start_year-type" value="year_after" onChange={handleStartYearChange}/>
                         <div className="">Year after event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
-                            name="event_series"
-                            value={eventData.event_series}>
+                            name="start_year-event_series"
+                            value={eventData.event_series}
+                            onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {formData.event_series
                             .map(event_series => 
