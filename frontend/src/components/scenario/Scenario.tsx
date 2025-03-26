@@ -1,239 +1,36 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
 import axios from "axios";
 
-//sample
-const scenario = {
-    user: "Bob",
-    name: "Retirement Plan",
-    marital: "individual",
-    birth_year: [2003],
-    life_expectancy: [{
-        type:"normal",
-        value:82,
-        mean:82,
-        stdev:8
-    }],
-    investment_types: [{
-        name:"stocks",
-        description:"moneyyyy",
-        exp_annual_return: {
-            type:"normal",
-            value:0,
-            is_percent:true,
-            mean:5,
-            stdev:3
-        },
-        expense_ratio: 0.2,
-        exp_annual_income: {
-            type:"fixed",
-            value:1000,
-            is_percent:false,
-            mean:0,
-            stdev:1
-        },
-        taxability:true
-    }],
-    investment: [{
-        invest_type: {
-            name:"stocks",
-            description:"moneyyyy",
-            exp_annual_return: {
-                type:"normal",
-                value:0,
-                is_percent:true,
-                mean:5,
-                stdev:3
-            },
-            expense_ratio: 0.2,
-            exp_annual_income: {
-                type:"fixed",
-                value:1000,
-                is_percent:false,
-                mean:0,
-                stdev:1
-            },
-            taxability:true
-        },
-        value: 34000,
-        tax_status:"pre-tax"
-    }],
-    event_series: [{
-        name:"job",
-        description:"my job",
-        start: {
-            type: "fixed",
-            value: 2020,
-            lower:2019,
-            upper:2022,
-            mean:0,
-            stdev:1,
-            event_series:""
-        },
-        duration: {
-            type: "uniform",
-            value: 0,
-            lower:20,
-            upper:30,
-            mean:0,
-            stdev:1,
-            event_series:""
-        },
-        type: "income",
-        details: {
-            initial_amt: 95000,
-            exp_annual_change: {
-                type: "fixed",
-                is_percent: false,
-                value: 7000,
-                lower: 0,
-                upper:0,
-                mean:0,
-                stdev:1
-            },
-            inflation_adjust: true,
-            user_split: [100],
-            social_security: true
-        }
-    },{
-        name:"eating out",
-        description:"yum yum",
-        start: {
-            type: "normal",
-            value: 2020,
-            lower:2019,
-            upper:2022,
-            mean:2019,
-            stdev:3,
-            event_series:""
-        },
-        duration: {
-            type: "uniform",
-            value: 0,
-            lower:20,
-            upper:30,
-            mean:0,
-            stdev:1,
-            event_series:""
-        },
-        type: "expense",
-        details: {
-            initial_amt: 6000,
-            exp_annual_change: {
-                type: "normal",
-                is_percent: true,
-                value: 0,
-                lower: 10,
-                upper: 90,
-                mean: 3,
-                stdev:0.5
-            },
-            inflation_adjust: true,
-            user_split: [100],
-            is_discretionary: true
-        }
-
-    },{
-        name:"bad strategy",
-        description:"idk what im doing",
-        start: {
-            type: "normal",
-            value: 2020,
-            lower:2019,
-            upper:2022,
-            mean:2019,
-            stdev:3,
-            event_series:""
-        },
-        duration: {
-            type: "uniform",
-            value: 0,
-            lower:20,
-            upper:30,
-            mean:0,
-            stdev:1,
-            event_series:""
-        },
-        type: "invest",
-        details: {
-            is_glide: true,
-            max_cash: 75000,
-            assets:[{
-                invest_id: "stocks",
-                initial:10,
-                final:90
-            }]
-        }
-
-    }],
-    inflation_assume: {
-        type: "uniform",
-        value: 4,
-        lower: 3,
-        upper: 5,
-        mean: 0,
-        stdev: 1,
-    },
-    spending_strat: [{
-        name:"eating out",
-        description:"yum yum",
-        start: {
-            type: "normal",
-            value: 2020,
-            lower:2019,
-            upper:2022,
-            mean:2019,
-            stdev:3,
-            event_series:""
-        },
-        duration: {
-            type: "uniform",
-            value: 0,
-            lower:20,
-            upper:30,
-            mean:0,
-            stdev:1,
-            event_series:""
-        },
-        type: "expense",
-        details: {
-            initial_amt: 6000,
-            exp_annual_change: {
-                type: "normal",
-                is_percent: true,
-                value: 0,
-                lower: 10,
-                upper: 90,
-                mean: 3,
-                stdev:0.5
-            },
-            inflation_adjust: true,
-            user_split: [100],
-            is_discretionary: true
-        }
-
-    }], 
-    expense_withdraw: ["stocks pre-tax"], 
-    rmd_strat: ["stocks pre-tax"] ,
-    roth_conversion_strat: ["stocks pre-tax"], 
-    roth_optimizer: {
-        is_enable:true,
-        start_year:2037,
-        end_year:2066
-    },
-    r_only_share:  [],
-    wr_only_share: [],
-    fin_goal: 750000,
-    state: "New Jersey"
-}
-
 const Scenario = ({}) => {
     const params = useParams();
+    const navigate = useNavigate();
     const [ scenario, setScenario ] = useState()
     const [ collapse, setCollapse ] = useState({ //need to set the lengths to array sizes
         investment_types: [],
         event_series: [],
     });
+    const [ editing, setEditing ] = useState(false);
+
+    //fetch the scenario data from backend
+    useEffect(() => {
+        const fetchScenario = async () => {
+            console.log("Fetching scenario")
+            try{
+                const res = await axios.get(`http://localhost:8000/api/scenarios/view/${params.id}`);
+                console.log(res.data);
+                setScenario(res.data.scenario)
+                setCollapse({
+                    investment_types: Array(res.data.scenario.investment_types.length).fill(false),
+                    event_series: Array(res.data.scenario.event_series.length).fill(false)
+                })
+            }
+            catch(err){
+                console.log("Could not fetch scenario: ", err);
+            }
+        }
+        fetchScenario();
+    },[params.id]);
 
     const handleCollapse = (field,ind) => {
         setCollapse({
@@ -281,26 +78,11 @@ const Scenario = ({}) => {
             default: return "After " + event_series
         }
     }
+    console.log(scenario)
 
-    useEffect(() => {
-        const fetchScenario = async () => {
-            console.log("Fetching scenario")
-            try{
-                const res = await axios.get(`http://localhost:8000/api/scenarios/view/${params.id}`);
-                console.log(res.data);
-                setScenario(res.data.scenario)
-            }
-            catch(err){
-                console.log("Could not fetch scenario: ", err);
-            }
-        }
-        fetchScenario();
-    },[params.id]);
-    // console.log(scenario)
-    if (!scenario)
-        return (<></>);
-    if (scenario)
-        console.log(scenario)
+    const handleEdit = () => {
+        navigate(`/scenario/edit/${params.id}`)
+    }
 
     return (scenario &&
         <div className="flex flex-col gap-4">
@@ -309,7 +91,7 @@ const Scenario = ({}) => {
                     <h1 className="text-5xl font-bold text-wrap break-words">{scenario.name}</h1>
                     <h2 className="text-3xl font-medium">By {scenario.user.name}</h2>
                 </div>
-                <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" >Edit</button>
+                <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
             </div>
             <div className="">
                 <h1 className="text-3xl font-medium">General Information</h1>
