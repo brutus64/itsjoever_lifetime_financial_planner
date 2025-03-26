@@ -78,6 +78,7 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             setError("Please fill out Start Year fields");
             return;
         }
+
         
         let { type: d_type, fixed: d_fixed, min: d_min, max: d_max, mean: d_mean, stddev: d_stddev } = incomeEventData.duration;
         if (
@@ -87,6 +88,10 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             d_type === 'normal' && (d_mean < 0 || d_stddev < 0)
         ) {
             setError("Please fill out Duration fields");
+            return;
+        }
+        if(d_type === 'fixed' && d_fixed == 0) {
+            setError("Fixed year for duration cannot be 0.");
             return;
         }
 
