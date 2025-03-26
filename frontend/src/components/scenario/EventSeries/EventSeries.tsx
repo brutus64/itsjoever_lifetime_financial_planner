@@ -1,10 +1,10 @@
 import Popup from "reactjs-popup"
 import "reactjs-popup/dist/index.css"
 import { useState } from "react";
-import ExpenseEventSeries, {ExpenseEventItem} from "./ExpenseEventSeries";
-import InvestEventSeries, {InvestEventItem} from "./InvestEventSeries";
-import RebalanceEventSeries, {RebalanceEventItem} from "./RebalanceEventSeries";
-import IncomeEventSeries, {IncomeEventItem} from "./IncomeEventSeries";
+import ExpenseEventSeriesPopup from "./ExpenseEventSeries";
+import InvestEventSeriesPopup from "./InvestEventSeries";
+import RebalanceEventSeriesPopup from "./RebalanceEventSeries";
+import IncomeEventSeriesPopup from "./IncomeEventSeries";
 
 const eventSeriesModalStyling = { 
     "border": "none",
@@ -15,98 +15,22 @@ const eventSeriesModalStyling = {
 
 const EventSeries = ({ formData,setFormData }:any) => {
     return (
-        <div className="m-10 flex align-center justify-center h-full gap-10">
-            <div className='flex flex-col gap-4 w-60 '>
+        <div className="m-5 flex align-center h-full gap-5">
+            <div className='flex gap-4 w-60 '>
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-5 w-fit align-center">
                     <h1 className="text-2xl font-bold inline-block whitespace-nowrap">Event Series</h1>
                     <p className="">An event series represents a sequence of annual events. Event series are categorized into four types: income, expense, invest, or rebalance. These events will last for a specified amount of years.</p>
                 </div>
-                <EventSeriesPopUp formData={formData} setFormData={setFormData} />
             </div>
+            
             <div className="bg-white shadow-md rounded-lg p-2 flex flex-1 gap-4">
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-4 overflow-y-auto w-fit">
-                    <h2 className="text-xl font-bold whitespace-nowrap">Income Event Series</h2>
-                    
-                    {formData.event_series
-                    .filter(event_series => event_series.type === 'income')  // Only keep items with type 'income'
-                    .map(event_series => 
-                        <IncomeEventItem key={event_series.name} name={event_series.name} description={event_series.description} />
-                    )}
+                    <IncomeEventSeriesPopup eventSeriesModalStyling={eventSeriesModalStyling} formData={formData} setFormData={setFormData} />
+                    <ExpenseEventSeriesPopup eventSeriesModalStyling={eventSeriesModalStyling} formData={formData} setFormData={setFormData} />
+                    <InvestEventSeriesPopup eventSeriesModalStyling={eventSeriesModalStyling} formData={formData} setFormData={setFormData} />
+                    <RebalanceEventSeriesPopup eventSeriesModalStyling={eventSeriesModalStyling}formData={formData} setFormData={setFormData} />
                 </div>
-                
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-4 overflow-y-auto w-fit">
-                    <h2 className="text-xl font-bold whitespace-nowrap">Expense Event Series</h2>
-                    {formData.event_series
-                    .filter(event_series => event_series.type === 'expense')  // Only keep items with type 'income'
-                    .map(event_series => 
-                        <ExpenseEventItem key={event_series.name} name={event_series.name} description={event_series.description} />
-                    )}
-                </div>
-                
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-4 overflow-y-auto w-fit">
-                    <h2 className="text-xl font-bold whitespace-nowrap">Invest Event Series</h2>
-                    {formData.event_series
-                    .filter(event_series => event_series.type === 'invest')  // Only keep items with type 'income'
-                    .map(event_series => 
-                        <InvestEventItem key={event_series.name} name={event_series.name} description={event_series.description} />
-                    )}
-                </div>
-                
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-6 overflow-y-auto w-fit">
-                    <h2 className="text-xl font-bold whitespace-nowrap">Rebalance Event Series</h2>
-                    {formData.event_series
-                    .filter(event_series => event_series.type === 'rebalance')  // Only keep items with type 'income'
-                    .map(event_series => 
-                        <RebalanceEventItem key={event_series.name} name={event_series.name} description={event_series.description} />
-                    )}
-                </div>
-            </div>
         </div>
     )
-}
-
-const EventSeriesPopUp = ({ formData, setFormData }:any) => {
-    const [open, setOpen] = useState(false);
-    const [eventSeriesType, setEventSeriesType] = useState('income');
-
-    const handleAddEventSeriesType = () => {
-            
-    }
-    return (
-        <div>
-            <div 
-                className="bg-white shadow-md rounded-lg p-5 flex items-center justify-center flex-0 gap-3 w-fit hover:bg-gray-100 cursor-pointer"
-                onClick={() => setOpen(true)}
-            >
-                <div className="flex items-center gap-3">
-                    <p className="text-sm"> 
-                        + Add 
-                        <select 
-                            className="border border-gray-300 inline-block rounded-md inline-block mx-2 w-fit"
-                            onChange={(e) => setEventSeriesType(e.target.value)}
-                            value={eventSeriesType}
-                            onClick={(e) => e.stopPropagation()} // Prevent modal from opening
-                        >
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
-                            <option value="invest">Invest</option>
-                            <option value="rebalance">Rebalance</option>
-                        </select>
-                        <br></br>Event Series
-                    </p>
-                </div>
-            </div>
-
-            <Popup open={open} onClose={() => setOpen(false)} position="right center" contentStyle={eventSeriesModalStyling}>
-                <div className="rounded-lg flex flex-col gap-2 overflow-y-auto h-full">
-                    {eventSeriesType === "income" && <IncomeEventSeries setOpen={setOpen} formData={formData} setFormData={setFormData}/>}
-                    {eventSeriesType === "expense" && <ExpenseEventSeries setOpen={setOpen} formData={formData} setFormData={setFormData}/>}
-                    {eventSeriesType === "invest" && <InvestEventSeries setOpen={setOpen} formData={formData} setFormData={setFormData}/>}
-                    {eventSeriesType === "rebalance" && <RebalanceEventSeries setOpen={setOpen} formData={formData} setFormData={setFormData}/>}
-                </div>
-            </Popup>
-        </div>
-    );
 }
 
 const Name = ({handleChange, eventData}: {handleChange:any, eventData:any}) => {
@@ -145,7 +69,7 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
             <div className="flex gap-5">
                 <div className="flex flex-col gap-1">
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="fixed" onChange={handleStartYearChange}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="fixed" onChange={handleStartYearChange} checked={eventData.start_year.type === 'fixed'}/>
                         <div className="">Fixed:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="fixed" 
@@ -154,7 +78,7 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="uniform" onChange={handleStartYearChange}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="uniform" onChange={handleStartYearChange} checked={eventData.start_year.type === 'uniform'}/>
                         <div className="">Uniform: &nbsp; Min:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="min"
@@ -162,14 +86,14 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                             onChange={handleStartYearChange}
                             type="number" min="0"/> 
                         <div className="">Max:</div>
-                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30"  
                             name="max"
                             value={eventData.start_year.max}
                             onChange={handleStartYearChange}
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="normal" onChange={handleStartYearChange}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="normal" onChange={handleStartYearChange} checked={eventData.start_year.type === 'normal'}/>
                         <div className="">Normal: &nbsp; Mean:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="mean"
@@ -184,7 +108,7 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="same_year" onChange={handleStartYearChange}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="same_year" onChange={handleStartYearChange} checked={eventData.start_year.type === 'same_year'}/>
                         <div className="">Same year event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-event_series"
@@ -199,7 +123,7 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <div className=""> starts</div> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="start_year-type" value="year_after" onChange={handleStartYearChange}/>
+                        <input className="ml-1" type="radio" name="start_year-type" value="year_after" onChange={handleStartYearChange} checked={eventData.start_year.type === 'year_after'}/>
                         <div className="">Year after event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-event_series"
@@ -227,7 +151,7 @@ const Duration = ({handleDurationChange, eventData}: {handleDurationChange:any, 
             <div className="flex gap-5">
                 <div className="flex flex-col gap-1">
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="duration-type" value="fixed" onChange={handleDurationChange}/>
+                        <input className="ml-1" type="radio" name="duration-type" value="fixed" onChange={handleDurationChange} checked={eventData.duration.type === 'fixed'}/>
                         <div className="">Fixed:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="fixed"
@@ -236,7 +160,7 @@ const Duration = ({handleDurationChange, eventData}: {handleDurationChange:any, 
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="duration-type" value="uniform" onChange={handleDurationChange}/>
+                        <input className="ml-1" type="radio" name="duration-type" value="uniform" onChange={handleDurationChange} checked={eventData.duration.type === 'uniform'}/>
                         <div className="">Uniform: &nbsp; Min:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="min"
@@ -251,7 +175,7 @@ const Duration = ({handleDurationChange, eventData}: {handleDurationChange:any, 
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="duration-type" value="normal" onChange={handleDurationChange}/>
+                        <input className="ml-1" type="radio" name="duration-type" value="normal" onChange={handleDurationChange} checked={eventData.duration.type === 'normal'}/>
                         <div className="">Normal: &nbsp; Mean:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             name="mean"
@@ -278,17 +202,17 @@ const ExpectedAnnualChange = ({handleAnnualChange, eventData}: {handleAnnualChan
             <div className="flex gap-5">
                 <div className="flex flex-col gap-2">
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="exp-is_percent" value="false" onChange={handleAnnualChange} />
+                        <input className="ml-1" type="radio" name="exp-is_percent" value="false" onChange={handleAnnualChange} checked={eventData.exp_annual_change.is_percent === 'false'}/>
                         <div className="">Amount</div>
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="exp-is_percent" value="true" onChange={handleAnnualChange}/>
+                        <input className="ml-1" type="radio" name="exp-is_percent" value="true" onChange={handleAnnualChange} checked={eventData.exp_annual_change.is_percent === 'true'}/>
                         <div className="">Percent</div>
                     </div>
                 </div>
                 <div className="border-l-2 border-l-black-400 pl-5 flex flex-col gap-1">
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="exp-type" value="fixed" onChange={handleAnnualChange}/>
+                        <input className="ml-1" type="radio" name="exp-type" value="fixed" onChange={handleAnnualChange} checked={eventData.exp_annual_change.type === 'fixed'}/>
                         <div className="">Fixed:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             onChange={handleAnnualChange}
@@ -297,7 +221,7 @@ const ExpectedAnnualChange = ({handleAnnualChange, eventData}: {handleAnnualChan
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="exp-type" value="normal" onChange={handleAnnualChange}/>
+                        <input className="ml-1" type="radio" name="exp-type" value="normal" onChange={handleAnnualChange} checked={eventData.exp_annual_change.type === 'normal'}/>
                         <div className="">Normal: &nbsp; Mean:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             onChange={handleAnnualChange}
@@ -312,7 +236,7 @@ const ExpectedAnnualChange = ({handleAnnualChange, eventData}: {handleAnnualChan
                             type="number" min="0"/> 
                     </div>
                     <div className="flex gap-2 align-middle">
-                        <input className="ml-1" type="radio" name="exp-type" value="uniform" onChange={handleAnnualChange}/>
+                        <input className="ml-1" type="radio" name="exp-type" value="uniform" onChange={handleAnnualChange} checked={eventData.exp_annual_change.type === 'uniform'}/>
                         <div className="">Uniform: &nbsp; Min:</div>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" 
                             onChange={handleAnnualChange}
