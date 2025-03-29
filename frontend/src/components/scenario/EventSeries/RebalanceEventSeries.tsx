@@ -86,8 +86,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             setError("Fixed year for duration cannot be 0.");
             return;
         }
-
-        console.log(rebalanceEventData.initial_allocation);
         let num_tax_status = formData.investment.filter((investment: { tax_status: string; }) => investment.tax_status == rebalanceEventData.tax_status).length;
         if (num_tax_status == 0) {
             setError("Please create Investments first");
@@ -98,7 +96,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             Object.keys(rebalanceEventData.initial_allocation).length != num_tax_status ||
             rebalanceEventData.is_glide && (Object.keys(rebalanceEventData.final_allocation).length != num_tax_status)
         ) {
-            console.log(`${Object.keys(rebalanceEventData.initial_allocation).length} VS ${num_tax_status} `)
             setError("Please fill out Asset Allocation fields");
             return;
         }
@@ -118,7 +115,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             for (let key in rebalanceEventData.final_allocation)  {
                 const value = rebalanceEventData.final_allocation[key];
                 cumulative_percentages += value
-                console.log(`${key}: ${value}`);
             }
             if(cumulative_percentages != 100.0) {
                 setError("Please make sure percentages sum to 100");
@@ -156,7 +152,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             }
         })
 
-        console.log(`${name} is ${value}`)
     }
 
     const handleDurationChange = (e:any) => {
@@ -172,7 +167,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
     }
 
     const handleGlide = (e:any) => {
@@ -181,17 +175,14 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             "is_glide":e.target.checked,
         })
 
-        console.log(rebalanceEventData.is_glide)
     }
 
     const handleAssetAllocation = (e:any) => {
         let { name, value } = e.target;
-        console.log(`as ${name} and ${value}`);
         let split = name.split(':');
         let initial_or_final = split[0];
         let rname = split[1];
 
-        console.log(`rname: ${rname} initorfinal ${initial_or_final}`)
         if(initial_or_final == 'initial') {
             setRebalanceEventData({
                 ...rebalanceEventData,
@@ -205,8 +196,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
                 }
             });
             
-            console.log(rebalanceEventData.initial_allocation);
-            console.log(rebalanceEventData.initial_allocation_data);
         }
         else { // initial_or_final == 'final'
             setRebalanceEventData({
@@ -221,13 +210,11 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
                 }
             });
 
-            console.log(rebalanceEventData.final_allocation);
         }
     };
 
     const handleTaxStatusChange = (e: any) => {
         const { name, value } = e.target;
-        console.log(`${name} IS ${value}`)
         setRebalanceEventData({
             ...rebalanceEventData,
             initial_allocation: {},
@@ -239,7 +226,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             ...rebalanceEventData,
             [name]:value,
         });
-        console.log(`holy shit ${name} ${value}`)
     };
     
 
@@ -249,7 +235,6 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
             ...rebalanceEventData,
             [name]:value,
         });
-        console.log(`holy shit ${name} ${value}`)
     };
     
     return (

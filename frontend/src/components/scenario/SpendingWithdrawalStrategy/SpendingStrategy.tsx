@@ -43,7 +43,6 @@ export default function SpendingStrategy({formData,setFormData}) {
             spending_strat: [...formData.spending_strat,expense]
         })
     }
-    console.log(formData.event_series)
 
     const canAdd = formData.event_series.filter((es) => {
         return es.type === "expense" && es.expense === "Discretionary" && !formData.spending_strat.includes(es.name)

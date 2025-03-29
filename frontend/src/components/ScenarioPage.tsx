@@ -45,7 +45,6 @@ const ScenarioPage: React.FC = () => {
                 // fetch user from your backend using email
                 const userResponse = await fetch(`http://localhost:8000/api/get_user?email=${googleData.email}`);
                 const userData = await userResponse.json();
-                console.log("USERDATA", userData)
                 if (userData.user) {
                     setUser(userData.user);
                     
@@ -71,7 +70,6 @@ const ScenarioPage: React.FC = () => {
         navigate('/scenario/new');
     }
 
-    console.log(scenarios)
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>

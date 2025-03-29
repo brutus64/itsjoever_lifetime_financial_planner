@@ -119,7 +119,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
             })
         }
         handleClose(true)
-        console.log(expenseEventData)
     }
 
     const handleStartYearChange = (e: any) => {
@@ -135,8 +134,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
                 [name]:value,
             }
         })
-
-        console.log(`${name} is ${value}`)
     }
 
     const handleDurationChange = (e:any) => {
@@ -152,7 +149,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
     }
 
     const handleAnnualChange = (e:any) => {
@@ -168,7 +164,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
     }
 
     const handleInflationChange = (e: any) => {
@@ -178,8 +173,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
             [name]:!expenseEventData.inflation_adjust,
         });
 
-        console.log(`${name} is ${expenseEventData.inflation_adjust}`)
-
     }
 
     const handleChange = (e: any) => {
@@ -188,7 +181,6 @@ const ExpenseEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData
             ...expenseEventData,
             [name]:value,
         });
-        console.log(`holy shit ${name} ${value}`)
     };
 
 

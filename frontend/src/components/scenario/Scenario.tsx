@@ -78,7 +78,6 @@ const Scenario = ({}) => {
             default: return "After " + event_series
         }
     }
-    console.log(scenario)
 
     const handleEdit = () => {
         navigate(`/scenario/edit/${params.id}`)

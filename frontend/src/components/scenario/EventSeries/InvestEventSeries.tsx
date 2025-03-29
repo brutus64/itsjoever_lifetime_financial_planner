@@ -116,7 +116,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             for (let key in investEventData.final_allocation)  {
                 const value = investEventData.final_allocation[key];
                 cumulative_percentages += value
-                console.log(`${key}: ${value}`);
             }
             if(cumulative_percentages != 100.0) {
                 setError("Please make sure percentages sum to 100");
@@ -139,8 +138,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
 
         }
         handleClose(true)
-
-        console.log(investEventData)
     }
 
 
@@ -157,8 +154,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 [name]:value,
             }
         })
-
-        console.log(`${name} is ${value}`)
     }
 
     const handleDurationChange = (e:any) => {
@@ -174,7 +169,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
     }
 
     const handleGlide = (e:any) => {
@@ -183,7 +177,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             "is_glide":e.target.checked,
         })
 
-        console.log(investEventData.is_glide)
     }
     const handleAssetAllocation = (e:any) => {
         let { name, value } = e.target;
@@ -202,7 +195,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                     [name]: parseFloat(value),  
                 }
             });
-            console.log(investEventData.initial_allocation);
         }
         else { // initial_or_final == 'final'
             setInvestEventData({
@@ -217,7 +209,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 }
             });
 
-            console.log(investEventData.final_allocation);
         }
     };
 
@@ -227,7 +218,6 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             ...investEventData,
             [name]:value,
         });
-        console.log(`holy shit ${name} ${value}`)
     };
 
     return (

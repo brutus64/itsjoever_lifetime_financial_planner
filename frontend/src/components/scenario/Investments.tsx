@@ -255,7 +255,6 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
     }
 
     const handleEdit = (index) => {
-        console.log(index)
         setEditing(index);
         setInvestmentTypeData(formData.investment_types[index])
         setOpen(true);
@@ -400,7 +399,6 @@ const InvestmentPopup = ({formData,setFormData}) => {
     }
     
     const handleAddInvestment = () => {
-        console.log(investmentData)
         if (investmentData.investment_type === "" || investmentData.tax_status === "") {
             setError("Please fill out all fields")
             return;
@@ -427,7 +425,6 @@ const InvestmentPopup = ({formData,setFormData}) => {
                     if (es.type === "expense" || es.type === "income")
                         continue;
                     // check if investment type is used in any allocation
-                    console.log(formData)
                     for (const [key,val] of Object.entries(es.initial_allocation)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);

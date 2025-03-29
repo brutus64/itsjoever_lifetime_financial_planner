@@ -136,8 +136,6 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 [name]:value,
             }
         })
-
-        console.log(`${name} is ${value}`)
     }
 
     const handleDurationChange = (e:any) => {
@@ -153,7 +151,6 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
     }
 
     const handleAnnualChange = (e:any) => {
@@ -169,7 +166,6 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                 [name]:value,
             }
         })
-        console.log(`${name} is ${value}`)
 
     }
 
@@ -179,8 +175,6 @@ const IncomeEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
             ...incomeEventData,
             [name]:!incomeEventData.inflation_adjust,
         });
-
-        console.log(`${name} is ${incomeEventData.inflation_adjust}`)
 
     }
 

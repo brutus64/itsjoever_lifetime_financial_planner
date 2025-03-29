@@ -48,7 +48,6 @@ export default function Login() {
         .then((response) => response.json())
         .then(async (data) => {
           // Set user info from the response
-          // console.log(data)
           setUserInfo(data);
           
           const userExists = await foundUser(data.email);
@@ -87,25 +86,7 @@ export default function Login() {
       
       if (calledOnce.current) return; // Prevent multiple runs
       calledOnce.current = true;
-      console.log("createUser called")
-      // let bd = new Date();
-      // const today = new Date();
-      // let age = 0;
-      // if (data.birthday){
-      //   bd = new Date(data.birthday)
-                
-      //   age = today.getFullYear() - bd.getFullYear(); 
 
-      //   // Adjust age if the birthday hasn't occurred yet this year
-      //   const hasBirthdayPassed = (
-      //       today.getMonth() > bd.getMonth() ||
-      //       (today.getMonth() === bd.getMonth() && today.getDate() >= bd.getDate())
-      //   );
-
-      //   if (!hasBirthdayPassed) {
-      //       age--;
-      //   }
-      // }
       const response = await fetch('http://localhost:8000/api/add_user', {
         method: 'POST',
         headers: {
@@ -130,12 +111,6 @@ export default function Login() {
     }
   };
   
-
-  // TODO: REMOVE
-  function test() {
-    console.log(userInfo);
-  }
-
   return (
     <div>
       <div className="cursor-pointer flex w-full px-6 py-3 bg-blue-500 hover:bg-blue-800 transition-colors gap-2 items-center" onClick={handleClick}>

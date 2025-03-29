@@ -128,7 +128,6 @@ const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
                     }),
                     roth_optimizer: scenario.roth_optimizer,
                 }
-                console.log("form",formData)
                 setFormData(formFormat)
             }
             catch(err){
@@ -137,8 +136,6 @@ const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
         }
         if (location.pathname.startsWith("/scenario/edit/")) //if editing
             fetchScenario();
-        else
-            console.log("Not editing")
         //todo
     },[params])
 
