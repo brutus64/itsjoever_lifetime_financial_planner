@@ -1,18 +1,9 @@
 from beanie import Document, Link
 from pydantic import BaseModel
 from typing import Literal, Optional, Union, List
-from app.models.utils import Fixed, Uniform, Normal
-from app.models.investment import Investment
 
 class EventDate(BaseModel):
     type: Literal['fixed', 'uniform', 'normal', 'start_with', 'end_with']
-    #SLOWLY PHASE IT OUT
-    # fixed: Optional[int]
-    # uniform: Optional[Uniform]
-    # normal: Optional[Normal]
-    # start_with: Optional[Link["EventSeries"]] #is it supposed to be id or name? Line 83 scenario.yaml
-    # end_with: Optional[Link["EventSeries"]] #same tangent, is it supposed to be id or name? Line 83 scenario.yaml
-    
     # For fixed/uniform/normal distribution
     value: Optional[float] = None
     lower: Optional[float] = None
@@ -22,30 +13,8 @@ class EventDate(BaseModel):
     # For references to other event series, CONSIDER whether keep it as string or not
     event_series: Optional[str] = None 
     
-# class Duration(BaseModel):
-#     type: Literal['fixed', 'uniform', 'normal']
-#     #SLOWLY PHASE IT OUT
-#     # fixed: Optional[int]
-#     # uniform: Optional[Uniform]
-#     # normal: Optional[Normal]
-    
-    
-#     # For fixed/uniform/normal distribution
-#     value: Optional[float] = None
-#     lower: Optional[float] = None
-#     upper: Optional[float] = None
-#     mean: Optional[float] = None
-#     stdev: Optional[float] = None
-#change in amount of income/expense over time (not capital gains or dividends/interest)
 class EventAnnualChange(BaseModel):
-    type: Literal['fixed', 'uniform', 'normal']
-    #SLOWLY PHASE IT OUT
-    # fixed: Optional[Fixed]
-    # uniform: Optional[Uniform]
-    # normal: Optional[Normal]
-    
-    
-    
+    type: Literal['fixed', 'uniform', 'normal']   
     is_percent: Optional[bool] = False
     value: Optional[float] = None  # For fixed
     lower: Optional[float] = None  # For uniform
@@ -60,11 +29,6 @@ class GlideInvestment(BaseModel):
     invest_id: str
     initial: float #both percentages apparently this is non-retirement?
     final: float #apparently this is after tax?
-    
-# class AssetAlloc(BaseModel):
-#     type: Literal['fixed', 'glide']
-#     fixed: Optional[List[FixedInvestment]]
-#     glide: Optional[List[GlideInvestment]]
 
 class Invest(Document):
     is_glide: bool = False #if not it's fixed

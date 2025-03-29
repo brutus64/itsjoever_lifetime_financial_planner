@@ -191,16 +191,16 @@ async def create_scenario(scenario:  dict):
         print(f"Error in create_scenario: {e}")  # Actually print the exception
         raise HTTPException(status_code=400, detail="Error at scenario creation")
 
-#NOT TESTED
-@router.get("/{scenario_id}")
-async def fetch_scenario(scenario_id: str):
-    try:
-        scenario = await Scenario.get(scenario_id) #get is a specialized function for getting id
-        if not scenario:
-            raise HTTPException(status_code=404, detail=f"Scenario not found with id:{scenario_id}")
-        return {"scenario": scenario}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Scenario not found, bad request, error: {e}")
+#NOT TESTED NOT SURE IF NEEDED AT ALL, DONE AT USER NO? OR DO WE USE THIS FOR GUESTS?
+# @router.get("/{scenario_id}")
+# async def fetch_scenario(scenario_id: str):
+#     try:
+#         scenario = await Scenario.get(scenario_id) #get is a specialized function for getting id
+#         if not scenario:
+#             raise HTTPException(status_code=404, detail=f"Scenario not found with id:{scenario_id}")
+#         return {"scenario": scenario}
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=f"Scenario not found, bad request, error: {e}")
 
 @router.post("/import")
 async def import_scenario(file: UploadFile = File(...)):
