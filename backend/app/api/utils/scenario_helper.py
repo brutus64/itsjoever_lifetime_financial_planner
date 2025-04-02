@@ -1,6 +1,8 @@
 from app.models.event_series import *
 from app.models.scenario import *
 
+
+'''-----------------INVESTMENT_TYPE------------------'''
 def parse_invest_type(invest_type):
     
     #basic data
@@ -64,6 +66,7 @@ def parse_invest_type(invest_type):
     }
     return investment_type
 
+'''---------------------------INVESTMENT-------------------------------------'''
 def parse_investments(investment):
     invest_type = investment['investment_type']
     tax_status_mapping = {
@@ -125,6 +128,7 @@ def parse_fixed_investment(initial):
             percentage=float(value) / 100
         ))
     return assets
+
 def parse_glide_investment(initial, final):
     assets = []
     investment_ids = set(initial.keys()) | set(final.keys())
@@ -140,11 +144,10 @@ def parse_glide_investment(initial, final):
         ))
     return assets
     
-async def parse_events(event):
+'''--------------------------------EVENT SERIES-------------------------------------------'''
+def parse_events(event):
     # print("Parse events currently")
     # print(event)
-    
-    
     #processing needed:
     start = EventDate(**parse_event_date(event['start_year']))
     duration = EventDate(**parse_event_date(event['duration']))

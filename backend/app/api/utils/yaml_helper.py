@@ -138,7 +138,7 @@ def create_assetalloc(data):
         #need to validate it == 1 later
     return arr
 
-async def create_event_from_yaml(data):
+def create_event_from_yaml(data):
     event_type = data.get('type')
     detail = None
     income, expense, invest, rebalance, res = None, None, None, None, None

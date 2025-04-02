@@ -11,6 +11,9 @@ from typing import Set
 
 router = APIRouter()
 
+
+
+'''------------------------SCENARIO CREATE/DELETE ROUTES------------------------'''
 #NO TESTING BETWEEN ALL OF THESE YET
 @router.get("/init")
 async def init_scenario():
@@ -26,20 +29,23 @@ async def delete_scenario(scenario_id: str):
         scenario_obj_id = PydanticObjectId(scenario_id)
         await Scenario.get(scenario_obj_id).delete()
         return {"success": True}
-    except:
-        raise HTTPException(status_code=400, detail="Deleting scenario failed")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Deleting scenario failed, {e}")
 
+'''----------------------------INVESTMENT TYPE ROUTES--------------------------------'''
 @router.post("/{scenario_id}/investment_type")
 async def create_invest_type(scenario_id: str, investment_type: dict):
     try:
         scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="POST investment_type, scenario does not exist")
         invest_type = InvestmentType(**investment_type)
         await invest_type.insert()
         await scenario.update(AddToSet({Scenario.investment_types: invest_type}))
         updated_scenario = await Scenario.get(scenario.id)
         return {"scenario": updated_scenario.model_dump()}
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Error posting investment type")
+        raise HTTPException(status_code=400, detail=f"Error posting investment type, {e}")
     
 
 @router.put("/{scenario_id}/investment_type/{invest_type_id}") #requires investment id
@@ -50,9 +56,8 @@ async def update_invest_type(scenario_id: str, invest_type_id: str, investment: 
         invest_type = await InvestmentType.get(PydanticObjectId(invest_type_id))
         return {"investment_type": invest_type}
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Error updating investment type")
+        raise HTTPException(status_code=400, detail=f"Error updating investment type, {e}")
         
-
 @router.delete("/{scenario_id}/investment_type/{invest_type_id}")
 async def delete_invest_type(scenario_id: str, invest_type_id: str):
     try:
@@ -69,41 +74,101 @@ async def delete_invest_type(scenario_id: str, invest_type_id: str):
         
         # potentially does not work
         await scenario.update({"$pull": {"investment_types":{"$ref": "investment_types", "$id": invest_type_obj_id}}})
-        return True
+        return { "success": True }
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Error deleting investment type")
+        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
 
+'''---------------------------INVESTMENT ROUTES-------------------------------------'''
 @router.post("/{scenario_id}/investment")
 async def create_invest(scenario_id: str, investment: dict):
     try:
         scenario = await Scenario.get(PydanticObjectId(scenario_id))
         if not scenario:
-            raise HTTPException(status_code=400, detail= "Scenario does not exist for create investment")
+            raise HTTPException(status_code=400, detail= "POST create investment cenario does not exist")
         investment = Investment(**investment)
         await investment.insert()
         await scenario.update(AddToSet({Scenario.investment: investment}))
         updated_scenario = await Scenario.get(scenario.id)
         return { "scenario": updated_scenario }
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Create investment error")
+        raise HTTPException(status_code=400, detail=f"Create investment error, {e}")
 
-@router.put("/{scenario_id}/investment") #requires investment id
-async def update_invest(scenario_id: str, investment: dict):
+@router.put("/{scenario_id}/investment/{investment_id}") #requires investment id
+async def update_invest(scenario_id: str, investment: dict, investment_id: str):
     try:
-        investments = await InvestmentType.get(PydanticObjectId(investment))
+        scenario = await Scenario.get(scenario_id)
+        if not scenario:
+            raise HTTPException(status_code=400, detail="UPDATE investment scenario not found")
+        investments = await InvestmentType.get(PydanticObjectId(investment_id))
+        #MAY BE WRONG MIGHT NEED TO PARSE IT
         await investments.update(Set(investment))
-        investments = await InvestmentType.get(PydanticObjectId(investment))
         return {"investment": investments}
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Update investment error")
+        raise HTTPException(status_code=400, detail=f"Update investment error, {e}")
+    
+@router.delete("/{scenario_id}/investment/{investment_id}")
+async def delete_invest(scenario_id: str, investment_id: str):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        investment_obj_id = PydanticObjectId(investment_id)
         
+        # get the scenario
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        # delete the investment type
+        await Investment.get(investment_obj_id).delete()
+        
+        # potentially does not work
+        await scenario.update({"$pull": {"investments":{"$ref": "investments", "$id": investment_obj_id}}})
+        return { "success": True }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
 
-# @router.post("/{scenario_id}/event_series")
-# async def create_event_series():
-    
-# @router.put("/{scenario_id}/event_series") #requires event series id
-# async def update_event_series():
-    
+'''-------------------------------EVENT SERIES ROUTES--------------------------------'''
+
+@router.post("/{scenario_id}/event_series")
+async def create_event_series(scenario_id: str, event_data: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="POST event series scenario does not exist")
+        event = parse_events(event_data)
+        event_series = EventSeries(**event)
+        await event_series.insert()
+        await scenario.update(AddToSet({Scenario.event_series: event_series}))
+        return { "event_series": event_series }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Create event series error, {e}")
+
+@router.put("/{scenario_id}/event_series/{event_series_id}") #requires event series id
+async def update_event_series(scenario_id: str, event_series_id: str, event_data: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="PUT event series scenario does not exist")
+        event_series = await EventSeries.get(PydanticObjectId(event_series_id))
+        #NOT SURE IF THIS WORKS
+        new_event_series = EventSeries(**parse_events(event_data))
+        await event_series.update(Set(new_event_series))
+        return { "event_series": event_series}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Update event series error, {e}")
+
+@router.delete("/{scenario_id}/event_series/{event_series_id}")
+async def delete_event_series(scenario_id: str, event_series_id: str):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="DELETE event series scenario does not exist")
+        await EventSeries.get(PydanticObjectId(event_series_id)).delete()
+        # potentially does not work
+        await scenario.update({"$pull": {"event_series":{"$ref": "event_series", "$id": event_series_id}}})
+        return { "success": True }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Delete event series error {e}")
+
 
 #NOT TESTED
 #MOSt LIKELY PHASING OUT
@@ -143,7 +208,7 @@ async def update_scenario(scenario_id: str, scenario: dict):
         new_event_series_ids = []
         event_series_id_map = {}
         for e in scenario.get('event_series', []):
-            event = await parse_events(e)
+            event = parse_events(e)
             event_obj = await EventSeries.find_one(EventSeries.name == event['name'])
             if not event_obj:
                 event_obj = EventSeries(**event)

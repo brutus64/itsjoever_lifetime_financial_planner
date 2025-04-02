@@ -72,7 +72,7 @@ async def import_scenario(file: UploadFile = File(...)):
         for event in data.get('eventSeries'):
             # print(event)
             #NEED FIX SHOULD BE FIXED WITH NAME
-            e = await create_event_from_yaml(event)
+            e = create_event_from_yaml(event)
             exists = await EventSeries.find_one(EventSeries.name == e.name)
             
             if exists:
