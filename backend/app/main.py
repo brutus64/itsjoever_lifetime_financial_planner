@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import user, scrape_yaml, scenario
+from app.api import user, scrape_yaml, scenario, import_export
 from app.db.db import init_db
 from contextlib import asynccontextmanager
 import time
@@ -54,6 +54,7 @@ app.add_middleware(
 
 app.include_router(user.router, prefix='/api')
 app.include_router(scenario.router, prefix='/api/scenario')
+app.include_router(import_export.router, prefix='/api/scenario')
 
 # @app.on_event("startup")
 # async def startup_event():

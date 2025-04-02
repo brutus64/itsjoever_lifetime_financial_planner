@@ -1,5 +1,5 @@
 from beanie import Document, Link
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Literal, Optional, Union, List
 
 class EventDate(BaseModel):
@@ -13,6 +13,8 @@ class EventDate(BaseModel):
     # For references to other event series, CONSIDER whether keep it as string or not
     event_series: Optional[str] = None 
     
+    model_config = ConfigDict(exclude_none=True)
+    
 class EventAnnualChange(BaseModel):
     type: Literal['fixed', 'uniform', 'normal']   
     is_percent: Optional[bool] = False
@@ -21,6 +23,10 @@ class EventAnnualChange(BaseModel):
     upper: Optional[float] = None  # For uniform
     mean: Optional[float] = None   # For normal
     stdev: Optional[float] = None  # For normal
+    
+    model_config = ConfigDict(exclude_none=True)
+
+
 class FixedInvestment(BaseModel):
     invest_id: str
     percentage: float
@@ -54,6 +60,7 @@ class Income(Document):
     
     class Settings:
         name="income_events"
+        keep_nulls = False
 
 class Expense(Document):
     initial_amt: float
@@ -64,6 +71,7 @@ class Expense(Document):
     
     class Settings:
         name="expense_events"
+        keep_nulls = False
 
 class EventSeries(Document):
     name: str
@@ -71,7 +79,7 @@ class EventSeries(Document):
     start: EventDate
     duration: EventDate
     type: Literal['income', 'expense', 'invest', 'rebalance']
-    # details_links: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
+    # details: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
     details: Union[Income, Expense, Invest, Rebalance]
     class Settings:
         name="event_series"

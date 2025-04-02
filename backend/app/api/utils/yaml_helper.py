@@ -1,8 +1,7 @@
 from app.models.scenario import *
 from app.models.investment import *
 from app.models.event_series import *
-from beanie.operators import Set, And
-import yaml
+from beanie.operators import And
 
 '''----------------- INVESTMENT TYPE & INVESTMENT ---------------'''
 
