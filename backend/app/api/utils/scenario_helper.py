@@ -204,7 +204,6 @@ async def parse_events(event):
         # event.tax_status #APPARENTLY Rebalance has tax-status
         #I guess if we do need tax_status just grab from event_series initial_allocation 2nd half after "|" and just not store in db?
         
-    await details.save() #should update itself as well
     return {
         'name': event.get('name',''),
         'descripton': event.get('description', ''),

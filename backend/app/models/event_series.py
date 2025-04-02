@@ -36,42 +36,34 @@ class GlideInvestment(BaseModel):
     initial: float #both percentages apparently this is non-retirement?
     final: float #apparently this is after tax?
 
-class Invest(Document):
+class Invest(BaseModel):
     is_glide: bool = False #if not it's fixed
     assets: Union[List[FixedInvestment], List[GlideInvestment]]
     max_cash: float
     
-    class Settings:
-        name="invest_events"
         
-class Rebalance(Document):
+class Rebalance(BaseModel):
     is_glide: bool = False #if not it's fixed
     assets: Union[List[FixedInvestment], List[GlideInvestment]]
     # max_cash: float DOES IT HAVE MAX CASH?
 
-    class Settings:
-        name="rebalance_events"
-class Income(Document):
+class Income(BaseModel):
     initial_amt: float
     exp_annual_change: EventAnnualChange
     inflation_adjust: bool
     user_split: Optional[float] #split percentage btwn user and spouse
     social_security: bool #social security income or not
     
-    class Settings:
-        name="income_events"
-        keep_nulls = False
+    model_config = ConfigDict(exclude_none=True)
 
-class Expense(Document):
+class Expense(BaseModel):
     initial_amt: float
     exp_annual_change: EventAnnualChange
     inflation_adjust: bool
     user_split: Optional[float] #split percentage btwn user and spouse
     is_discretionary: bool
     
-    class Settings:
-        name="expense_events"
-        keep_nulls = False
+    model_config = ConfigDict(exclude_none=True)
 
 class EventSeries(Document):
     name: str
