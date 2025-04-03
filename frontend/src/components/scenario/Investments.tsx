@@ -42,19 +42,19 @@ const defaultInvestmentTypeForm = {
     exp_annual_return: {
         is_percent: false,
         type: "fixed", // either "fixed" or "normal"
-        fixed: 0,
+        value: 0,
         mean:0,
-        stddev:1,
+        stdev:1,
     },
     exp_annual_income: {
         is_percent: false,
         type: "fixed", // either "fixed" or "normal"
-        fixed: 0,
+        value: 0,
         mean:0,
-        stddev:1,
+        stdev:1,
     },
     expense_ratio: 0.0,
-    is_tax_exempt: false
+    taxability: false
 }
 
 const InvestmentTypePopup = ({formData,setFormData}) => {
@@ -112,7 +112,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
         const {value} = e.target
         setInvestmentTypeData({
             ...investmentTypeData,
-            is_tax_exempt:(value==="true"),
+            taxability:(value==="true"),
         })
     }
 
@@ -126,7 +126,13 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
     }
 
     const handleChange = (e: any) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+
+        const float_names = new Set(['expense_ratio', 'initial_amt']);
+        if (float_names.has(name)) {
+            value = parseFloat(value);
+        }
+
         setInvestmentTypeData({
             ...investmentTypeData,
             [name]:value,
@@ -139,7 +145,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             ...investmentTypeData,
             exp_annual_return: {
                 ...investmentTypeData.exp_annual_return,
-                [name]:value,
+                [name]:parseFloat(value),
             }
         })
     }
@@ -150,7 +156,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             ...investmentTypeData,
             exp_annual_income: {
                 ...investmentTypeData.exp_annual_income,
-                [name]:value,
+                [name]:parseFloat(value),
             }
         })
     }
@@ -165,7 +171,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             return;
         }
 
-        if (investmentTypeData.exp_annual_income.stddev <= 0 || investmentTypeData.exp_annual_return.stddev <= 0) {
+        if (investmentTypeData.exp_annual_income.stdev <= 0 || investmentTypeData.exp_annual_return.stdev <= 0) {
             setError("Only positive values for stddev")
             return;
         }
@@ -186,7 +192,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             const new_name = investmentTypeData.name;
             if (new_name !== old_name) {
                 const new_investment = formData.investment.map((inv) =>
-                    inv.investment_type === old_name ? {...inv,investment_type:new_name} : inv);
+                    inv.invest_type === old_name ? {...inv,invest_type:new_name} : inv);
                 const new_event_series = formData.event_series.map(es => {
                     if (es.type === "expense" || es.type === "income")
                         return es;
@@ -194,7 +200,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     const new_final = {}
     
                     // check if investment name is used in any allocation
-                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                    for (const [key,val] of Object.entries(es.initial)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);
                         if (type === old_name)
@@ -202,7 +208,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                         else
                             new_initial[key] = val;
                     }
-                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                    for (const [key,val] of Object.entries(es.final)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);
                         if (type === old_name)
@@ -211,7 +217,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                             new_final[key] = val;
                     }
     
-                    return {...es,initial_allocation:new_initial,final_allocation:new_final}
+                    return {...es,initial:new_initial,final:new_final}
                 });
     
                 const new_withdrawal = formData.expense_withdraw.map((inv) => {
@@ -252,6 +258,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
             console.log("added")
         }        
         handleClose(true)
+        console.log(investmentTypeData);
     }
 
     const handleEdit = (index) => {
@@ -297,14 +304,14 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                             <div className="flex gap-2 align-middle">
                                 <input className="ml-1" type="radio" value="fixed" onChange={handleRetTypeRadio} checked={investmentTypeData.exp_annual_return.type === "fixed"}/>
                                 <div className="">Fixed:</div>
-                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="fixed" value={investmentTypeData.exp_annual_return.fixed} onChange={handleReturnChange}/> 
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="value" value={investmentTypeData.exp_annual_return.value} onChange={handleReturnChange}/> 
                             </div>
                             <div className="flex gap-2 align-middle">
                                 <input className="ml-1" type="radio" value="normal" onChange={handleRetTypeRadio} checked={investmentTypeData.exp_annual_return.type === "normal"}/>
                                 <div className="">Normal: &nbsp; Mean:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="mean" value={investmentTypeData.exp_annual_return.mean} onChange={handleReturnChange}/> 
                                 <div className="">Std dev:</div>
-                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="stddev" value={investmentTypeData.exp_annual_return.stddev} onChange={handleReturnChange}/> 
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="stdev" value={investmentTypeData.exp_annual_return.stdev} onChange={handleReturnChange}/> 
                             </div>
                         </div>
                     </div>
@@ -324,14 +331,14 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                             <div className="flex gap-2 align-middle">
                                 <input className="ml-1" type="radio" value="fixed" onChange={handleIncTypeRadio} checked={investmentTypeData.exp_annual_income.type === "fixed"}/>
                                 <div className="">Fixed:</div>
-                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="fixed" value={investmentTypeData.exp_annual_income.fixed} onChange={handleIncomeChange}/> 
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="value" value={investmentTypeData.exp_annual_income.value} onChange={handleIncomeChange}/> 
                             </div>
                             <div className="flex gap-2 align-middle">
                                 <input className="ml-1" type="radio" value="normal" onChange={handleIncTypeRadio} checked={investmentTypeData.exp_annual_income.type === "normal"}/>
                                 <div className="">Normal: &nbsp; Mean:</div>
                                 <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="mean" value={investmentTypeData.exp_annual_income.mean} onChange={handleIncomeChange}/> 
                                 <div className="">Std dev:</div>
-                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="stddev" value={investmentTypeData.exp_annual_income.stddev} onChange={handleIncomeChange}/> 
+                                <input className="text-md px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="stdev" value={investmentTypeData.exp_annual_income.stdev} onChange={handleIncomeChange}/> 
                             </div>
                         </div>
                     </div>
@@ -342,11 +349,11 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
                     <div className="flex gap-2 align-middle">
                         <h2 className="font-medium">Taxability:</h2>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" value="true" onChange={handleTaxRadio} checked={investmentTypeData.is_tax_exempt}/>
+                            <input className="ml-1" type="radio" value="true" onChange={handleTaxRadio} checked={investmentTypeData.taxability}/>
                             <div className="">Tax-exempt</div>
                         </div>
                         <div className="flex gap-1">
-                            <input className="ml-1" type="radio" value="false" onChange={handleTaxRadio} checked={!investmentTypeData.is_tax_exempt}/>
+                            <input className="ml-1" type="radio" value="false" onChange={handleTaxRadio} checked={!investmentTypeData.taxability}/>
                             <div className="">Taxable</div>
                         </div>
                     </div>
@@ -362,7 +369,7 @@ const InvestmentTypePopup = ({formData,setFormData}) => {
 }
 
 const defaultInvestmentForm = {
-    investment_type: "", // are investment types uniquely identified by names?
+    invest_type: "", // are investment types uniquely identified by names?
     value: 0.0,
     tax_status: "non-retirement" // is this needed?
 }
@@ -391,7 +398,11 @@ const InvestmentPopup = ({formData,setFormData}) => {
     }
 
     const handleChange = (e: any) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if(name == 'value') {
+            value = parseFloat(value);
+        }
+
         setInvestmentData({
             ...investmentData,
             [name]:value,
@@ -399,7 +410,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
     }
     
     const handleAddInvestment = () => {
-        if (investmentData.investment_type === "" || investmentData.tax_status === "") {
+        if (investmentData.invest_type === "" || investmentData.tax_status === "") {
             setError("Please fill out all fields")
             return;
         }
@@ -418,8 +429,8 @@ const InvestmentPopup = ({formData,setFormData}) => {
             // remove it from strategies
             const old_tax = formData.investment[editing].tax_status;
             const new_tax = investmentData.tax_status;
-            const old_type = formData.investment[editing].investment_type;
-            const new_type = investmentData.investment_type;
+            const old_type = formData.investment[editing].invest_type;
+            const new_type = investmentData.invest_type;
             if (old_tax !== new_tax) {
                 for (const es of formData.event_series) {
                     if (es.type === "expense" || es.type === "income")
@@ -480,7 +491,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
                     const new_final = {}
     
                     // check if investment name is used in any allocation
-                    for (const [key,val] of Object.entries(es.initial_allocation)) {
+                    for (const [key,val] of Object.entries(es.initial)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);
                         const tax = key.slice(last_index+1);
@@ -489,7 +500,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
                         else
                             new_initial[key] = val;
                     }
-                    for (const [key,val] of Object.entries(es.final_allocation)) {
+                    for (const [key,val] of Object.entries(es.final)) {
                         const last_index = key.lastIndexOf("|")
                         const type = key.slice(0,last_index);
                         const tax = key.slice(last_index+1);
@@ -499,7 +510,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
                             new_initial[key] = val;
                     }
     
-                    return {...es,initial_allocation:new_initial,final_allocation:new_final}
+                    return {...es,initial:new_initial,final:new_final}
                 });
     
                 const new_withdrawal = formData.expense_withdraw.map((inv) => {
@@ -548,6 +559,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
             })
         }
         handleClose(true)
+        console.log(investmentData);
     }
     const handleEdit = (index) => {
         setEditing(index);
@@ -573,7 +585,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
                     <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment</h1>
                     <div className="flex gap-4 items-center">
                         <h2 className="font-medium">Investment Type:</h2>
-                        <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="investment_type" value={investmentData.investment_type} onChange={handleChange}>
+                        <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="invest_type" value={investmentData.invest_type} onChange={handleChange}>
                             <option value=""></option>
                             {formData.investment_types.map((inv_type) => (
                                 <option className="flex flex-col w-100 h-23" key={inv_type.name} value={inv_type.name}>
@@ -613,7 +625,7 @@ const InvestmentPopup = ({formData,setFormData}) => {
 }
 
 // click to edit
-const InvestmentTypeItem = ({name, description,i,handleEdit}) => {
+const InvestmentTypeItem = ({name, description,i,handleEdit}:{name:any, description:any,i:any,handleEdit:any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
             <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{name}</h2>
@@ -623,10 +635,10 @@ const InvestmentTypeItem = ({name, description,i,handleEdit}) => {
     )
 }
 
-const InvestmentItem = ({investment,i,handleEdit}) => {
+const InvestmentItem = ({investment,i,handleEdit}:{investment:any,i:any,handleEdit:any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.investment_type}</h2>
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.invest_type}</h2>
             <p className="overflow-ellipsis w-85 overflow-hidden">{investment.tax_status} - ${investment.value}</p>
             {/* <button>Edit</button> */}
         </div>
