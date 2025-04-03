@@ -1,7 +1,6 @@
 from beanie import Document, Link
 from pydantic import BaseModel
 from typing import Literal, Optional, List, TYPE_CHECKING, Union
-from app.models.utils import Normal, Fixed
 
 
 #investment imports users, users import scenarios, scenarios import investment, circular dependency

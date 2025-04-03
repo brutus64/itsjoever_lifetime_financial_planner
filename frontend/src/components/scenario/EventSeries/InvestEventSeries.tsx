@@ -1,7 +1,7 @@
 import Popup from "reactjs-popup"
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration } from './EventSeries'
-import InvestmentCard from './InvestmentCard';
+import AssetAllocationCard from './AssetAllocationCard';
 
 const defaultInvestEventForm = {
     type: "invest",
@@ -278,7 +278,7 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                                     .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
                                     .map((investment: unknown) =>
                                         <div className="flex flex-col gap-1">
-                                            <InvestmentCard investment={investment}/>
+                                            <AssetAllocationCard investment={investment}/>
                                             <div className='flex gap-3'>
                                                 <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
                                                     name={"initial:"+investment.investment_type+'|'+investment.tax_status} 
@@ -302,7 +302,7 @@ const InvestEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormData}
                                         .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
                                         .map((investment: unknown) => (
                                             <div className="flex flex-col gap-1" key={investment.name}>
-                                                <InvestmentCard investment={investment} />
+                                                <AssetAllocationCard investment={investment} />
                                                 <div className="flex gap-3">
                                                     <input
                                                         type="number"

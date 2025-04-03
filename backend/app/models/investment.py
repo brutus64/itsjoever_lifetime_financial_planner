@@ -1,8 +1,7 @@
 from beanie import Document, Link
 from pydantic import BaseModel
 from typing import Literal, Optional, TYPE_CHECKING
-from app.models.utils import Fixed, Normal
-from app.models.scenario import Scenario
+# from app.models.scenario import Scenario
 # from app.models.user import User
 
 #investment imports users, users import scenarios, scenarios import investment, circular dependency
@@ -12,8 +11,6 @@ if TYPE_CHECKING:
 #capital gain/loss or dividends/interest, tied to value of investment, not to be confused with annual change in event series
 class InvestAnnualChange(BaseModel):
     type: Literal['fixed', 'normal']
-    # fixed: Optional[Fixed]
-    # normal: Optional[Normal]
     value: Optional[float] = None
     mean: Optional[float] = None
     stdev: Optional[float] = None

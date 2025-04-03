@@ -1,7 +1,7 @@
 import Popup from "reactjs-popup"
 import { useState } from 'react';
 import { Name, Description, StartYear, Duration } from './EventSeries'
-import InvestmentCard from './InvestmentCard';
+import AssetAllocationCard from './AssetAllocationCard';
 
 const defaultRebalanceEventForm = {
     type: "rebalance",
@@ -298,7 +298,7 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
                                     .filter(investment => investment.tax_status ===  rebalanceEventData.tax_status)
                                     .map(investment =>
                                         <div className="flex flex-col gap-1 w-60">
-                                            <InvestmentCard investment={investment}/>
+                                            <AssetAllocationCard investment={investment}/>
                                             <div className='flex gap-3'>
                                                 <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-full" 
                                                     name={"initial:"+investment.investment_type+'|'+investment.tax_status} 
@@ -322,7 +322,7 @@ const RebalanceEventSeriesPopup = ({eventSeriesModalStyling, formData, setFormDa
                                         .filter(investment => investment.tax_status ==  rebalanceEventData.tax_status)
                                         .map(investment => (
                                             <div className="flex flex-col gap-1 w-60" key={investment.name}>
-                                                <InvestmentCard investment={investment} />
+                                                <AssetAllocationCard investment={investment} />
                                                 <div className="flex gap-3">
                                                     <input
                                                         type="number"

@@ -1,4 +1,4 @@
-const InvestmentCard = ({ investment }) => {
+const AssetAllocationCard = ({ investment }) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full ">            
             <h1 className="text-md">{investment.investment_type} | {investment.tax_status}</h1>
@@ -7,4 +7,4 @@ const InvestmentCard = ({ investment }) => {
     );
 }
 
-export default InvestmentCard;
+export default AssetAllocationCard;
