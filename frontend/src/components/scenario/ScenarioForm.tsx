@@ -119,7 +119,7 @@ const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
                         return exp.invest_id+"-retirement"
                     }),
                     rmd_strat: scenario.rmd_strat.map(inv => {
-                        const last_index = inv.lastIndexOf(" ");
+                        const last_index = inv.invest_id.lastIndexOf(" ");
                         return inv.slice(0,last_index)
                     }),
                     roth_conversion_strat: scenario.roth_conversion_strat.map(inv => {

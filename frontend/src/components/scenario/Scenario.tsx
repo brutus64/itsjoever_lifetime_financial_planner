@@ -129,7 +129,7 @@ const Scenario = ({}) => {
                 <div className="flex flex-col gap-2">
                     {scenario.investment.map((investment,i) =>
                         <div className="font-medium bg-white shadow-md rounded-lg flex flex-col pl-4 py-4 gap-1 w-140 h-30">
-                            <div><b>Invest Type:</b> {investment.invest_type.name}</div>
+                            <div><b>Invest Type:</b> {investment.invest_type}</div>
                             <div><b>Value:</b> ${investment.value}</div>
                             <div><b>Tax Status:</b> {investment.tax_status}</div>
                         </div>
