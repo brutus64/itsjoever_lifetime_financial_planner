@@ -45,7 +45,7 @@ export default function WithdrawalStrategy({formData,setFormData}) {
     }
 
     const canAdd = formData.investment.filter((inv) => {
-        return !formData.expense_withdraw.includes(`${inv.investment_type} ${inv.tax_status}`)
+        return !formData.expense_withdraw.includes(`${inv.invest_type} ${inv.tax_status}`)
     })
 
     return (
@@ -64,8 +64,8 @@ export default function WithdrawalStrategy({formData,setFormData}) {
             >
                 <div className="max-h-90 overflow-y-scroll">
                     {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.investment_type} onClick={() => handleAddInvestment(`${inv.investment_type} ${inv.tax_status}`)}>
-                            {inv.investment_type + " - " + inv.tax_status}
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.invest_type} onClick={() => handleAddInvestment(`${inv.invest_type} ${inv.tax_status}`)}>
+                            {inv.invest_type + " - " + inv.tax_status}
                         </div>
                     ))}
                     {canAdd.length === 0 && <div className="flex flex-col p-1 w-70 h-8">

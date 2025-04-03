@@ -1,7 +1,12 @@
 import { useState } from "react";
 const MainInfo = ({formData,setFormData}:any) => {
     const handleChange = (e) => { // Not for radio  
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        
+        const float_names = new Set(['fin_goal', 'birth_year', 'spouse_birth_year']);
+        if (float_names.has(name)) {
+            value = parseFloat(value);
+        }
         setFormData({
             ...formData,
             [name]:value,
@@ -54,7 +59,7 @@ const MainInfo = ({formData,setFormData}:any) => {
             ...formData,
             life_expectancy: {
                 ...formData.life_expectancy,
-                [name]:value,
+                [name]:parseFloat(value),
             }
         })
     }
@@ -64,7 +69,7 @@ const MainInfo = ({formData,setFormData}:any) => {
             ...formData,
             spouse_life_expectancy: {
                 ...formData.spouse_life_expectancy,
-                [name]:value,
+                [name]:parseFloat(value),
             }
         })
     }
@@ -75,7 +80,7 @@ const MainInfo = ({formData,setFormData}:any) => {
             ...formData,
             inflation_assume: {
                 ...formData.inflation_assume,
-                [name]:value,
+                [name]:parseFloat(value),
             }
         })
     }
@@ -142,7 +147,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                         <div className="flex gap-2 align-middle">
                             <input className="ml-1" type="radio" value="fixed" onChange={handleUserRadio} checked={formData.life_expectancy.type === "fixed"}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="fixed" value={formData.life_expectancy.fixed} onChange={handleUserExp}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.life_expectancy.value} onChange={handleUserExp}/> 
                         </div>
                         <div className="flex gap-2 align-middle">
                             <input className="ml-1" type="radio" value="normal" onChange={handleUserRadio} checked={formData.life_expectancy.type === "normal"}/>
@@ -150,7 +155,7 @@ const MainInfo = ({formData,setFormData}:any) => {
 
                             <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.life_expectancy.mean} onChange={handleUserExp}/> 
                             <div className="">Std dev:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stddev" value={formData.life_expectancy.stddev} onChange={handleUserExp}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.life_expectancy.stdev} onChange={handleUserExp}/> 
                         </div>
                     </div>
                     
@@ -166,7 +171,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                         <div className="flex gap-2 align-middle">
                             <input className="ml-1" type="radio" value="fixed" onChange={handleSpouseRadio} disabled={!formData.is_married} checked={formData.spouse_life_expectancy.type === "fixed"}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="fixed" value={formData.spouse_life_expectancy.fixed} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.spouse_life_expectancy.value} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
                         </div>
                         
                         <div className="flex gap-2 align-middle">
@@ -175,7 +180,7 @@ const MainInfo = ({formData,setFormData}:any) => {
 
                             <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.spouse_life_expectancy.mean} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
                             <div className="">Std dev:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stddev" value={formData.spouse_life_expectancy.stddev} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.spouse_life_expectancy.stdev} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
                         </div>
                     </div>
                 </div>
@@ -186,7 +191,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                         <div className="flex gap-2 align-middle">
                             <input className="ml-1" type="radio" value="fixed" onChange={handleInfRadio} checked={formData.inflation_assume.type === "fixed"}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="fixed" value={formData.inflation_assume.fixed} onChange={handleInflation}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.inflation_assume.value} onChange={handleInflation}/> 
                         </div>
                         
                         <div className="flex gap-2 align-middle">
@@ -195,7 +200,7 @@ const MainInfo = ({formData,setFormData}:any) => {
 
                             <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.inflation_assume.mean} onChange={handleInflation}/> 
                             <div className="">Variance:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stddev" value={formData.inflation_assume.stddev} onChange={handleInflation}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.inflation_assume.stdev} onChange={handleInflation}/> 
                         </div>
                 </div>
                 
