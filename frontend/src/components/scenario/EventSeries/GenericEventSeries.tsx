@@ -55,7 +55,7 @@ const defaultGenericEventForm = {
     is_glide: false,
     initial: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation1
     final: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation2
-    initial_allocation_data: {}, // used to display % in frontend
+    initial_allocation_data: {}, // used to display % in frontend; stores entirety of input's value parameter (eg in InitialAssetAllocationCard)
     final_allocation_data: {},
 
     // INVEST
@@ -201,6 +201,7 @@ const GenericEventSeriesPopup = ({eventSeriesType, formData, setFormData}: {even
         }
         handleClose(true)
         console.log(genericEventData);
+        console.log(formData);
     }
 
     const handleStartYearChange = (e: any) => {
