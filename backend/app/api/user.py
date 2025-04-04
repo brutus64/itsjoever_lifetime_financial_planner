@@ -59,24 +59,7 @@ async def delete_user_scenario(user_id: str, scenario_id: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-@router.get("/scenarios/view/{scenario_id}")
-async def fetch_user_scenario(scenario_id: str):
-    try:
-        
-        scenario_id = PydanticObjectId(scenario_id)
-        
-        scenario = await Scenario.find_one(
-                Scenario.id == scenario_id,
-                fetch_links=True
-            )
-        
-        if not scenario:
-            raise HTTPException(status_code=404, detail="Scenario not found")
-        print("FOUND THE SCENARIO",scenario)
-        return {"scenario": scenario.model_dump(exclude={
-                    "user": {"scenarios"}},mode="json")}
-    except ValueError: #occurs if pydantic conversion fails
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
 
 @router.get("/scenarios/{user_id}")
 async def fetch_user_scenarios(user_id: str):

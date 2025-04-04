@@ -102,6 +102,38 @@ async def update_scenario(scenario_id: str, scenario: dict):
         print(f"Error in update_scenario: {e}")
         raise HTTPException(status_code=400, detail="Error updating scenario")
 
+@router.get("/all/{scenario_id}")
+async def fetch_scenario(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+                Scenario.id == scenario_id,
+                fetch_links=True
+            )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        print("FOUND THE SCENARIO",scenario)
+        return {"scenario": scenario.model_dump(exclude={
+                    "user": {"scenarios"}},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+@router.get("/main/{scenario_id}")
+async def fetch_main(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+            Scenario.id == scenario_id,
+        )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        print("FOUND THE SCENARIO",scenario)
+        return {"scenario": scenario.model_dump(include={'id','name','marital','birth_year','life_expectancy','inflation_assume','limit_posttax','fin_goal','state'},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
 
 @router.post("/create_scenario")
 async def create_scenario(scenario:  dict):

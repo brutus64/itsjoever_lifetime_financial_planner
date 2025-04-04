@@ -46,7 +46,7 @@ class Scenario(Document):
     r_only_share: List[Link["User"]] = []
     wr_only_share: List[Link["User"]] = []
     fin_goal: Optional[float] = None
-    state: Optional[str] = None
+    state: Optional[str] = ""
     
     class Settings:
         name="scenarios"

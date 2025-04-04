@@ -1,5 +1,41 @@
-import { useState } from "react";
-const MainInfo = ({formData,setFormData}:any) => {
+import { useState, useEffect } from "react";
+import axios from "axios";
+const MainInfo = ({scenario_id}:any) => {
+    const [ mainData, setMainData ] = useState()
+
+    // retrieve main information data
+    useEffect(() => {
+        const fetchMain = async () => {
+            console.log("Fetching main info")
+            let res;
+            try{
+                res = await axios.get(`http://localhost:8000/api/scenario/main/${scenario_id}`);
+                console.log(res.data);
+            }
+            catch(err){
+                console.error("Could not fetch main data: ", err);
+                return (<div>Could not fetch main data</div>)
+            }
+            const scenario = res.data.scenario;
+            // convert to form format
+            const formFormat = {
+                name: scenario.name,
+                is_married: scenario.marital === "couple",
+                birth_year: scenario.birth_year[0],
+                spouse_birth_year: scenario.martial === "couple" ? scenario.birth_year[1] : "",
+                fin_goal: scenario.fin_goal,
+                state: scenario.state,
+                life_expectancy: scenario.life_expectancy[0],
+                spouse_life_expectancy: scenario.life_expectancy[1],
+                inflation_assume: scenario.inflation_assume
+            }
+            console.log(formFormat)
+            setMainData(formFormat)
+            
+        }
+        fetchMain();
+    },[])
+
     const handleChange = (e) => { // Not for radio  
         let { name, value } = e.target;
         
@@ -7,14 +43,14 @@ const MainInfo = ({formData,setFormData}:any) => {
         if (float_names.has(name)) {
             value = parseFloat(value);
         }
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             [name]:value,
         })
     }
     const handleMarried = (e) => {
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             "is_married":e.target.checked,
         })
     }
@@ -22,10 +58,10 @@ const MainInfo = ({formData,setFormData}:any) => {
     // annoying radio buttons
     const handleUserRadio = (e) => {
         const { value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             life_expectancy: {
-                ...formData.life_expectancy,
+                ...mainData.life_expectancy,
                 type: value
             }
         })
@@ -33,10 +69,10 @@ const MainInfo = ({formData,setFormData}:any) => {
 
     const handleSpouseRadio = (e) => {
         const { value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             spouse_life_expectancy: {
-                ...formData.spouse_life_expectancy,
+                ...mainData.spouse_life_expectancy,
                 type: value
             }
         })
@@ -44,10 +80,10 @@ const MainInfo = ({formData,setFormData}:any) => {
 
     const handleInfRadio = (e) => {
         const { value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             inflation_assume: {
-                ...formData.inflation_assume,
+                ...mainData.inflation_assume,
                 type: value
             }
         })
@@ -55,20 +91,20 @@ const MainInfo = ({formData,setFormData}:any) => {
 
     const handleUserExp = (e) => { // ugh nested state 
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             life_expectancy: {
-                ...formData.life_expectancy,
+                ...mainData.life_expectancy,
                 [name]:parseFloat(value),
             }
         })
     }
     const handleSpouseExp = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             spouse_life_expectancy: {
-                ...formData.spouse_life_expectancy,
+                ...mainData.spouse_life_expectancy,
                 [name]:parseFloat(value),
             }
         })
@@ -76,26 +112,26 @@ const MainInfo = ({formData,setFormData}:any) => {
 
     const handleInflation = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
+        setMainData({
+            ...mainData,
             inflation_assume: {
-                ...formData.inflation_assume,
+                ...mainData.inflation_assume,
                 [name]:parseFloat(value),
             }
         })
     }
     
-    return (
+    return ( mainData &&
         <div className="flex flex-col gap-4 m-10">
             <div className='flex gap-10'>
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100">
                     <h1 className="text-2xl font-bold">Scenario Name</h1>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="name" value={formData.name} onChange={handleChange}></input>
+                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="name" value={mainData.name} onChange={handleChange}></input>
                 </div>
 
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-90">
                     <h1 className="text-2xl font-bold">State of Residence</h1>
-                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="state" value={formData.state} onChange={handleChange}>
+                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="state" value={mainData.state} onChange={handleChange}>
                         <option value=""></option>
                         {[
                             { name: "Alabama", abbreviation: "AL" }, { name: "Alaska", abbreviation: "AK" }, { name: "Arizona", abbreviation: "AZ" },
@@ -125,7 +161,7 @@ const MainInfo = ({formData,setFormData}:any) => {
                 
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-55">
                     <h1 className="text-2xl font-bold">Financial Goal</h1>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" name="fin_goal" value={formData.fin_goal} onChange={handleChange}></input>
+                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" name="fin_goal" value={mainData.fin_goal} onChange={handleChange}></input>
                 </div>
             </div>
             <div className="flex gap-10">
@@ -134,74 +170,81 @@ const MainInfo = ({formData,setFormData}:any) => {
                         <h1 className="text-2xl font-bold">About You</h1>
                         <div className="flex gap-5 align-middle">
                             <h2 className="font-medium self-cener">Married:</h2>
-                            <input type="checkbox" name="is-married" onChange={handleMarried} checked={formData.is_married}/>  
+                            <input type="checkbox" name="is-married" onChange={handleMarried} checked={mainData.is_married}/>  
                         </div>
                     </div>
                     
                     <div className="flex gap-5 align-middle">
                         <h2 className="font-medium">Birth year:</h2>
-                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="birth_year" value={formData.birth_year} onChange={handleChange} min="1900" max="2025"/>
+                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="birth_year" value={mainData.birth_year} onChange={handleChange} min="1900" max="2025"/>
                     </div>
                     <div className="flex flex-col gap-3">
                         <h2 className="font-medium">Life Expectancy (in years):</h2>
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="fixed" onChange={handleUserRadio} checked={formData.life_expectancy.type === "fixed"}/>
+                            <input className="ml-1" type="radio" value="fixed" onChange={handleUserRadio} checked={mainData.life_expectancy.type === "fixed"}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.life_expectancy.value} onChange={handleUserExp}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={mainData.life_expectancy.value} onChange={handleUserExp}/> 
                         </div>
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="normal" onChange={handleUserRadio} checked={formData.life_expectancy.type === "normal"}/>
+                            <input className="ml-1" type="radio" value="normal" onChange={handleUserRadio} checked={mainData.life_expectancy.type === "normal"}/>
                             <div className="">Normal: &nbsp; Mean</div>
 
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.life_expectancy.mean} onChange={handleUserExp}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={mainData.life_expectancy.mean} onChange={handleUserExp}/> 
                             <div className="">Std dev:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.life_expectancy.stdev} onChange={handleUserExp}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={mainData.life_expectancy.stdev} onChange={handleUserExp}/> 
                         </div>
                     </div>
                     
                 </div>
-                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3" style={{opacity: (formData.is_married ? 1.0 : 0.2)}}>
+                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3" style={{opacity: (mainData.is_married ? 1.0 : 0.2)}}>
                     <h1 className="text-2xl font-bold">Spouse</h1>
                     <div className="flex gap-5 align-middle">
                         <h2 className="font-medium">Birth year:</h2>
-                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="spouse_birth_year" value={formData.spouse_birth_year} onChange={handleChange} disabled={!formData.is_married} min="1900" max="2025"/>
+                        <input type="number" className="text-md px-1 border-2 border-gray-200 rounded-md w-32" name="spouse_birth_year" value={mainData.spouse_birth_year} onChange={handleChange} disabled={!mainData.is_married} min="1900" max="2025"/>
                     </div>
                     <div className="flex flex-col gap-3">
                         <h2 className="font-medium">Life Expectancy (in years):</h2>
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="fixed" onChange={handleSpouseRadio} disabled={!formData.is_married} checked={formData.spouse_life_expectancy.type === "fixed"}/>
+                            <input className="ml-1" type="radio" value="fixed" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy.type === "fixed"}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.spouse_life_expectancy.value} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={mainData.spouse_life_expectancy.value} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                         </div>
                         
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="normal" onChange={handleSpouseRadio} disabled={!formData.is_married} checked={formData.spouse_life_expectancy.type === "normal"}/>
+                            <input className="ml-1" type="radio" value="normal" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy.type === "normal"}/>
                             <div className="">Normal: &nbsp; Mean</div>
 
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.spouse_life_expectancy.mean} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={mainData.spouse_life_expectancy.mean} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                             <div className="">Std dev:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.spouse_life_expectancy.stdev} onChange={handleSpouseExp} disabled={!formData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={mainData.spouse_life_expectancy.stdev} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                         </div>
                     </div>
                 </div>
             </div>
             <div className='flex gap-10'>
-                <div className="shadow-md rounded-lg justify-between flex-col p-4">
+                <div className="shadow-md rounded-lg flex flex-col gap-3 justify-between p-4">
                     <h1 className="text-2xl font-bold">Inflation Assumption</h1>
-                        <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="fixed" onChange={handleInfRadio} checked={formData.inflation_assume.type === "fixed"}/>
-                            <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={formData.inflation_assume.value} onChange={handleInflation}/> 
-                        </div>
-                        
-                        <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="normal" onChange={handleInfRadio} checked={formData.inflation_assume.type === "normal"}/>
-                            <div className="">Normal: &nbsp; Mean</div>
+                    <div className="flex gap-2 align-middle">
+                        <input className="ml-1" type="radio" value="fixed" onChange={handleInfRadio} checked={mainData.inflation_assume.type === "fixed"}/>
+                        <div className="">Fixed:</div>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={mainData.inflation_assume.value} onChange={handleInflation}/> 
+                    </div>
+                    
+                    <div className="flex gap-2 align-middle">
+                        <input className="ml-1" type="radio" value="normal" onChange={handleInfRadio} checked={mainData.inflation_assume.type === "normal"}/>
+                        <div className="">Normal: &nbsp; Mean</div>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={mainData.inflation_assume.mean} onChange={handleInflation}/> 
+                        <div className="">Variance:</div>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={mainData.inflation_assume.stdev} onChange={handleInflation}/> 
+                    </div>
 
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={formData.inflation_assume.mean} onChange={handleInflation}/> 
-                            <div className="">Variance:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={formData.inflation_assume.stdev} onChange={handleInflation}/> 
-                        </div>
+                    <div className="flex gap-2 align-middle">
+                        <input className="ml-1" type="radio" value="uniform" onChange={handleInfRadio} checked={mainData.inflation_assume.type === "uniform"}/>
+                        <div className="">Uniform: &nbsp; Lower</div>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="lower_bound" value={mainData.inflation_assume.lower_bound} onChange={handleInflation}/> 
+                        <div className="">Upper:</div>
+                        <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="upper_bound" value={mainData.inflation_assume.upper_bound} onChange={handleInflation}/> 
+                    </div>
                 </div>
                 
                 {/* <div className="bg-white shadow-md rounded-lg p-6 flex flex-col w-full gap-3 w-55">
