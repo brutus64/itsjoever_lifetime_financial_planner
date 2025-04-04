@@ -66,8 +66,21 @@ const ScenarioPage: React.FC = () => {
         fetchUserAndScenarios();
     }, []);
 
-    const handleNewScenario = () => {
-        navigate('/scenario/new');
+    const handleNewScenario = async () => {
+        // create a new scenario in the backend
+        try {
+            const newScenarioResponse = await axios.post(`http://localhost:8000/api/scenario/new`,{user:user._id});
+            if (newScenarioResponse.data.message === "ok") {
+                console.log("new scenario created")
+                navigate(`/scenario/edit/${newScenarioResponse.data.id}`);
+            }
+            else
+                console.error(newScenarioResponse.data.detail)
+        }
+        catch(error:any){
+            console.error("Error creating new scenario: ", error);
+        }
+        
     }
 
     return (
@@ -107,7 +120,7 @@ const ScenarioCard: React.FC = ({ scenario }) => {
     };
     return (
         <div className="border rounded-lg p-4 shadow-md hover:shadow-lg cursor-pointer" onClick={handleClick}>
-            <h3 className="text-xl font-bold mb-2">{scenario.name}</h3>
+            <h3 className="text-xl font-bold mb-2">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h3>
             <p className="text-gray-600">{scenario.marital}</p>
             <p className="text-gray-600">{scenario.fin_goal}</p>
 

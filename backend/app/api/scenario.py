@@ -14,6 +14,23 @@ router = APIRouter()
 
 #NOT TESTED
 #update existing scenario given its id
+
+@router.post("/new")
+async def new_scenario(user: dict):
+    try:
+        user_obj = await User.get(user.get("user"))
+        scenario_obj = Scenario(user=user_obj)
+        await scenario_obj.save()
+        print("saved id", scenario_obj.id)
+        user_obj.scenarios.append(scenario_obj)
+        await user_obj.save()
+        # print(user)
+        id = PydanticObjectId(scenario_obj.id)
+        return {"message":"ok","id":str(id)}
+    except Exception as e:
+        print(f"Error in new_scenario: {e}")  # Actually print the exception
+        raise HTTPException(status_code=400, detail="Error at new scenario creation")
+
 @router.put("/update_scenario/{scenario_id}")
 async def update_scenario(scenario_id: str, scenario: dict):
     try:
