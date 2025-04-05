@@ -178,8 +178,18 @@ async def fetch_investments(scenario_id: str):
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
+# create invest type, add to scenario
+@router.post("/investtype/{scenario_id}/{investtype_id}")
+async def update_investment_type(scenario_id,investtype_id):
+    pass
+
+# create investment, add to scenario
+@router.post("/invest/{scenario_id}/{investment_id}")
+async def update_investment(scenario_id,investment_id):
+    pass
+
 # update invest type
-@router.put("/investtype/{scenario}/{investtype_id}")
+@router.put("/investtype/{investtype_id}")
 async def update_investment_type(investtype_id):
     pass
 

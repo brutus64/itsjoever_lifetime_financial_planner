@@ -5,7 +5,7 @@ import { useDebouncedCallback } from "use-debounce";
 
 const MainInfo = ({scenario_id}:any) => {
     const mounted = useIsMounted()
-    const [ mainData, setMainData ] = useState()
+    const [ mainData, setMainData ] = useState(null)
     const [ retrieved, setRetrieved ] = useState(false)
 
     const fetchMain = async () => {
@@ -179,8 +179,11 @@ const MainInfo = ({scenario_id}:any) => {
             }
         })
     }
+
+    if (mainData === null)
+        return <div>Loading</div>
     
-    return ( mainData &&
+    return (
         <div className="flex flex-col gap-4 m-10">
             <div className='flex gap-10'>
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-100">
