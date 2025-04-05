@@ -214,6 +214,9 @@ async def parse_events(event):
         'details': details
     }
 
+def parse_float(f):
+    return float(f) if f else None
+
 def parse_life_expectancy(life_expect):
     # print("LIFE EXPECTANCY")
     # print(life_expect)
@@ -224,19 +227,19 @@ def parse_life_expectancy(life_expect):
         if life_type == 'fixed':
             res.append(LifeExpectancy(
                 type='fixed',
-                value=float(life.get('fixed'))
+                value=parse_float(life.get('value'))
             ))
         elif life_type == 'normal':
             res.append(LifeExpectancy(
                 type='normal',
-                mean=float(life.get('mean')),
-                stdev=float(life.get('stddev'))
+                mean=parse_float(life.get('mean')),
+                stdev=parse_float(life.get('stdev'))
             ))
         elif life_type == 'uniform':
             res.append(LifeExpectancy(
                 type='uniform',
-                lower=float(life.get('min')),
-                upper=float(life.get('max'))
+                lower=parse_float(life.get('min')),
+                upper=parse_float(life.get('max'))
             ))
         
     return res
@@ -248,14 +251,14 @@ def parse_inflation(inflation):
     res = {'type': inflation_type}
     
     if inflation_type == 'fixed':
-        fixed_value = inflation.get('fixed')
-        res['value'] = float(fixed_value)
+        fixed_value = inflation.get('value')
+        res['value'] = parse_float(fixed_value)
     elif inflation_type == 'normal':
-        res['mean'] = float(inflation.get('mean'))
-        res['stdev'] = float(inflation.get('stddev'))
+        res['mean'] = parse_float(inflation.get('mean'))
+        res['stdev'] = parse_float(inflation.get('stdev'))
     elif inflation_type == 'uniform':
-        res['lower'] = float(inflation.get('min'))
-        res['upper'] = float(inflation.get('max'))
+        res['lower'] = parse_float(inflation.get('min'))
+        res['upper'] = parse_float(inflation.get('max'))
     
     return res
 def parse_roth_optimizer(optimizer):

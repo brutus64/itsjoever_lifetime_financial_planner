@@ -129,10 +129,39 @@ async def fetch_main(scenario_id: str):
         )
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        print("FOUND THE SCENARIO",scenario)
         return {"scenario": scenario.model_dump(include={'id','name','marital','birth_year','life_expectancy','inflation_assume','limit_posttax','fin_goal','state'},mode="json")}
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+@router.put("/main/{scenario_id}")
+async def update_main(scenario_id: str, scenario: dict):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        
+        existing_scenario = await Scenario.get(scenario_obj_id)
+        if not existing_scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        print(scenario)
+
+        update_data = {
+            "name": scenario.get('name', existing_scenario.name),
+            "marital": scenario.get('marital', existing_scenario.marital),
+            "birth_year": [int(year) if year else None for year in scenario.get('birth_year', existing_scenario.birth_year)],
+            "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
+            "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
+            "fin_goal": float(scenario.get('fin_goal', existing_scenario.fin_goal)),
+            "state": scenario.get('state', existing_scenario.state)
+        }
+        print(update_data)
+
+        # Update the scenario
+        await existing_scenario.update({"$set": update_data})
+
+        return {"message": "Scenario updated successfully"}
+    except Exception as e:
+        print(f"Error in update_main: {e}")
+        raise HTTPException(status_code=400, detail="Error updating main")
+
 
 
 @router.post("/create_scenario")

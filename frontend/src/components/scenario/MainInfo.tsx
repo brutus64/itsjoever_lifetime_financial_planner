@@ -1,40 +1,99 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import useIsMounted from "../../utility/useIsMounted";
+import { useDebouncedCallback } from "use-debounce";
+
 const MainInfo = ({scenario_id}:any) => {
+    const mounted = useIsMounted()
     const [ mainData, setMainData ] = useState()
+    const [ retrieved, setRetrieved ] = useState(false)
+
+    const updateMain = async () => {
+        if (!mainData)
+            return
+        console.log("Updating...")
+        
+        try {
+            const scenario_data = {
+                name: mainData.name,
+                marital: mainData.is_married ? "couple" : "individual",
+                birth_year: [mainData.birth_year,mainData.spouse_birth_year],
+                life_expectancy: [mainData.life_expectancy,mainData.spouse_life_expectancy],
+                inflation_assume: mainData.inflation_assume,
+                fin_goal: parseFloat(mainData.fin_goal),
+                state: mainData.state
+            }
+            console.log(scenario_data)
+            let res = await axios.put(`http://localhost:8000/api/scenario/main/${scenario_id}`,scenario_data);
+            if (res.data.message === "Scenario updated successfully")
+                console.log("Update successful");
+            else
+                console.log("Update failed")
+        }
+        catch(err){
+            console.error("Could not update main data: ", err);
+        }
+    }
+
+    const debounced = useDebouncedCallback(updateMain,1000);
 
     // retrieve main information data
     useEffect(() => {
         const fetchMain = async () => {
             console.log("Fetching main info")
             let res;
-            try{
+            try {
                 res = await axios.get(`http://localhost:8000/api/scenario/main/${scenario_id}`);
-                console.log(res.data);
             }
             catch(err){
                 console.error("Could not fetch main data: ", err);
-                return (<div>Could not fetch main data</div>)
+                return
             }
             const scenario = res.data.scenario;
+            console.log(scenario)
             // convert to form format
             const formFormat = {
                 name: scenario.name,
                 is_married: scenario.marital === "couple",
                 birth_year: scenario.birth_year[0],
-                spouse_birth_year: scenario.martial === "couple" ? scenario.birth_year[1] : "",
+                spouse_birth_year: scenario.birth_year[1],
                 fin_goal: scenario.fin_goal,
                 state: scenario.state,
                 life_expectancy: scenario.life_expectancy[0],
                 spouse_life_expectancy: scenario.life_expectancy[1],
                 inflation_assume: scenario.inflation_assume
             }
-            console.log(formFormat)
             setMainData(formFormat)
-            
+            setRetrieved(true)
         }
         fetchMain();
-    },[])
+        return () => {
+            if (!mounted() && mainData) {
+                const scenario_data = {
+                    name: mainData.name,
+                    marital: mainData.is_married ? "couple" : "individual",
+                    birth_year: [mainData.birth_year,mainData.spouse_birth_year],
+                    life_expectancy: [mainData.life_expectancy,mainData.spouse_life_expectancy],
+                    inflation_assume: mainData.inflation_assume,
+                    fin_goal: parseFloat(mainData.fin_goal),
+                    state: mainData.state
+                }
+                axios.put(`http://localhost:8000/api/scenario/main/${scenario_id}`,scenario_data);
+                // updateMain();
+            }
+        }
+    },[mounted()])
+
+    useEffect(() => {
+        if (retrieved) {// do not update initial change (just received from backend)
+            setRetrieved(false)
+            return;
+        }
+        if (mainData) {
+            console.log("DEBOUNCING")
+            debounced()
+        }
+    },[mainData])
 
     const handleChange = (e) => { // Not for radio  
         let { name, value } = e.target;
@@ -161,7 +220,7 @@ const MainInfo = ({scenario_id}:any) => {
                 
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-55">
                     <h1 className="text-2xl font-bold">Financial Goal</h1>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" name="fin_goal" value={mainData.fin_goal} onChange={handleChange}></input>
+                    <input type="number" className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" name="fin_goal" value={mainData.fin_goal} onChange={handleChange}></input>
                 </div>
             </div>
             <div className="flex gap-10">
