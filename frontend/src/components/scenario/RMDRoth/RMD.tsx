@@ -45,7 +45,7 @@ export default function RMD({formData,setFormData}) {
     }
 
     const canAdd = formData.investment.filter((inv) => {
-        return (inv.tax_status === "pre-tax-retirement" && !formData.rmd_strat.includes(inv.investment_type))
+        return (inv.tax_status === "pre-tax-retirement" && !formData.rmd_strat.includes(inv.invest_type))
     })
 
     return (
@@ -64,8 +64,8 @@ export default function RMD({formData,setFormData}) {
             >
                 <div className="max-h-90 overflow-y-scroll">
                     {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.investment_type} onClick={() => handleAddInvestment(inv.investment_type)}>
-                            {inv.investment_type}
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.invest_type} onClick={() => handleAddInvestment(inv.invest_type)}>
+                            {inv.invest_type}
                             
                         </div>
                     ))}
