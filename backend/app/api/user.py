@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 import app.db.db_utils as db
 from app.models.user import User
 from app.models.scenario import Scenario
@@ -10,6 +10,15 @@ router = APIRouter()
 
 
 
+@router.post("/login")
+async def login(request: Request, user_data: User):
+    try:
+        pass
+        #requires checking if we need ot add new user or get user, then add a session to it.
+        
+        request.session['user_id']
+    except Exception as e:
+        pass
 @router.post("/add_user", response_model=User)
 async def add_new_user(user_data: User):
     try:
