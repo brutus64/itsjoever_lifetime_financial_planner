@@ -162,7 +162,39 @@ async def update_main(scenario_id: str, scenario: dict):
         print(f"Error in update_main: {e}")
         raise HTTPException(status_code=400, detail="Error updating main")
 
+# fetch all investment types and investments associated with a scenario
+@router.get("/investments/{scenario_id}")
+async def fetch_investments(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+            Scenario.id == scenario_id,
+            fetch_links=True
+        )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        return {"scenario": scenario.model_dump(include={'investment_types','investment'},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
 
+# update invest type
+@router.put("/investtype/{scenario}/{investtype_id}")
+async def update_investment_type(investtype_id):
+    pass
+
+# update investment
+@router.put("/invest/{investment_id}")
+async def update_investment(investment_id):
+    pass
+
+@router.delete("/investtype/{investtype_id}")
+async def delete_investment_type(investtype_id):
+    pass
+
+@router.delete("/invest/{investment_id}")
+async def update_investment(investment_id):
+    pass
 
 @router.post("/create_scenario")
 async def create_scenario(scenario:  dict):

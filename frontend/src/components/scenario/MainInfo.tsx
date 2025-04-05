@@ -8,6 +8,34 @@ const MainInfo = ({scenario_id}:any) => {
     const [ mainData, setMainData ] = useState()
     const [ retrieved, setRetrieved ] = useState(false)
 
+    const fetchMain = async () => {
+        console.log("Fetching main info")
+        let res;
+        try {
+            res = await axios.get(`http://localhost:8000/api/scenario/main/${scenario_id}`);
+        }
+        catch(err){
+            console.error("Could not fetch main data: ", err);
+            return
+        }
+        const scenario = res.data.scenario;
+        console.log(scenario)
+        // convert to form format
+        const formFormat = {
+            name: scenario.name,
+            is_married: scenario.marital === "couple",
+            birth_year: scenario.birth_year[0],
+            spouse_birth_year: scenario.birth_year[1],
+            fin_goal: scenario.fin_goal,
+            state: scenario.state,
+            life_expectancy: scenario.life_expectancy[0],
+            spouse_life_expectancy: scenario.life_expectancy[1],
+            inflation_assume: scenario.inflation_assume
+        }
+        setMainData(formFormat)
+        setRetrieved(true)
+    }
+
     const updateMain = async () => {
         if (!mainData)
             return
@@ -39,33 +67,6 @@ const MainInfo = ({scenario_id}:any) => {
 
     // retrieve main information data
     useEffect(() => {
-        const fetchMain = async () => {
-            console.log("Fetching main info")
-            let res;
-            try {
-                res = await axios.get(`http://localhost:8000/api/scenario/main/${scenario_id}`);
-            }
-            catch(err){
-                console.error("Could not fetch main data: ", err);
-                return
-            }
-            const scenario = res.data.scenario;
-            console.log(scenario)
-            // convert to form format
-            const formFormat = {
-                name: scenario.name,
-                is_married: scenario.marital === "couple",
-                birth_year: scenario.birth_year[0],
-                spouse_birth_year: scenario.birth_year[1],
-                fin_goal: scenario.fin_goal,
-                state: scenario.state,
-                life_expectancy: scenario.life_expectancy[0],
-                spouse_life_expectancy: scenario.life_expectancy[1],
-                inflation_assume: scenario.inflation_assume
-            }
-            setMainData(formFormat)
-            setRetrieved(true)
-        }
         fetchMain();
         return () => {
             if (!mounted() && mainData) {
@@ -79,7 +80,6 @@ const MainInfo = ({scenario_id}:any) => {
                     state: mainData.state
                 }
                 axios.put(`http://localhost:8000/api/scenario/main/${scenario_id}`,scenario_data);
-                // updateMain();
             }
         }
     },[mounted()])

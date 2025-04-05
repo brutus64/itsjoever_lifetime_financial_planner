@@ -1,6 +1,9 @@
 import Popup from "reactjs-popup"
 import "reactjs-popup/dist/index.css"
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import Investment from "./Investment";
+import InvestmentType from "./InvestmentType";
 
 const investmentTypeModalStyling = { 
     "border": "none",
@@ -16,22 +19,70 @@ const investmentModalStyling = {
     "height":"375px"
 };
 
+// do not need to use debounce here, there is a separete form for investments
 
-// Todo:              
-// Repurpose for editing    
-// Deleting ability
+// for investments, only need the id of the investment type, must find name every time
+// to avoid inconsistency
 
-const Investments = ({formData,setFormData}:any) => {
+// investment and investment components will be handling form field state, which updates
+// state over here when successfully updated in backend
+
+const Investments = ({scenario_id}:any) => {
+    const [ investmentTypes, setInvestmentTypes ] = useState([])
+    const [ investments, setInvestments ] = useState([])
+    // get all investments and investment types associated with scenario
+    const fetchInvestments = async () => {
+        console.log("Fetching investments")
+        let res;
+        try {
+            res = await axios.get(`http://localhost:8000/api/scenario/investments/${scenario_id}`);
+        }
+        catch(err){
+            console.error("Could not fetch investments: ", err);
+            return
+        }
+        const scenario = res.data.scenario;
+        console.log(scenario)
+        // convert to form format
+        const formFormat = {
+            name: scenario.name,
+            is_married: scenario.marital === "couple",
+            birth_year: scenario.birth_year[0],
+            spouse_birth_year: scenario.birth_year[1],
+            fin_goal: scenario.fin_goal,
+            state: scenario.state,
+            life_expectancy: scenario.life_expectancy[0],
+            spouse_life_expectancy: scenario.life_expectancy[1],
+            inflation_assume: scenario.inflation_assume
+        }
+        setMainData(formFormat)
+    }
+
+    const updateInvestmentType = async (invest_id) => {
+
+    }
+
+    const updateInvestment = async (invest_id) => {
+
+    }
+
+    const deleteInvestmentType = async (invest_id) => {
+
+    }
+
+    const deleteInvestment = async (invest_id) => {
+        
+    }
+
+    useEffect(() => {
+        fetchInvestments();
+    },[])
+
+    
     return (
-        <div className="flex flex-col gap-4 m-10">
-            {/* <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-200">
-                <h1 className="text-2xl font-bold">Investments</h1>
-                <p>An investment is the allocation of money into assets such as stocks, bonds, or real estate, with the expectation that the value of those assets will grow over time, providing returns through appreciation, dividends, or interest payments.</p>
-            </div> */}
-            <div className="flex gap-5">
-                <InvestmentTypePopup formData={formData} setFormData={setFormData} />
-                <InvestmentPopup formData={formData} setFormData={setFormData} />
-            </div>
+        <div className="flex gap-5 m-10">
+            <InvestmentType investmentTypes={investmentTypes} investments={investments} updateInvestmentType={updateInvestmentType} deleteInvestmentType={deleteInvestmentType}/>
+            <Investment investmentTypes={investmentTypes} investments={investments} updateInvestment={updateInvestment} deleteInvestment={deleteInvestment}/>
         </div>
     )
 }

@@ -80,7 +80,7 @@ const Scenario = ({}) => {
     }
 
     const handleEdit = () => {
-        navigate(`/scenario/edit/${params.id}`)
+        navigate(`/scenario/${params.id}/main`)
     }
 
     return (scenario &&

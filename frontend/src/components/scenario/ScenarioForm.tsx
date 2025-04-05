@@ -1,17 +1,26 @@
-import { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
-import Investments from "./Investments";
+import { useParams, useNavigate } from "react-router-dom";
+import Investments from "./Investments/Investments";
 import EventSeries from "./EventSeries/EventSeries";
 import RMDRoth from "./RMDRoth/RMDRoth";
 import SpendingWithdrawal from "./SpendingWithdrawalStrategy/SpendingWithdrawal";
 import Summary from "./Summary";
 import MainInfo from "./MainInfo";
-import axios from "axios";
 
-const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
+const pages = ["main","investments","eventseries","rmdroth","strategy"]
+
+const ScenarioForm = () => {
     const params = useParams();
-    const [currentPage, setCurrentPage] = useState(1)
-    // const location = useLocation();
+    const navigate = useNavigate();
+
+    const handlePageChange = (direction) => {
+        const ind = pages.indexOf(params.page);
+        if (ind === -1) 
+            return;
+        if ((ind === 0 && direction === -1) || (ind === pages.length - 1 && direction === 1)) 
+            navigate(`/scenario/${params.id}`)
+        else
+            navigate(`/scenario/${params.id}/${pages[ind+direction]}`)
+    }
     // const [formData, setFormData] = useState({
     //     name: "",
     //     is_married: false,
@@ -129,24 +138,29 @@ const ScenarioForm = () => { // if want to pass in a scenario to edit, useparam
     //     <SpendingWithdrawal formData={formData} setFormData={setFormData} />,
     //     <Summary formData={formData} setFormData={setFormData} editing={location.pathname.startsWith("/scenario/edit/")}/>,
     // ];
-    const pages = [
-        <MainInfo scenario_id={params.id} />,
-        <Investments scenario_id={params.id} />,
-        <EventSeries scenario_id={params.id} />,
-        <RMDRoth scenario_id={params.id} />,
-        <SpendingWithdrawal scenario_id={params.id} />,
-        <Summary scenario_id={params.id}/>,
-    ];
+    const pageMap = {
+        "main": <MainInfo scenario_id={params.id} />,
+        "investments":<Investments scenario_id={params.id} />,
+        "eventseries":<EventSeries scenario_id={params.id} />,
+        "rmdroth":<RMDRoth scenario_id={params.id} />,
+        "strategy":<SpendingWithdrawal scenario_id={params.id} />,
+        "summary":<Summary scenario_id={params.id}/>,
+    };
+    if (!pageMap.hasOwnProperty(params.page))
+        return (<div>Page not found</div>)
+
+    const prevText = params.page === pages[0] ? "Back" : "Prev";
+    const nextText = params.page === pages[pages.length-1] ? "Finish" : "Next"
     
     return (
         <div className="flex flex-col justify-center align-middle">
             <div className="min-h-150">
-                {pages[currentPage-1]}
+                {pageMap[params.page]}
             </div>
             
             <div className="flex justify-center gap-4">
-                <button className="flex bg-black text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" onClick={()=>setCurrentPage(currentPage-1)} disabled={currentPage==1}>Prev</button>
-                <button className="flex bg-black text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" onClick={()=>setCurrentPage(currentPage+1)} disabled={currentPage==pages.length}>Next</button>
+                <button className="flex bg-black text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" onClick={()=>handlePageChange(-1)}>{prevText}</button>
+                <button className="flex bg-black text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" onClick={()=>handlePageChange(1)}>{nextText}</button>
             </div>
         </div>
     )

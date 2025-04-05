@@ -72,7 +72,7 @@ const ScenarioPage: React.FC = () => {
             const newScenarioResponse = await axios.post(`http://localhost:8000/api/scenario/new`,{user:user._id});
             if (newScenarioResponse.data.message === "ok") {
                 console.log("new scenario created")
-                navigate(`/scenario/edit/${newScenarioResponse.data.id}`);
+                navigate(`/scenario/${newScenarioResponse.data.id}/main`);
             }
             else
                 console.error(newScenarioResponse.data.detail)
