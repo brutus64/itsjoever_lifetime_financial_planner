@@ -60,7 +60,6 @@ def test_export_scenario(client):
     assert "residenceState" in yaml_content
 
 
-
 # def test_delete_user_scenario(client):
 #     # Specific IDs from your actual database
 #     user_id = "67e324cbf2755219ac0ef544"  

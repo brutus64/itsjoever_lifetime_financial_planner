@@ -1,5 +1,5 @@
 from beanie import Document, Link
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Literal, Optional, Union, List
 
 class EventDate(BaseModel):
@@ -13,6 +13,8 @@ class EventDate(BaseModel):
     # For references to other event series, CONSIDER whether keep it as string or not
     event_series: Optional[str] = None 
     
+    model_config = ConfigDict(exclude_none=True)
+    
 class EventAnnualChange(BaseModel):
     type: Literal['fixed', 'uniform', 'normal']   
     is_percent: Optional[bool] = False
@@ -21,6 +23,10 @@ class EventAnnualChange(BaseModel):
     upper: Optional[float] = None  # For uniform
     mean: Optional[float] = None   # For normal
     stdev: Optional[float] = None  # For normal
+    
+    model_config = ConfigDict(exclude_none=True)
+
+
 class FixedInvestment(BaseModel):
     invest_id: str
     percentage: float
@@ -30,40 +36,34 @@ class GlideInvestment(BaseModel):
     initial: float #both percentages apparently this is non-retirement?
     final: float #apparently this is after tax?
 
-class Invest(Document):
+class Invest(BaseModel):
     is_glide: bool = False #if not it's fixed
     assets: Union[List[FixedInvestment], List[GlideInvestment]]
     max_cash: float
     
-    class Settings:
-        name="invest_events"
         
-class Rebalance(Document):
+class Rebalance(BaseModel):
     is_glide: bool = False #if not it's fixed
     assets: Union[List[FixedInvestment], List[GlideInvestment]]
     # max_cash: float DOES IT HAVE MAX CASH?
 
-    class Settings:
-        name="rebalance_events"
-class Income(Document):
+class Income(BaseModel):
     initial_amt: float
     exp_annual_change: EventAnnualChange
     inflation_adjust: bool
     user_split: Optional[float] #split percentage btwn user and spouse
     social_security: bool #social security income or not
     
-    class Settings:
-        name="income_events"
+    model_config = ConfigDict(exclude_none=True)
 
-class Expense(Document):
+class Expense(BaseModel):
     initial_amt: float
     exp_annual_change: EventAnnualChange
     inflation_adjust: bool
     user_split: Optional[float] #split percentage btwn user and spouse
     is_discretionary: bool
     
-    class Settings:
-        name="expense_events"
+    model_config = ConfigDict(exclude_none=True)
 
 class EventSeries(Document):
     name: str
@@ -71,7 +71,7 @@ class EventSeries(Document):
     start: EventDate
     duration: EventDate
     type: Literal['income', 'expense', 'invest', 'rebalance']
-    # details_links: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
+    # details: Union[Link["Income"], Link["Expense"], Link["Invest"], Link["Rebalance"]]
     details: Union[Income, Expense, Invest, Rebalance]
     class Settings:
         name="event_series"

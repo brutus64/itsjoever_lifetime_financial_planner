@@ -1,5 +1,5 @@
 from beanie import Document, Link
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Literal, Optional, List, TYPE_CHECKING, Union
 
 
@@ -14,6 +14,11 @@ class LifeExpectancy(BaseModel):
     mean: Optional[float] = None
     stdev: Optional[float] = None
     
+    model_config = ConfigDict(exclude_none=True)
+
+    # class Config:
+    #     exclude_none = True
+    
 class RothOptimizer(BaseModel):
     is_enable: bool = False
     start_year: Optional[int] = None
@@ -26,6 +31,11 @@ class Inflation(BaseModel):
     stdev: Optional[float] = None
     lower_bound: Optional[float] = None
     upper_bound: Optional[float] = None
+    
+    model_config = ConfigDict(exclude_none=True)
+    # class Config:
+    #     exclude_none = True
+    
 class Scenario(Document):
     user: Optional[Link['User']] = None #DONT HAVE THE DATA RIGHT NOW
     name: Optional[str] = ""
@@ -50,3 +60,4 @@ class Scenario(Document):
     
     class Settings:
         name="scenarios"
+        keep_nulls = False

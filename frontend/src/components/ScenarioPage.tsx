@@ -49,7 +49,7 @@ const ScenarioPage: React.FC = () => {
                     setUser(userData.user);
                     
                     // fetch scenarios for this user
-                    const scenariosResponse = await fetch(`http://localhost:8000/api/scenarios/${userData.user._id}`);
+                    const scenariosResponse = await fetch(`http://localhost:8000/api/${userData.user._id}/scenarios`);
                     const scenariosData = await scenariosResponse.json();
                     console.log(scenariosData)
                     if (scenariosData.scenario) {
