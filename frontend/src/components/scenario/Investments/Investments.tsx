@@ -80,8 +80,8 @@ const Investments = ({scenario_id}:any) => {
     
     return (
         <div className="flex gap-5 m-10">
-            {/* <InvestmentType investmentTypes={investmentTypes} investments={investments} createInvestmentType={createInvestmentType} updateInvestmentType={updateInvestmentType} deleteInvestmentType={deleteInvestmentType}/>
-            <Investment investmentTypes={investmentTypes} investments={investments} createInvestment={createInvestment} updateInvestment={updateInvestment} deleteInvestment={deleteInvestment}/> */}
+            <InvestmentType investmentTypes={investmentTypes} investments={investments} createInvestmentType={createInvestmentType} updateInvestmentType={updateInvestmentType} deleteInvestmentType={deleteInvestmentType}/>
+            <Investment investmentTypes={investmentTypes} investments={investments} createInvestment={createInvestment} updateInvestment={updateInvestment} deleteInvestment={deleteInvestment}/>
         </div>
     )
 }
