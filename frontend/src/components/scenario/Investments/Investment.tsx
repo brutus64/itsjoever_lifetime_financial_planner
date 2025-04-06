@@ -198,7 +198,7 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
             </div>
             <div className="flex flex-col gap-3 overflow-y-scroll h-100">
                 {investments.map((inv,i) =>
-                    <InvestmentCard investment={inv} handleEdit={handleEdit} i={i}/>
+                    <InvestmentCard key={inv.id} investment={inv} handleEdit={handleEdit} i={i}/>
                 )}
             </div>
             <InvestmentPopup investmentData={investmentData} setInvestmentData={setInvestmentData} investmentTypes={investmentTypes} open={open} handleClose={handleClose} error={error} handleAddInvestment={handleAddInvestment} editing={editing}/>
@@ -276,7 +276,7 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
 
 const InvestmentCard = ({investment,i,handleEdit}:{investment:any,i:any,handleEdit:any}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
+        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)} key={investment.id}>
             <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.invest_type}</h2>
             <p className="overflow-ellipsis w-85 overflow-hidden">{investment.tax_status} - ${investment.value}</p>
             {/* <button>Delete</button> */}

@@ -35,7 +35,7 @@ const Investments = ({scenario_id}:any) => {
         console.log("Fetching investments")
         let res;
         try {
-            res = await axios.get(`http://localhost:8000/api/scenario/investments/${scenario_id}`);
+            res = await axios.get(`http://localhost:8000/api/scenarios/investments/${scenario_id}`);
         }
         catch(err){
             console.error("Could not fetch investments: ", err);
