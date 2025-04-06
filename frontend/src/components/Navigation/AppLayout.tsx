@@ -14,27 +14,27 @@ function AppLayout() {
     Cookies.set("menu_open", newMenuState.toString());
   };
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-        try {
-            const accessToken = Cookies.get("access_token");
-            // Fetch user info using the access token
-            const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
-            const data = await response.json();
-            // Set user info from the response
-            setUserInfo(data);
-        } catch (error) {
-            console.error("Error fetching user info", error);
-        }
-    };
+  // useEffect(() => {
+  //   const fetchUserInfo = async () => {
+  //       try {
+  //           const accessToken = Cookies.get("access_token");
+  //           // Fetch user info using the access token
+  //           const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+  //               method: "GET",
+  //               headers: {
+  //                   Authorization: `Bearer ${accessToken}`,
+  //               },
+  //           });
+  //           const data = await response.json();
+  //           // Set user info from the response
+  //           setUserInfo(data);
+  //       } catch (error) {
+  //           console.error("Error fetching user info", error);
+  //       }
+  //   };
 
-      fetchUserInfo();
-  }, []);
+  //     fetchUserInfo();
+  // }, []);
 
   return (
     <div className="flex flex-col h-screen">
