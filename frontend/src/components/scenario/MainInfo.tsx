@@ -12,7 +12,7 @@ const MainInfo = ({scenario_id}:any) => {
         console.log("Fetching main info")
         let res;
         try {
-            res = await axios.get(`http://localhost:8000/api/scenarios/main/${scenario_id}`);
+            res = await axios.get(`http://localhost:8000/api/scenarios/${scenario_id}/main`);
         }
         catch(err){
             console.error("Could not fetch main data: ", err);
@@ -52,7 +52,7 @@ const MainInfo = ({scenario_id}:any) => {
                 state: mainData.state
             }
             console.log(scenario_data)
-            let res = await axios.put(`http://localhost:8000/api/scenarios/main/${scenario_id}`,scenario_data);
+            let res = await axios.put(`http://localhost:8000/api/scenarios/${scenario_id}/main`,scenario_data);
             if (res.data.message === "Scenario updated successfully")
                 console.log("Update successful");
             else
@@ -79,7 +79,7 @@ const MainInfo = ({scenario_id}:any) => {
                     fin_goal: parseFloat(mainData.fin_goal),
                     state: mainData.state
                 }
-                axios.put(`http://localhost:8000/api/scenarios/main/${scenario_id}`,scenario_data);
+                axios.put(`http://localhost:8000/api/scenarios/${scenario_id}/main`,scenario_data);
             }
         }
     },[mounted()])

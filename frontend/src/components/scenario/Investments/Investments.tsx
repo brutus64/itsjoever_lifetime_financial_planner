@@ -35,7 +35,7 @@ const Investments = ({scenario_id}:any) => {
         console.log("Fetching investments")
         let res;
         try {
-            res = await axios.get(`http://localhost:8000/api/scenarios/investments/${scenario_id}`);
+            res = await axios.get(`http://localhost:8000/api/scenarios/${scenario_id}/investments`);
         }
         catch(err){
             console.error("Could not fetch investments: ", err);
@@ -48,7 +48,16 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const createInvestmentType = async (newData) => {
-
+        try {
+            console.log(newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/${scenario_id}/investment_type`,newData)
+            console.log(res)
+            setInvestmentTypes(res.data.investment_types)
+        }
+        catch(err) {
+            console.error("Could not create investment type: ",err)
+            return
+        }
     }
 
     const createInvestment = async (newData) => {

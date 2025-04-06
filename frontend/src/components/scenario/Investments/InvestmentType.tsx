@@ -50,30 +50,61 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
     }
 
     const validateForm = () => {
+        // Check if all fields filled out
+        if (investmentTypeData.name === "" || investmentTypeData.description === "" || isNaN(investmentTypeData.expense_ratio)) {
+            setError("Please fill out all fields");
+            return false;
+        }
+        console.log(isNaN(investmentTypeData.exp_annual_income.mean))
+        if ((investmentTypeData.exp_annual_return.type === "fixed" && isNaN(investmentTypeData.exp_annual_return.value)) || (investmentTypeData.exp_annual_return.type === "normal" && (isNaN(investmentTypeData.exp_annual_return.stdev) || isNaN(investmentTypeData.exp_annual_return.mean)))) {
+            setError("Please fill out all fields")
+            return false;
+        }
+        if ((investmentTypeData.exp_annual_income.type === "fixed" && isNaN(investmentTypeData.exp_annual_income.value)) || (investmentTypeData.exp_annual_income.type === "normal" && (isNaN(investmentTypeData.exp_annual_income.stdev) || isNaN(investmentTypeData.exp_annual_income.mean)))) {
+            setError("Please fill out all fields")
+            return false;
+        }
 
+        // check duplicate name
+        if (investmentTypes.some((inv_type,i) => {
+            if (inv_type.name === investmentTypeData.name) {
+                if (editing === -1 || editing !== i)
+                    return true
+            }
+            return false
+        })) {
+            setError("Name is taken. Please use a different name")
+            return false;
+        }
+
+        // check numeric values
+        if ((investmentTypeData.exp_annual_income.type === "normal" && investmentTypeData.exp_annual_income.stdev <= 0) || (investmentTypeData.exp_annual_return.type === "normal" && investmentTypeData.exp_annual_return.stdev <= 0)) {
+            setError("Only positive values for stddev")
+            return false;
+        }
+        if (investmentTypeData.expense_ratio < 0) {
+            setError("Only nonnegative value for expense ratio")
+            return false;
+        }
+        return true;
     }
 
     // TODO
     // need to validate fields
     const handleAddInvestmentType = () => {
-        // // Check if all fields are filled out
-        // const important_fields = [investmentTypeData.name,investmentTypeData.description]
-        // const numeric_fields = [investmentTypeData.expense_ratio,]
+        if (!validateForm())
+            return;
+        console.log("Everything is fine")
+        setError("")
 
-        // if (important_fields.some((field) => field === "")) {
-        //     setError("Please fill out all fields");
-        //     return;
-        // }
+        if (editing === -1) { // create new investment type
+            createInvestmentType(investmentTypeData)
+        }
+        else { //modify investment type
+            updateInvestmentType(investmentTypes[editing].id,investmentTypeData)
+        }
 
-        // if (investmentTypeData.exp_annual_income.stdev <= 0 || investmentTypeData.exp_annual_return.stdev <= 0) {
-        //     setError("Only positive values for stddev")
-        //     return;
-        // }
-        // if (investmentTypeData.expense_ratio < 0) {
-        //     setError("Only nonnegative value for expense ratio")
-        //     return;
-        // }
-
+        handleClose(true)
         // // must change all locations on the form too
         // if (editing !== -1) {
         //     // change investment type array
@@ -151,8 +182,6 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
         //     })
         //     console.log("added")
         // }        
-        // handleClose(true)
-        // console.log(investmentTypeData);
     }
 
     const handleEdit = (index) => {

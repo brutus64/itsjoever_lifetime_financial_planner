@@ -17,7 +17,7 @@ const Scenario = ({}) => {
         const fetchScenario = async () => {
             console.log("Fetching scenario")
             try{
-                const res = await axios.get(`http://localhost:8000/api/scenarios/all/${params.id}`);
+                const res = await axios.get(`http://localhost:8000/api/scenarios/${params.id}/all`);
                 console.log(res.data);
                 setScenario(res.data.scenario)
                 setCollapse({
