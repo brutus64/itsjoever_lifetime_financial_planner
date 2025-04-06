@@ -256,12 +256,12 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
                         <div className="">Non-retirement</div>
                     </div>
                     <div className="flex gap-1">
-                        <input className="ml-1" type="radio" value="pre-tax-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "pre-tax-retirement"}/>
-                        <div className="">Pre-tax retirement</div>
+                        <input className="ml-1" type="radio" value="pre-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "pre-tax"}/>
+                        <div className="">Pre-tax</div>
                     </div>
                     <div className="flex gap-1">
-                        <input className="ml-1" type="radio" value="after-tax-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "after-tax-retirement"}/>
-                        <div className="">After-tax retirement</div>
+                        <input className="ml-1" type="radio" value="after-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "after-tax"}/>
+                        <div className="">After-tax</div>
                     </div>
                 </div>
                 <div className="flex justify-between">
