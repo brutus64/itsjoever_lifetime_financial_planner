@@ -1,6 +1,8 @@
 from app.models.event_series import *
 from app.models.scenario import *
 
+
+'''-----------------INVESTMENT_TYPE------------------'''
 def parse_invest_type(invest_type):
     
     #basic data
@@ -64,6 +66,7 @@ def parse_invest_type(invest_type):
     }
     return investment_type
 
+'''---------------------------INVESTMENT-------------------------------------'''
 def parse_investments(investment):
     invest_type = investment['investment_type']
     tax_status_mapping = {
@@ -125,6 +128,7 @@ def parse_fixed_investment(initial):
             percentage=float(value) / 100
         ))
     return assets
+
 def parse_glide_investment(initial, final):
     assets = []
     investment_ids = set(initial.keys()) | set(final.keys())
@@ -140,11 +144,10 @@ def parse_glide_investment(initial, final):
         ))
     return assets
     
-async def parse_events(event):
+'''--------------------------------EVENT SERIES-------------------------------------------'''
+def parse_events(event):
     # print("Parse events currently")
     # print(event)
-    
-    
     #processing needed:
     start = EventDate(**parse_event_date(event['start_year']))
     duration = EventDate(**parse_event_date(event['duration']))
@@ -154,47 +157,47 @@ async def parse_events(event):
     details = {}
     if event_type == 'income':
         details = Income(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change= EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            social_security= False if event.get('income') == 'Wages' else True,
-            inflation_adjust= event.get('inflation_adjust', False) #NOTHING
+            user_split=float(event.get('user_split', 0)),
+            social_security= event.get('social_security'),
+            inflation_adjust= event.get('inflation_adjust') #NOTHING
         )
     elif event_type == 'expense':
         details = Expense(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change=EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            is_discretionary=event.get('expense') == 'Discretionary',
+            user_split=float(event.get('user_split', 0)),
+            is_discretionary=event.get('is_discretionary'),
             inflation_adjust=event.get('inflation_adjust', False)#NOTHING
 
         )
-        
+    #NEED TO FIX THE STUFF HERE
     elif event_type == 'invest':
         assets = []
         is_glide = event.get('is_glide', False)
         
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         
         details = Invest(
             is_glide=is_glide,
             assets=assets,
-            max_cash=float(event.get('maximum_cash',0))
+            max_cash=float(event.get('max_cash',0))
         )
     elif event_type == 'rebalance':
         is_glide = event.get('is_glide', False)
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         details = Rebalance(
             is_glide=is_glide,
@@ -204,7 +207,6 @@ async def parse_events(event):
         # event.tax_status #APPARENTLY Rebalance has tax-status
         #I guess if we do need tax_status just grab from event_series initial_allocation 2nd half after "|" and just not store in db?
         
-    await details.save() #should update itself as well
     return {
         'name': event.get('name',''),
         'descripton': event.get('description', ''),

@@ -1,10 +1,16 @@
 #put db actions here, then import to other files as app.db.db_utils
 
-from fastapi import APIRouter
+from fastapi import HTTPException, Request
 from app.models.user import User
 from beanie import PydanticObjectId
 from app.models.event_series import EventSeries
 from app.models.investment import Investment
+
+async def get_current_user(request: Request):
+    user_id = request.state.user_id
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return await User.get(PydanticObjectId(user_id))
 
 # add a user to User db
 async def add_user(user_data: dict) -> User:
