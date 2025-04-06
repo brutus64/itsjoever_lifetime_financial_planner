@@ -157,47 +157,47 @@ def parse_events(event):
     details = {}
     if event_type == 'income':
         details = Income(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change= EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            social_security= False if event.get('income') == 'Wages' else True,
-            inflation_adjust= event.get('inflation_adjust', False) #NOTHING
+            user_split=float(event.get('user_split', 0)),
+            social_security= event.get('social_security'),
+            inflation_adjust= event.get('inflation_adjust') #NOTHING
         )
     elif event_type == 'expense':
         details = Expense(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change=EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            is_discretionary=event.get('expense') == 'Discretionary',
+            user_split=float(event.get('user_split', 0)),
+            is_discretionary=event.get('is_discretionary'),
             inflation_adjust=event.get('inflation_adjust', False)#NOTHING
 
         )
-        
+    #NEED TO FIX THE STUFF HERE
     elif event_type == 'invest':
         assets = []
         is_glide = event.get('is_glide', False)
         
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         
         details = Invest(
             is_glide=is_glide,
             assets=assets,
-            max_cash=float(event.get('maximum_cash',0))
+            max_cash=float(event.get('max_cash',0))
         )
     elif event_type == 'rebalance':
         is_glide = event.get('is_glide', False)
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         details = Rebalance(
             is_glide=is_glide,

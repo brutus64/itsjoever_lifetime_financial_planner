@@ -2,37 +2,44 @@ from fastapi import APIRouter, HTTPException
 from app.models.scenario import Scenario
 from app.models.investment import Investment, InvestmentType
 from app.models.event_series import EventSeries
+from app.models.user import User
 from app.api.utils.yaml_helper import *
 from app.api.utils.scenario_helper import *
 from app.db.db_utils import *
 from beanie import PydanticObjectId
 from beanie.odm.operators.update.array import AddToSet
 from typing import Set
-
+from fastapi import Depends
 router = APIRouter()
 
 
 
 '''------------------------SCENARIO CREATE/DELETE ROUTES------------------------'''
-#NO TESTING BETWEEN ALL OF THESE YET
+#TESTED WITH NO USER YET
 @router.get("/init")
 async def init_scenario():
+    #user: User = Depends(get_current_user)
     #some way to link the user
     #get user's len of scenarios and call it "Draft ", len(scenarios)
     scenario = Scenario()
-    await scenario.insert()
-    return { "id": scenario.id }
+    scenario = await scenario.insert()
+    return { "id": str(scenario.id) }
 
-@router.delete("/{scenario_id}")
+#TESTED WITH NO USER YET
+@router.delete("/delete/{scenario_id}")
 async def delete_scenario(scenario_id: str):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
-        await Scenario.get(scenario_obj_id).delete()
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=400, detail=f"/delete/scenario_id, scenario does not exist")
+        await scenario.delete()
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Deleting scenario failed, {e}")
 
 '''----------------------------INVESTMENT TYPE ROUTES--------------------------------'''
+
 @router.post("/{scenario_id}/investment_type")
 async def create_invest_type(scenario_id: str, investment_type: dict):
     try:

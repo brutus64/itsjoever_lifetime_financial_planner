@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.scenario import Scenario
 from beanie import PydanticObjectId
 import yaml
+import uuid
 from bson import DBRef
 
 router = APIRouter()
@@ -13,12 +14,25 @@ router = APIRouter()
 @router.post("/login")
 async def login(request: Request, user_data: User):
     try:
-        pass
+        user = await User.find_one(User.email == user_data.email)
+        if not user:
+            user = await db.add_user(user_data.models_dump())
+        print("user obj:", user)
+        session_id = str(uuid.uuid4())
+        request.session['user_id'] = str(user.id)
+        request.session['session_id'] = str(session_id)
         #requires checking if we need ot add new user or get user, then add a session to it.
-        
-        request.session['user_id']
+        return {
+            "message": "Successful login",
+            "user": {
+                "id": str(user.id),
+                "name": str(user.name),
+                "email": user.email
+            }
+        }
     except Exception as e:
-        pass
+        raise HTTPException(status_code=400, detail="/api/login error")
+    
 @router.post("/add_user", response_model=User)
 async def add_new_user(user_data: User):
     try:
@@ -87,7 +101,7 @@ async def fetch_user_scenario(scenario_id: str):
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-@router.get("/scenarios/{user_id}")
+@router.get("/{user_id}/scenarios")
 async def fetch_user_scenarios(user_id: str):
     try:
         user_obj_id = PydanticObjectId(user_id)
