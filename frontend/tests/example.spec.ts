@@ -105,7 +105,68 @@ test('create investment type & investment', async ({ page }) => {
 });
 
 
-// Create Investment Type & Investment, and check that they appear on screen
-test('create event series', async ({ page }) => {
+// Create income event series, and check that they appear on screen
+test('create income event series', async ({ page }) => {
+  const IncomeEventInfo = {
+    type: "income",
+    name: "Social Security",
+    description: "Social Security income",
+    start_year: {
+        type: "fixed", //  "fixed", "uniform", "normal", "start_with", "end_with"
+        value: "2026"
+    },
+    duration: {
+        type: "fixed", //fixed, uniform, normal
+        value: "20"
+    },
+
+    // INCOME/EXPENSE
+    initial_amt: "10000",
+    exp_annual_change: {
+        is_percent: true,
+        type: "fixed", // either "fixed" or "normal" or "uniform"
+        value: "110",
+    },
+    inflation_adjust: true,
+    user_split: 100.0,
+    // INCOME
+    social_security: true,
+  }
+  await page.goto('http://localhost:5173/scenario');
+  await page.getByText('New Scenario').click();
+  await page.waitForURL("http://localhost:5173/scenario/new");
+  await page.getByText('Next').click();
+  await page.getByText('Next').click();
+
+  await page.getByText('+ Add Income', {exact: true}).click();
+  await page.locator("input[name='name']").fill(IncomeEventInfo.name);
+  await page.locator("textarea[name='description']").fill(IncomeEventInfo.description);
+  await page.locator("input[name='social_security']").check();
+  await page.locator("input[name='initial_amt']").fill(IncomeEventInfo.initial_amt);
   
+
+  const value_input_tags = await page.locator('input[name="value"]').all();
+  const start_year_radio_buttons = await page.locator('input[name="start_year-type"]').all();
+  await start_year_radio_buttons[0].check();  // Check Fixed radio button
+  await value_input_tags[0].fill(IncomeEventInfo.start_year.value);
+
+  const duration_radio_buttons = await page.locator('input[name="duration-type"]').all();
+  await duration_radio_buttons[0].check();
+  await value_input_tags[1].fill(IncomeEventInfo.duration.value);
+  
+  await page.locator("input[name='inflation_adjust']").check();
+
+  const expected_annual_change_radio_buttons =await page.locator('input[name="exp-is_percent"]').all();
+  await expected_annual_change_radio_buttons[1].check();
+  const expected_annual_change_value_radio_buttons =await page.locator('input[name="exp-type"]').all();
+  await expected_annual_change_value_radio_buttons[0].check();  // Check Fixed radio button
+  await value_input_tags[2].fill(IncomeEventInfo.exp_annual_change.value);
+
+  
+  await page.getByText('Add', {exact: true}).click();
+  const income_event_item_container = page.locator('div.bg-white.shadow-md.rounded-lg.p-4.flex.flex-col.w-full.hover\\:bg-sky-100.cursor-pointer');
+
+  await expect(income_event_item_container.locator('p').nth(0)).toHaveText('$'+IncomeEventInfo.initial_amt);
+  await expect(income_event_item_container.locator('h2')).toHaveText(IncomeEventInfo.name);
+  await expect(income_event_item_container.locator('p').nth(1)).toHaveText(IncomeEventInfo.description);
 });
