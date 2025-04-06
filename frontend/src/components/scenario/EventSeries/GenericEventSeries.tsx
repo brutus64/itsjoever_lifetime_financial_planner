@@ -53,8 +53,8 @@ const defaultGenericEventForm = {
     
     // INVEST/REBALANCE
     is_glide: false,
-    initial: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation1
-    final: {}, //key = "investment_type|tax_status", value = percentage AKA asset_allocation2
+    initial: {}, //key = "investment_type tax_status", value = percentage AKA asset_allocation1
+    final: {}, //key = "investment_type tax_status", value = percentage AKA asset_allocation2
     initial_allocation_data: {}, // used to display % in frontend; stores entirety of input's value parameter (eg in InitialAssetAllocationCard)
     final_allocation_data: {},
 
@@ -622,8 +622,8 @@ const InitialAssetAllocationCard = ({ investment, genericEventData, handleAssetA
                 <input
                     type="number"
                     className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                    name={"initial:"+investment.investment_type+'|'+investment.tax_status}
-                    value={genericEventData.final_allocation_data["initial:"+investment.investment_type+'|'+investment.tax_status]}
+                    name={"initial:"+investment.invest_type+' '+investment.tax_status}
+                    value={genericEventData.final_allocation_data["initial:"+investment.invest_type+' '+investment.tax_status]}
                     onChange={handleAssetAllocation}
                     min="0"
                     max="100"
@@ -641,8 +641,8 @@ const FinalAssetAllocationCard = ({investment, genericEventData, handleAssetAllo
                 <input
                     type="number"
                     className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                    name={"final:"+investment.investment_type+'|'+investment.tax_status}
-                    value={genericEventData.final_allocation_data["final:"+investment.investment_type+'|'+investment.tax_status]}
+                    name={"final:"+investment.invest_type+' '+investment.tax_status}
+                    value={genericEventData.final_allocation_data["final:"+investment.invest_type+' '+investment.tax_status]}
                     onChange={handleAssetAllocation}
                     min="0"
                     max="100"
@@ -655,7 +655,7 @@ const FinalAssetAllocationCard = ({investment, genericEventData, handleAssetAllo
 const AssetAllocationCard = ({ investment } : { investment : any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full ">            
-            <h1 className="text-md">{investment.investment_type} | {investment.tax_status}</h1>
+            <h1 className="text-md">{investment.invest_type} | {investment.tax_status}</h1>
             <h2 className="text-sm">${investment.value}</h2>
         </div>
     );
