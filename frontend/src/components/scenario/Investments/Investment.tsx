@@ -31,12 +31,42 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
         setEditing(-1)
         setError("")
     }
+
+    const validateForm = () => {
+        // check if all fields are filled out
+        if (investmentData.invest_type === "" || isNaN(investmentData.value)) {
+            setError("Please fill out all fields");
+            return false;
+        }
+
+        // check to see if there is another investment with the same type and tax status
+        // check duplicate name
+        if (investments.some((inv,i) => {
+            if (inv.invest_type === investmentData.invest_type && inv.tax_status === investmentData.tax_status) {
+                if (editing !== i)
+                    return true
+            }
+            return false
+        })) {
+            setError("Type/tax pair already used.")
+            return false;
+        }
+        return true;
+    }
     
     const handleAddInvestment = () => {
-        // if (investmentData.invest_type === "" || investmentData.tax_status === "") {
-        //     setError("Please fill out all fields")
-        //     return;
-        // }
+        if (!validateForm())
+            return;
+        console.log("Everything is fine")
+        setError("")
+        if (editing === -1) { // create new investment
+            createInvestment(investmentData)
+        }
+        else { //modify investment
+            updateInvestment(investments[editing].id,investmentData)
+        }
+
+        handleClose(true)
 
         // // must change all locations on the form too
         // if (editing !== -1) {

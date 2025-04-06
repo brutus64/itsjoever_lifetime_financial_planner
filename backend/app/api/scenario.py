@@ -48,7 +48,7 @@ async def delete_scenario(scenario_id: str):
         raise HTTPException(status_code=400, detail=f"Deleting scenario failed, {e}")
 
 
-@router.get("/{scenario_id}/all")
+@router.get("/all/{scenario_id}")
 async def fetch_scenario(scenario_id: str):
     try:
         scenario_id = PydanticObjectId(scenario_id)
@@ -67,7 +67,7 @@ async def fetch_scenario(scenario_id: str):
     
 '''----------------------------MAIN DATA ROUTES--------------------------------'''
     
-@router.get("/{scenario_id}/main")
+@router.get("/main/{scenario_id}")
 async def fetch_main(scenario_id: str):
     try:
         scenario_id = PydanticObjectId(scenario_id)
@@ -81,7 +81,7 @@ async def fetch_main(scenario_id: str):
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-@router.put("/{scenario_id}/main")
+@router.put("/main/{scenario_id}")
 async def update_main(scenario_id: str, scenario: dict):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
@@ -97,11 +97,7 @@ async def update_main(scenario_id: str, scenario: dict):
             "birth_year": [int(year) if year else None for year in scenario.get('birth_year')],
             "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
             "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
-<<<<<<< HEAD
             "fin_goal": float(scenario.get('fin_goal')) if scenario.get('fin_goal') else None,
-=======
-            "fin_goal": float(scenario.get('fin_goal') if scenario.get('fin_goal') else None),
->>>>>>> main
             "state": scenario.get('state', existing_scenario.state)
         }
         print(update_data)
@@ -116,7 +112,7 @@ async def update_main(scenario_id: str, scenario: dict):
 
 '''----------------------------INVESTMENT TYPE ROUTES--------------------------------'''
 # fetch all investment types and investments associated with a scenario
-@router.get("/{scenario_id}/investments/")
+@router.get("/investments/{scenario_id}")
 async def fetch_investments(scenario_id: str):
     try:
         scenario_id = PydanticObjectId(scenario_id)
@@ -184,12 +180,14 @@ async def create_invest(scenario_id: str, investment: dict):
     try:
         scenario = await Scenario.get(PydanticObjectId(scenario_id))
         if not scenario:
-            raise HTTPException(status_code=400, detail= "POST create investment cenario does not exist")
+            raise HTTPException(status_code=400, detail= "POST create investment, scenario does not exist")
         investment = Investment(**investment)
         await investment.insert()
-        await scenario.update(AddToSet({Scenario.investment: investment}))
-        updated_scenario = await Scenario.get(scenario.id)
-        return { "scenario": updated_scenario }
+        db_ref = DBRef(collection="investments", id=investment.id)
+        scenario.investment.append(Link(ref = db_ref,document_class=Investment))
+        await scenario.save(link_rule=WriteRules.WRITE)
+        updated_scenario = await Scenario.get(scenario.id, fetch_links=True)
+        return updated_scenario.model_dump(include={'investment'}, mode="json")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Create investment error, {e}")
 

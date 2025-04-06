@@ -35,7 +35,7 @@ const Investments = ({scenario_id}:any) => {
         console.log("Fetching investments")
         let res;
         try {
-            res = await axios.get(`http://localhost:8000/api/scenarios/${scenario_id}/investments`);
+            res = await axios.get(`http://localhost:8000/api/scenarios/investments/${scenario_id}`);
         }
         catch(err){
             console.error("Could not fetch investments: ", err);
@@ -50,7 +50,7 @@ const Investments = ({scenario_id}:any) => {
     const createInvestmentType = async (newData) => {
         try {
             console.log(newData)
-            const res = await axios.post(`http://localhost:8000/api/scenarios/${scenario_id}/investment_type`,newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/investment_type/${scenario_id}`,newData)
             console.log(res)
             setInvestmentTypes(res.data.investment_types)
         }
@@ -61,14 +61,36 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const createInvestment = async (newData) => {
+        try {
+            console.log(newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/investment/${scenario_id}`,newData)
+            console.log(res)
+            setInvestments(res.data.investment)
+        }
+        catch(err) {
+            console.error("Could not create investment: ",err)
+            return
+        }
 
     }
 
     const updateInvestmentType = async (invest_id,newData) => {
-
+        
+        try {
+            console.log(newData)
+            const res = await axios.put(`http://localhost:8000/api/scenarios/investment/${scenario_id}/${invest_id}`,newData)
+            console.log(res)
+            setInvestmentTypes(res.data.scenario.investment_types)
+            setInvestments(res.data.scenario.investment) // changing investment type may change investments
+        }
+        catch(err) {
+            console.error("Could not modify investment type: ",err)
+            return
+        }
     }
 
     const updateInvestment = async (invest_id,newData) => {
+        // resolve invest_type to id of investment type
 
     }
 

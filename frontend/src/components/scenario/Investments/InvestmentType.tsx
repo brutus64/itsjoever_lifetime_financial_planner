@@ -55,7 +55,6 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
             setError("Please fill out all fields");
             return false;
         }
-        console.log(isNaN(investmentTypeData.exp_annual_income.mean))
         if ((investmentTypeData.exp_annual_return.type === "fixed" && isNaN(investmentTypeData.exp_annual_return.value)) || (investmentTypeData.exp_annual_return.type === "normal" && (isNaN(investmentTypeData.exp_annual_return.stdev) || isNaN(investmentTypeData.exp_annual_return.mean)))) {
             setError("Please fill out all fields")
             return false;
@@ -68,7 +67,7 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
         // check duplicate name
         if (investmentTypes.some((inv_type,i) => {
             if (inv_type.name === investmentTypeData.name) {
-                if (editing === -1 || editing !== i)
+                if (editing !== i)
                     return true
             }
             return false
