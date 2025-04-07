@@ -16,7 +16,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import Popup from "reactjs-popup"
   
-export default function RMD({formData,setFormData}) {
+export default function RMD({rmdStrat,setRMDStrat}) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -28,24 +28,24 @@ export default function RMD({formData,setFormData}) {
         const {active, over} = event;
         
         if (active.id !== over.id) {
-            const oldIndex = formData.rmd_strat.indexOf(active.id);
-            const newIndex = formData.rmd_strat.indexOf(over.id);
-            setFormData({
-                ...formData,
-                rmd_strat: arrayMove(formData.rmd_strat,oldIndex,newIndex)
+            const oldIndex = rmd_strat.indexOf(active.id);
+            const newIndex = rmd_strat.indexOf(over.id);
+            setRMDStrat({
+                ...rmdStrat,
+                rmd_strat: arrayMove(rmd_strat,oldIndex,newIndex)
             })
         }
     }
 
     const handleAddInvestment = (investment) => {
-        setFormData({
-            ...formData,
-            rmd_strat: [...formData.rmd_strat,investment]
+        setRMDStrat({
+            ...rmdStrat,
+            rmd_strat: [...rmd_strat,investment]
         })
     }
 
-    const canAdd = formData.investment.filter((inv) => {
-        return (inv.tax_status === "pre-tax-retirement" && !formData.rmd_strat.includes(inv.invest_type))
+    const canAdd = rmdStrat.investment.filter((inv) => {
+        return (inv.tax_status === "pre-tax" && !rmd_strat.includes(inv.invest_type))
     })
 
     return (
@@ -77,10 +77,10 @@ export default function RMD({formData,setFormData}) {
             <div className='flex flex-col gap-3 overflow-y-scroll h-70'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
-                    items={formData.rmd_strat}
+                    items={rmd_strat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.rmd_strat.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
+                        {rmd_strat.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>

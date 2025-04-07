@@ -48,19 +48,59 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const createInvestmentType = async (newData) => {
-        
+        try {
+            console.log(newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/investment_type/${scenario_id}`,newData)
+            console.log(res)
+            setInvestmentTypes(res.data.investment_types)
+        }
+        catch(err) {
+            console.error("Could not create investment type: ",err)
+            return
+        }
     }
 
     const createInvestment = async (newData) => {
+        const data = {...newData,"invest_type":newData.invest_type.id}
+        try {
+            console.log(newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/investment/${scenario_id}`,data)
+            console.log(res)
+            setInvestments(res.data.investment)
+        }
+        catch(err) {
+            console.error("Could not create investment: ",err)
+            return
+        }
 
     }
 
     const updateInvestmentType = async (invest_id,newData) => {
-
+        try {
+            console.log(newData)
+            const res = await axios.put(`http://localhost:8000/api/scenarios/investment_type/${scenario_id}/${invest_id}`,newData)
+            console.log(res)
+            setInvestmentTypes(res.data.investment_types)
+            setInvestments(res.data.investment) // changing investment type may change investments
+        }
+        catch(err) {
+            console.error("Could not modify investment type: ",err)
+            return
+        }
     }
 
     const updateInvestment = async (invest_id,newData) => {
-
+        const data = {...newData,"invest_type":newData.invest_type.id}
+        console.log(data)
+        try {
+            const res = await axios.put(`http://localhost:8000/api/scenarios/investment/${scenario_id}/${invest_id}`,data)
+            console.log(res)
+            setInvestments(res.data.investment)
+        }
+        catch(err) {
+            console.error("Could not modify investment type: ",err)
+            return
+        }
     }
 
     const deleteInvestmentType = async (invest_id) => {

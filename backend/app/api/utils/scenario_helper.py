@@ -1,6 +1,7 @@
 from app.models.event_series import *
 from app.models.scenario import *
-
+from beanie import PydanticObjectId, Link
+from bson import DBRef
 
 '''-----------------INVESTMENT_TYPE------------------'''
 def parse_invest_type(invest_type):
@@ -125,8 +126,11 @@ def parse_event_ann_change(ann_change):
 def parse_fixed_investment(initial):
     assets = []
     for invest_id, value in initial.items():
+        obj_id = PydanticObjectId(invest_id)
+        db_ref = DBRef(collection="investments", id=obj_id)
+        link = Link(ref=db_ref, document_class=Investment)
         assets.append(FixedInvestment(
-            invest_id=invest_id,
+            invest_id=link,
             percentage=float(value) / 100
         ))
     return assets
@@ -136,11 +140,14 @@ def parse_glide_investment(initial, final):
     investment_ids = set(initial.keys()) | set(final.keys())
     
     for invest_id in investment_ids:
+        obj_id = PydanticObjectId(invest_id)
+        db_ref = DBRef(collection="investments", id=obj_id)
+        link = Link(ref=db_ref, document_class=Investment)
         initial_pct = float(initial.get(invest_id, 0)) / 100
         final_pct = float(final.get(invest_id, 0)) / 100
         
-    assets.append(GlideInvestment(
-            invest_id=invest_id,
+        assets.append(GlideInvestment(
+            invest_id=link,
             initial=initial_pct,
             final=final_pct
         ))
