@@ -27,7 +27,7 @@ interface UserInfo {
     const loginWithGoogle = () => {
       const accessToken = Cookies.get("access_token");
       if (accessToken) {
-        setIsLoggedIn(true);
+        // setIsLoggedIn(true);
         return;
       }
   
@@ -44,8 +44,7 @@ interface UserInfo {
     useEffect(() => {
       const accessTokenRegex = /access_token=([^&]+)/;
       const isMatch = window.location.href.match(accessTokenRegex);
-      let accessToken = null;
-    
+      let accessToken=   null;
       if (isMatch) {
         accessToken = isMatch[1];
         Cookies.set("access_token", accessToken);
@@ -57,7 +56,7 @@ interface UserInfo {
       }
     
       if (accessToken) {
-        setIsLoggedIn(true);
+        // setIsLoggedIn(true);
     
         fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
           method: "GET",
@@ -68,6 +67,20 @@ interface UserInfo {
           .then((res) => res.json())
           .then(async (data) => {
             setUserInfo(data);
+            setIsLoggedIn(true);
+            console.log(data);
+            // await fetch("http://localhost:8000/api/login", {
+            //   method: "POST",
+            //   headers: {
+            //     "Content-Type": "application/json",
+            //   },
+            //   credentials: "include",
+            //   body: JSON.stringify({
+            //     name: data.name,
+            //     email: data.email,
+            //     picture: data.picture,
+            //   }),
+            // });
             const userExists = await foundUser(data.email);
             if (!userExists) {
               await createUser(data);
