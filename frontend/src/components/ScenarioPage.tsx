@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Cookies from "js-cookie";
 import axios from 'axios';
+import { useAuth } from './Navigation/AuthContext';
 type User = {
     age: number;
     birthday: string;
@@ -18,10 +19,12 @@ type User = {
 
 const ScenarioPage: React.FC = () => {
     const navigate = useNavigate();
+    
     const [user, setUser] = useState<User | null>(null);
     const [scenarios, setScenarios] = useState([])
     const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
+    
     // Fetch user data and then scenarios
     useEffect(() => {
         const fetchUserAndScenarios = async () => {
@@ -75,6 +78,7 @@ const ScenarioPage: React.FC = () => {
             <div className='flex item justify-between'>
                 <p className="text-5xl">Scenario Page</p>
                 <div className='flex '>
+                    
                     {/* <div className="flex items-center bg-gray-200 rounded-full px-4 py-2 ml-4">
                         <img src="./menu_icons/explore.png" alt="Search" className="w-5 h-5 mr-2"/>
                         <input
@@ -116,3 +120,14 @@ const ScenarioCard: React.FC = ({ scenario }) => {
 };
 
 export default ScenarioPage;
+
+// import  DebugUser  from './Navigation/DebugUser'
+
+// export default function ScenarioPage() {
+//   return (
+//     <div>
+//       <h1>Scenario Page</h1>
+//       <DebugUser />
+//     </div>
+//   );
+// }
