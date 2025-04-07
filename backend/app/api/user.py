@@ -36,10 +36,11 @@ async def login(request: Request, user_data: User):
 @router.post("/add_user", response_model=User)
 async def add_new_user(user_data: User):
     try:
+        print(user_data)
         existing_user = await db.find_user_email(user_data.email)
         if existing_user:
             return existing_user
-        user = await db.add_user(user_data.dict())
+        user = await db.add_user(user_data.model_dump())
         return user
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error adding user: {e}")

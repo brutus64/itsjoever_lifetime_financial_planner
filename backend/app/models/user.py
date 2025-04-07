@@ -8,8 +8,8 @@ class User(Document):
     name: str
     email: str
     # hashed_password: str
-    session: str
-    scenarios: List[Link["Scenario"]]
+    session: str = None
+    scenarios: List[Link["Scenario"]] = []
     age: int
     birthday: datetime
     shared_r_scenarios: List[Link["Scenario"]]
