@@ -110,8 +110,8 @@ def test_event_series_post(client):
         },
         "duration": {
             "type": "uniform",
-            "lower": 2030,
-            "upper": 2050
+            "lower": 20,
+            "upper": 40
         },
         "initial_amt": 2000.0,
         "exp_annual_change": {
@@ -126,6 +126,37 @@ def test_event_series_post(client):
     event_post_res = client.post(f"/api/scenarios/event_series/{scenario_id}", json=sample_event_form)
     assert event_post_res.status_code == 200
     events = event_post_res.json()
+    print(events)
+    newest_event = events['event_series'][-1]['id']
+    print(newest_event)
+    sample_put_event_form = {
+        "type": "income",
+        "name": "joe",
+        "description": "rent paid to me",
+        "start_year": {
+            "type": "normal",
+            "mean": 2030,
+            "stdev": 4
+        },
+        "duration": {
+            "type": "uniform",
+            "lower": 15,
+            "upper": 30
+        },
+        "initial_amt": 5000.0,
+        "exp_annual_change": {
+            "is_percent": True,
+            "type": "uniform",
+            "lower": 50,
+            "upper": 100
+        },
+        "inflation_adjust": True,
+        "user_split": 100.0,
+        "social_security": False,
+    }
+    event_put_res = client.put(f"/api/scenarios/event_series/{scenario_id}/{newest_event}", json=sample_put_event_form)
+    assert event_put_res.status_code == 200
+    events = event_put_res.json()
     print(events)
     # const defaultGenericEventForm = {
     # // INCOME/EXPENSE/INVEST/REBALANCE
