@@ -11,7 +11,7 @@ const investmentModalStyling = {
 };
 
 const defaultInvestmentForm = {
-    invest_type: "",
+    invest_type: {},
     value: 0.0,
     tax_status: "non-retirement" // is this needed?
 }
@@ -34,7 +34,7 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
 
     const validateForm = () => {
         // check if all fields are filled out
-        if (investmentData.invest_type === "" || isNaN(investmentData.value)) {
+        if (Object.keys(investmentData.invest_type).length === 0 || isNaN(investmentData.value)) {
             setError("Please fill out all fields");
             return false;
         }
@@ -42,7 +42,7 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
         // check to see if there is another investment with the same type and tax status
         // check duplicate name
         if (investments.some((inv,i) => {
-            if (inv.invest_type.name === investmentData.invest_type && inv.tax_status === investmentData.tax_status) {
+            if (inv.invest_type.name === investmentData.invest_type.name && inv.tax_status === investmentData.tax_status) {
                 if (editing !== i)
                     return true
             }
@@ -253,13 +253,18 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
         if(name == 'value') {
             value = parseFloat(value);
         }
+        else if (name === "invest_type") { // find corresponding invest type
+            if (value === "")
+                value = {}
+            else
+                value = investmentTypes.find(inv_type => inv_type.name === value)
+        }
 
         setInvestmentData({
             ...investmentData,
             [name]:value,
         })
     }
-
     return (
         <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={investmentModalStyling} onClose={() => handleClose(false)}>
             <div className="rounded-lg m-10 flex flex-col gap-3">

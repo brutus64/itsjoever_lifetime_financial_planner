@@ -61,12 +61,10 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const createInvestment = async (newData) => {
-        // resolve invest_type to id of investment
-        console.log(newData.invest_type)
-        newData.invest_type = investmentTypes.find(inv_type => inv_type.name === newData.invest_type).id
+        const data = {...newData,"invest_type":newData.invest_type.id}
         try {
             console.log(newData)
-            const res = await axios.post(`http://localhost:8000/api/scenarios/investment/${scenario_id}`,newData)
+            const res = await axios.post(`http://localhost:8000/api/scenarios/investment/${scenario_id}`,data)
             console.log(res)
             setInvestments(res.data.investment)
         }
@@ -78,7 +76,6 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const updateInvestmentType = async (invest_id,newData) => {
-        
         try {
             console.log(newData)
             const res = await axios.put(`http://localhost:8000/api/scenarios/investment_type/${scenario_id}/${invest_id}`,newData)
@@ -93,9 +90,17 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const updateInvestment = async (invest_id,newData) => {
-        // resolve invest_type to id of investment type
-        
-
+        const data = {...newData,"invest_type":newData.invest_type.id}
+        console.log(data)
+        try {
+            const res = await axios.put(`http://localhost:8000/api/scenarios/investment/${scenario_id}/${invest_id}`,data)
+            console.log(res)
+            setInvestments(res.data.investment)
+        }
+        catch(err) {
+            console.error("Could not modify investment type: ",err)
+            return
+        }
     }
 
     const deleteInvestmentType = async (invest_id) => {

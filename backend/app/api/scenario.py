@@ -159,7 +159,6 @@ async def update_invest_type(scenario_id: str, invest_type_id: str, investment: 
         await existing_investment_type.update({"$set":invest_type_obj})
 
         updated_scenario = await Scenario.get(scenario_obj_id, fetch_links=True)
-        print(updated_scenario)
         return updated_scenario.model_dump(include={'investment_types','investment'}, mode="json")
         
     except Exception as e:
@@ -206,13 +205,17 @@ async def create_invest(scenario_id: str, investment: dict):
 @router.put("/investment/{scenario_id}/{investment_id}") #requires investment id
 async def update_invest(scenario_id: str, investment: dict, investment_id: str):
     try:
-        scenario = await Scenario.get(scenario_id)
-        if not scenario:
-            raise HTTPException(status_code=400, detail="UPDATE investment scenario not found")
-        investments = await InvestmentType.get(PydanticObjectId(investment_id))
-        #MAY BE WRONG MIGHT NEED TO PARSE IT
-        await investments.update(Set(investment))
-        return {"investment": investments}
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        invest_obj_id = PydanticObjectId(investment_id)
+        existing_investment = await Investment.get(invest_obj_id)
+        if not existing_investment:
+            raise HTTPException(status_code=404, detail="Investment not found")
+        
+        invest_obj = Investment(**investment)
+        await existing_investment.update({"$set":invest_obj})
+
+        updated_scenario = await Scenario.get(scenario_obj_id, fetch_links=True)
+        return updated_scenario.model_dump(include={'investment'}, mode="json")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Update investment error, {e}")
     
