@@ -95,7 +95,7 @@ async def update_main(scenario_id: str, scenario: dict):
             "birth_year": [int(year) if year else None for year in scenario.get('birth_year', existing_scenario.birth_year)],
             "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
             "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
-            "fin_goal": float(scenario.get('fin_goal') if scenario.get('fin_goal') else None),
+            "fin_goal": float(scenario.get('fin_goal')) if scenario.get('fin_goal') else None,
             "state": scenario.get('state', existing_scenario.state)
         }
         print(update_data)

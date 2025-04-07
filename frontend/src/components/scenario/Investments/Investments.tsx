@@ -48,7 +48,7 @@ const Investments = ({scenario_id}:any) => {
     }
 
     const createInvestmentType = async (newData) => {
-
+        
     }
 
     const createInvestment = async (newData) => {
