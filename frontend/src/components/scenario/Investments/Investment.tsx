@@ -11,7 +11,7 @@ const investmentModalStyling = {
 };
 
 const defaultInvestmentForm = {
-    invest_type: "", // are investment types uniquely identified by names?
+    invest_type: "",
     value: 0.0,
     tax_status: "non-retirement" // is this needed?
 }
@@ -42,7 +42,7 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
         // check to see if there is another investment with the same type and tax status
         // check duplicate name
         if (investments.some((inv,i) => {
-            if (inv.invest_type === investmentData.invest_type && inv.tax_status === investmentData.tax_status) {
+            if (inv.invest_type.name === investmentData.invest_type && inv.tax_status === investmentData.tax_status) {
                 if (editing !== i)
                     return true
             }
@@ -266,7 +266,7 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
                 <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment</h1>
                 <div className="flex gap-4 items-center">
                     <h2 className="font-medium">Investment Type:</h2>
-                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="invest_type" value={investmentData.invest_type} onChange={handleChange}>
+                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="invest_type" value={investmentData.invest_type.name} onChange={handleChange}>
                         <option value=""></option>
                         {investmentTypes.map((inv_type) => (
                             <option className="flex flex-col w-100 h-23" key={inv_type.name} value={inv_type.name}>
@@ -307,7 +307,7 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
 const InvestmentCard = ({investment,i,handleEdit}:{investment:any,i:any,handleEdit:any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)} key={investment.id}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.invest_type}</h2>
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.invest_type.name}</h2>
             <p className="overflow-ellipsis w-85 overflow-hidden">{investment.tax_status} - ${investment.value}</p>
             {/* <button>Delete</button> */}
         </div>

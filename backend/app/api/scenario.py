@@ -121,11 +121,13 @@ async def fetch_investments(scenario_id: str):
             Scenario.id == scenario_id,
             fetch_links=True
         )
+        print("Hello")
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
         return {"scenario": scenario.model_dump(include={'investment_types','investment'},mode="json")}
-    except ValueError: #occurs if pydantic conversion fails
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    except ValueError as e: #occurs if pydantic conversion fails
+        print(e)
+        raise HTTPException(status_code=400, detail="Invalid scenario ID format")
 
 @router.post("/investment_type/{scenario_id}")
 async def create_invest_type(scenario_id: str, investment_type: dict):
@@ -147,11 +149,21 @@ async def create_invest_type(scenario_id: str, investment_type: dict):
 @router.put("/investment_type/{scenario_id}/{invest_type_id}") #requires investment id
 async def update_invest_type(scenario_id: str, invest_type_id: str, investment: dict):
     try:
-        invest_type = await InvestmentType.get(PydanticObjectId(invest_type_id))
-        await invest_type.update(Set(investment))
-        invest_type = await InvestmentType.get(PydanticObjectId(invest_type_id))
-        return {"investment_type": invest_type}
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        invest_obj_id = PydanticObjectId(invest_type_id)
+        existing_investment_type = await InvestmentType.get(invest_obj_id)
+        if not existing_investment_type:
+            raise HTTPException(status_code=404, detail="Investment not found")
+        
+        invest_type_obj = InvestmentType(**investment)
+        await existing_investment_type.update({"$set":invest_type_obj})
+
+        updated_scenario = await Scenario.get(scenario_obj_id, fetch_links=True)
+        print(updated_scenario)
+        return updated_scenario.model_dump(include={'investment_types','investment'}, mode="json")
+        
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=400, detail=f"Error updating investment type, {e}")
         
 @router.delete("/investment_type/{scenario_id}/{invest_type_id}")

@@ -1,4 +1,4 @@
-from beanie import Document
+from beanie import Document, Link
 from pydantic import BaseModel, ConfigDict
 from typing import Literal, Optional, TYPE_CHECKING, Any
 # from app.models.scenario import Scenario
@@ -44,7 +44,7 @@ class Investment(Document):
     # user: Link["User"] #not in example but necessary to know who it belongs to?
     #OR
     # scenario: Link["Scenario"] #NOT SURE IF NEEDED RIGHT NOW
-    invest_type: str #name to investment_type -- # KEEP AS invest_type, frontend changed to invest_type
+    invest_type: Link["InvestmentType"] #name to investment_type -- # KEEP AS invest_type, frontend changed to invest_type
     invest_id: Optional[str] = ""#name to investment + tax status?
     value: float
     tax_status: Literal['non-retirement','pre-tax','after-tax']
