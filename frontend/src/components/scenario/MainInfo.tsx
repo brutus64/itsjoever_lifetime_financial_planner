@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import useIsMounted from "../../utility/useIsMounted";
-import { useDebouncedCallback } from "use-debounce";
 
 const MainInfo = ({scenario_id}:any) => {
-    const mounted = useIsMounted()
     const [ mainData, setMainData ] = useState(null)
-    const [ retrieved, setRetrieved ] = useState(false)
+    const [ dirty, setDirty ] = useState(false)
 
     const fetchMain = async () => {
         console.log("Fetching main info")
@@ -33,7 +30,6 @@ const MainInfo = ({scenario_id}:any) => {
             inflation_assume: scenario.inflation_assume
         }
         setMainData(formFormat)
-        setRetrieved(true)
     }
 
     const updateMain = async () => {
@@ -53,8 +49,10 @@ const MainInfo = ({scenario_id}:any) => {
             }
             console.log(scenario_data)
             let res = await axios.put(`http://localhost:8000/api/scenarios/main/${scenario_id}`,scenario_data);
-            if (res.data.message === "Scenario updated successfully")
+            if (res.data.message === "Scenario updated successfully") {
                 console.log("Update successful");
+                setDirty(false)
+            }
             else
                 console.log("Update failed")
         }
@@ -63,37 +61,14 @@ const MainInfo = ({scenario_id}:any) => {
         }
     }
 
-    const debounced = useDebouncedCallback(updateMain,1000);
 
     // retrieve main information data
     useEffect(() => {
         fetchMain();
         return () => {
-            if (!mounted() && mainData) {
-                const scenario_data = {
-                    name: mainData.name,
-                    marital: mainData.is_married ? "couple" : "individual",
-                    birth_year: [mainData.birth_year,mainData.spouse_birth_year],
-                    life_expectancy: [mainData.life_expectancy,mainData.spouse_life_expectancy],
-                    inflation_assume: mainData.inflation_assume,
-                    fin_goal: parseFloat(mainData.fin_goal),
-                    state: mainData.state
-                }
-                axios.put(`http://localhost:8000/api/scenarios/main/${scenario_id}`,scenario_data);
-            }
+            // maybe warn user if data hasn't been saved?
         }
-    },[mounted()])
-
-    useEffect(() => {
-        if (retrieved) {// do not update initial change (just received from backend)
-            setRetrieved(false)
-            return;
-        }
-        if (mainData) {
-            console.log("DEBOUNCING")
-            debounced()
-        }
-    },[mainData])
+    },[])
 
     const handleChange = (e) => { // Not for radio  
         let { name, value } = e.target;
@@ -106,12 +81,14 @@ const MainInfo = ({scenario_id}:any) => {
             ...mainData,
             [name]:value,
         })
+        setDirty(true);
     }
     const handleMarried = (e) => {
         setMainData({
             ...mainData,
             "is_married":e.target.checked,
         })
+        setDirty(true)
     }
 
     // annoying radio buttons
@@ -124,6 +101,7 @@ const MainInfo = ({scenario_id}:any) => {
                 type: value
             }
         })
+        setDirty(true);
     }
 
     const handleSpouseRadio = (e) => {
@@ -135,6 +113,7 @@ const MainInfo = ({scenario_id}:any) => {
                 type: value
             }
         })
+        setDirty(true);
     }
 
     const handleInfRadio = (e) => {
@@ -146,6 +125,7 @@ const MainInfo = ({scenario_id}:any) => {
                 type: value
             }
         })
+        setDirty(true);
     }
 
     const handleUserExp = (e) => { // ugh nested state 
@@ -157,6 +137,7 @@ const MainInfo = ({scenario_id}:any) => {
                 [name]:parseFloat(value),
             }
         })
+        setDirty(true);
     }
     const handleSpouseExp = (e) => {
         const { name, value } = e.target;
@@ -167,6 +148,7 @@ const MainInfo = ({scenario_id}:any) => {
                 [name]:parseFloat(value),
             }
         })
+        setDirty(true);
     }
 
     const handleInflation = (e) => {
@@ -178,6 +160,7 @@ const MainInfo = ({scenario_id}:any) => {
                 [name]:parseFloat(value),
             }
         })
+        setDirty(true);
     }
 
     if (mainData === null)
@@ -314,6 +297,10 @@ const MainInfo = ({scenario_id}:any) => {
                     <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" min="0"></input>
                 </div> */}
             </div>
+            <div className="flex justify-center">
+                <button className="bg-blue-500 text-white w-60 px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" disabled={!dirty} onClick={updateMain}>Save</button>
+            </div>
+            
             
         </div>
     )

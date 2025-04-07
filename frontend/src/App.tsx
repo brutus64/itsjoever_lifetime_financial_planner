@@ -8,11 +8,14 @@ import SimulationLogPage from './components/SimulationLogPage';
 import AppLayout from './components/Navigation/AppLayout';
 import ScenarioForm from './components/scenario/ScenarioForm';
 import { Route, Routes, BrowserRouter } from "react-router-dom";
+import { AuthProvider } from './components/Navigation/AuthContext';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+    <AuthProvider>
+    <Routes>
+        
         <Route path="/" element={<LandingPage />} />
         
         <Route path="/" element={<AppLayout />}>
@@ -26,6 +29,8 @@ function App() {
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>
+    </AuthProvider>
+      
     </BrowserRouter>
   );
 }

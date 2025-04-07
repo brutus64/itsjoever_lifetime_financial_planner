@@ -1,7 +1,9 @@
 from beanie import Document, Link
 from pydantic import BaseModel, ConfigDict
-from typing import Literal, Optional, Union, List
+from typing import Literal, Optional, Union, List, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.investment import Investment
 class EventDate(BaseModel):
     type: Literal['fixed', 'uniform', 'normal', 'start_with', 'end_with']
     # For fixed/uniform/normal distribution
@@ -28,7 +30,7 @@ class EventAnnualChange(BaseModel):
 
 
 class FixedInvestment(BaseModel):
-    invest_id: str
+    invest_id: Link['Investment']
     percentage: float
 
 class GlideInvestment(BaseModel):
