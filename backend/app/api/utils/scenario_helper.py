@@ -1,6 +1,7 @@
 from app.models.event_series import *
 from app.models.scenario import *
-
+from beanie import PydanticObjectId, Link
+from bson import DBRef
 
 '''-----------------INVESTMENT_TYPE------------------'''
 def parse_invest_type(invest_type):
@@ -92,39 +93,44 @@ def parse_event_date(date):
         'type': date_type,
     }
     if date_type == 'fixed':
-        ret['value'] = date['fixed']
+        ret['value'] = date['value']
     elif date_type == 'uniform':
-        ret['lower'] = date['min']
-        ret['upper'] = date['max']
+        ret['lower'] = date['lower']
+        ret['upper'] = date['upper']
     elif date_type == 'normal':
         ret['mean'] = date['mean']
-        ret['stdev'] = date['stddev']
-    elif date_type == 'start_with' or date_type == 'end_with':
-        ret['event_series'] = date['event_series']
+        ret['stdev'] = date['stdev']
+    elif date_type == 'start_with':
+        ret['event_series'] = date['start_with']
+    elif date_type == 'end_with':
+        ret['event_series'] = date['end_with']
     return ret
 
 def parse_event_ann_change(ann_change):
     ann_type = ann_change.get('type', 'fixed')
     change = {
         "type":ann_type,
-        "is_percent": False if ann_change.get('is_percent', 'false') == 'false' else True #apparently a string
+        "is_percent": ann_change.get('is_percent')#apparently a string
     }
     if ann_type == 'fixed':
-        change['value'] = ann_change.get('fixed', 0)
+        change['value'] = ann_change.get('value')
     elif ann_type == 'uniform':
-        change['lower'] = ann_change.get('min', 0)
-        change['upper'] = ann_change.get('max', 0)
+        change['lower'] = ann_change.get('lower')
+        change['upper'] = ann_change.get('upper')
     elif ann_type == 'normal':
-        change['mean'] = ann_change.get('mean', 0)
-        change['stdev'] = ann_change.get('stddev', 1)
+        change['mean'] = ann_change.get('mean')
+        change['stdev'] = ann_change.get('stdev')
     # 'exp_annual_change': {'is_percent': 'false', 'type': 'fixed', 'fixed': 0, 'mean': 0, 'stddev': 1, 'min': 0, 'max': 0, 'undefined': '04'}, 
     return change
     
 def parse_fixed_investment(initial):
     assets = []
     for invest_id, value in initial.items():
+        obj_id = PydanticObjectId(invest_id)
+        db_ref = DBRef(collection="investments", id=obj_id)
+        link = Link(ref=db_ref, document_class=Investment)
         assets.append(FixedInvestment(
-            invest_id=invest_id,
+            invest_id=link,
             percentage=float(value) / 100
         ))
     return assets
@@ -134,11 +140,14 @@ def parse_glide_investment(initial, final):
     investment_ids = set(initial.keys()) | set(final.keys())
     
     for invest_id in investment_ids:
+        obj_id = PydanticObjectId(invest_id)
+        db_ref = DBRef(collection="investments", id=obj_id)
+        link = Link(ref=db_ref, document_class=Investment)
         initial_pct = float(initial.get(invest_id, 0)) / 100
         final_pct = float(final.get(invest_id, 0)) / 100
         
-    assets.append(GlideInvestment(
-            invest_id=invest_id,
+        assets.append(GlideInvestment(
+            invest_id=link,
             initial=initial_pct,
             final=final_pct
         ))
@@ -149,6 +158,9 @@ def parse_events(event):
     # print("Parse events currently")
     # print(event)
     #processing needed:
+    print("HI")
+    print(event['start_year'])
+    print(event['duration'])
     start = EventDate(**parse_event_date(event['start_year']))
     duration = EventDate(**parse_event_date(event['duration']))
     
@@ -156,6 +168,7 @@ def parse_events(event):
     event_type = event['type']
     details = {}
     if event_type == 'income':
+        print("HELLO")
         details = Income(
             initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change= EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
@@ -209,7 +222,7 @@ def parse_events(event):
         
     return {
         'name': event.get('name',''),
-        'descripton': event.get('description', ''),
+        'description': event.get('description', ''),
         'start': start,
         'duration': duration,
         'type': event_type,

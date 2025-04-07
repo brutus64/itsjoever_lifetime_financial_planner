@@ -6,7 +6,8 @@ from app.models.user import User
 from app.api.utils.yaml_helper import *
 from app.api.utils.scenario_helper import *
 from app.db.db_utils import *
-from beanie import PydanticObjectId
+from beanie import PydanticObjectId, Link, WriteRules
+from bson import DBRef
 from beanie.odm.operators.update.array import AddToSet
 from typing import Set
 from fastapi import Depends
@@ -247,7 +248,7 @@ async def get_event_series(scenario_id: str):
         scenario = await Scenario.get(scenario_id, fetch_links=True)
         if not scenario:
             raise HTTPException(status_code=400, detail="get Eventseries scenario does not exist")
-        return {"event_series": scenario.model_dump(include={'event_series'}, mode="json")}
+        return scenario.model_dump(include={'event_series'}, mode="json")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"get Eventseries does not work: {e}")
 
@@ -257,11 +258,17 @@ async def create_event_series(scenario_id: str, event_data: dict):
         scenario = await Scenario.get(PydanticObjectId(scenario_id))
         if not scenario:
             raise HTTPException(status_code=400, detail="POST event series scenario does not exist")
+        print("EVENT_DATA", event_data)
         event = parse_events(event_data)
+        print("EVENT", event)
         event_series = EventSeries(**event)
         await event_series.insert()
-        await scenario.update(AddToSet({Scenario.event_series: event_series}))
-        return { "event_series": event_series }
+        print("After insert", event_series)
+        db_ref = DBRef(collection="event_series", id=event_series.id)
+        scenario.event_series.append(Link(ref = db_ref,document_class=EventSeries))
+        await scenario.save(link_rule=WriteRules.WRITE)
+        updated_scenario = await Scenario.get(scenario.id, fetch_links=True)
+        return updated_scenario.model_dump(include={'event_series'}, mode="json")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Create event series error, {e}")
 
@@ -274,8 +281,9 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
         event_series = await EventSeries.get(PydanticObjectId(event_series_id))
         #NOT SURE IF THIS WORKS
         new_event_series = EventSeries(**parse_events(event_data))
-        await event_series.update(Set(new_event_series))
-        return { "event_series": event_series}
+        await event_series.update({"$set":new_event_series})
+        updated_scenario = await Scenario.get(PydanticObjectId(scenario_id), fetch_links=True)
+        return updated_scenario.model_dump(include={'event_series'}, mode="json")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Update event series error, {e}")
 
