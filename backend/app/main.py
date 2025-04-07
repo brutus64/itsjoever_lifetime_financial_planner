@@ -1,4 +1,5 @@
 import uvicorn
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import user, scrape_yaml, scenario, import_export
 from app.db.db import init_db
 from contextlib import asynccontextmanager
+import cProfile
+import pstats
+import io
+import time
+import logging
 
 @asynccontextmanager #expects yield statement
 async def lifespan(app: FastAPI):
@@ -49,6 +55,12 @@ app.add_middleware(
     allow_headers=['*']
 )
 
+#max age defaults to 2 weeks
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="haha_random_key123821"
+)
+
 # @app.middleware('http')
 # async def auth_check(request: Request, call_next):
 #     public_path = [
@@ -58,19 +70,14 @@ app.add_middleware(
 #         '/redoc'
 #     ]
 #     #need to check if a session id exists and if it matches, otherwise reject, but if path is to login then everything is fine since we'll ahve to assign one
-#     if request.url.path in public_path:
-#         return await call_next(request)
-#     if 'session_id' not in request.session:
-#         if request.url.path.startswith("/api/"):
-#             return JSONResponse(status_code=401, content={"detail": "Not authenicated"})
+#     if request.url.path.startswith("/api") and request.url.path not in public_path:
+#         session_id = request.session.get("session_id")
+#         if not session_id:
+#             return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
 #     return await call_next(request)
 
-# #max age defaults to 2 weeks
-# app.add_middleware(
-#     SessionMiddleware,
-#     secret_key="haha_random_key123821"
-# )
-# #fastapi middleware is checked in reverse
+
+#fastapi middleware is checked in reverse
 
 app.include_router(user.router, prefix='/api')
 app.include_router(scenario.router, prefix='/api/scenarios')
