@@ -1,8 +1,7 @@
 from app.models.scenario import *
 from app.models.investment import *
 from app.models.event_series import *
-from beanie.operators import Set, And
-import yaml
+from beanie.operators import And
 
 '''----------------- INVESTMENT TYPE & INVESTMENT ---------------'''
 
@@ -139,98 +138,38 @@ def create_assetalloc(data):
         #need to validate it == 1 later
     return arr
 
-async def create_event_from_yaml(data):
+def create_event_from_yaml(data):
     event_type = data.get('type')
-    detail_id = None
+    detail = None
     income, expense, invest, rebalance, res = None, None, None, None, None
     if event_type == 'income':
-        income = Income(
+        detail = Income(
             initial_amt=data.get('initialAmount'),
             exp_annual_change= create_exp_annual(data),
             inflation_adjust=data.get('inflationAdjusted'),
             user_split=data.get('userFraction'),
             social_security=data.get('socialSecurity')
         )
-        #NEED FIX
-        exists = await Income.find_one(
-            And(
-                Income.initial_amt == income.initial_amt,
-                Income.user_split == income.user_split
-            )
-        )
-        if exists:
-            exists.exp_annual_change = income.exp_annual_change
-            exists.inflation_adjust = income.inflation_adjust
-            exists.social_security = income.social_security
-            await exists.save()
-            detail_id = exists
-        else:
-            await income.save() #edits the income now to have id
-            detail_id = income
     elif event_type == 'expense':
-        expense = Expense(
+        detail = Expense(
             initial_amt=data.get('initialAmount'),
             exp_annual_change= create_exp_annual(data),
             inflation_adjust=data.get('inflationAdjusted'),
             user_split=data.get('userFraction'),
             is_discretionary=data.get('discretionary')
         )
-        exists = await Expense.find_one(
-            And(
-                Expense.initial_amt == expense.initial_amt,
-                Expense.user_split == expense.user_split
-            )
-        )
-        if exists:
-            exists.exp_annual_change = expense.exp_annual_change
-            exists.inflation_adjust = expense.inflation_adjust
-            exists.is_discretionary = expense.is_discretionary
-            await exists.save()
-            detail_id = exists
-        else:
-            await expense.save() #edits the income now to have id
-            detail_id = expense
             
     elif event_type == 'invest':
-        invest = Invest(
+        detail = Invest(
             is_glide=data.get('glidePath', False),
             assets=create_assetalloc(data),
             max_cash=data.get('maxCash')
         )
-        #NEED FIX
-        exists = await Invest.find_one(
-            And(
-                Invest.is_glide == invest.is_glide,
-                Invest.max_cash == invest.max_cash
-            )
-        )
-        
-        if exists:
-            await exists.update({"$set": invest.model_dump(exclude={'id'})})
-            detail_id = exists
-        else:
-            # Insert new document
-            await invest.save()
-            detail_id = invest
-            
     elif event_type == 'rebalance':
-        rebalance = Rebalance(
+        detail = Rebalance(
             is_glide=data.get('glidePath', False),
             assets=create_assetalloc(data)
         )
-        # For rebalance, similar to invest
-        exists = await Rebalance.find_one(
-            Rebalance.is_glide == rebalance.is_glide
-        )
-        
-        if exists:
-            # Update exists document
-            await exists.update({"$set": rebalance.model_dump(exclude={'id'})})
-            detail_id = exists
-        else:
-            # Insert new document
-            await rebalance.save()
-            detail_id = rebalance
     # print("ID IN THE END:", detail_id)
     # print("EVENTFROMYAML START/DURATION", data.get('start'), data.get('duration'))
     event = EventSeries(
@@ -239,7 +178,7 @@ async def create_event_from_yaml(data):
         start=event_date_parse(data.get('start')),
         duration=event_date_parse(data.get('duration')),
         type=event_type,
-        details=detail_id #NEED FIX
+        details=detail
     )
     return event
 

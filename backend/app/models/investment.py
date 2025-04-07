@@ -1,6 +1,6 @@
-from beanie import Document, Link
-from pydantic import BaseModel
-from typing import Literal, Optional, TYPE_CHECKING
+from beanie import Document
+from pydantic import BaseModel, ConfigDict
+from typing import Literal, Optional, TYPE_CHECKING, Any
 # from app.models.scenario import Scenario
 # from app.models.user import User
 
@@ -15,8 +15,19 @@ class InvestAnnualChange(BaseModel):
     mean: Optional[float] = None
     stdev: Optional[float] = None
     is_percent: bool = False
-    #may need to enforce either-or relationship
+    
+    model_config = ConfigDict(exclude_none=True)
 
+    # #may need to enforce either-or relationship
+    # def dict(self, *args, **kwargs) -> dict[str, Any]:
+    #     """
+    #         Override the default dict method to exclude None values in the response
+    #     """
+    #     kwargs.pop('exclude_none', None)
+    #     return super().model_dump(*args, exclude_none=True, **kwargs)
+
+    # class Config:
+    #     exclude_none = True
 class InvestmentType(Document):
     name: str
     description: str
@@ -27,7 +38,8 @@ class InvestmentType(Document):
     
     class Settings:
         name="investment_types"
-    
+        keep_nulls = False
+
 class Investment(Document):
     # user: Link["User"] #not in example but necessary to know who it belongs to?
     #OR

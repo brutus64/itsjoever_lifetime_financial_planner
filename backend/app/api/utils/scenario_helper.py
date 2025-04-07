@@ -1,6 +1,8 @@
 from app.models.event_series import *
 from app.models.scenario import *
 
+
+'''-----------------INVESTMENT_TYPE------------------'''
 def parse_invest_type(invest_type):
     
     #basic data
@@ -64,6 +66,7 @@ def parse_invest_type(invest_type):
     }
     return investment_type
 
+'''---------------------------INVESTMENT-------------------------------------'''
 def parse_investments(investment):
     invest_type = investment['investment_type']
     tax_status_mapping = {
@@ -125,6 +128,7 @@ def parse_fixed_investment(initial):
             percentage=float(value) / 100
         ))
     return assets
+
 def parse_glide_investment(initial, final):
     assets = []
     investment_ids = set(initial.keys()) | set(final.keys())
@@ -140,11 +144,10 @@ def parse_glide_investment(initial, final):
         ))
     return assets
     
-async def parse_events(event):
+'''--------------------------------EVENT SERIES-------------------------------------------'''
+def parse_events(event):
     # print("Parse events currently")
     # print(event)
-    
-    
     #processing needed:
     start = EventDate(**parse_event_date(event['start_year']))
     duration = EventDate(**parse_event_date(event['duration']))
@@ -154,47 +157,47 @@ async def parse_events(event):
     details = {}
     if event_type == 'income':
         details = Income(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change= EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            social_security= False if event.get('income') == 'Wages' else True,
-            inflation_adjust= event.get('inflation_adjust', False) #NOTHING
+            user_split=float(event.get('user_split', 0)),
+            social_security= event.get('social_security'),
+            inflation_adjust= event.get('inflation_adjust') #NOTHING
         )
     elif event_type == 'expense':
         details = Expense(
-            initial_amt=float(event.get('initial_amount', 0)),
+            initial_amt=float(event.get('initial_amt', 0)),
             exp_annual_change=EventAnnualChange(**parse_event_ann_change(event.get('exp_annual_change', {}))),
-            user_split=float(event.get('percent_associated', 0)),
-            is_discretionary=event.get('expense') == 'Discretionary',
+            user_split=float(event.get('user_split', 0)),
+            is_discretionary=event.get('is_discretionary'),
             inflation_adjust=event.get('inflation_adjust', False)#NOTHING
 
         )
-        
+    #NEED TO FIX THE STUFF HERE
     elif event_type == 'invest':
         assets = []
         is_glide = event.get('is_glide', False)
         
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         
         details = Invest(
             is_glide=is_glide,
             assets=assets,
-            max_cash=float(event.get('maximum_cash',0))
+            max_cash=float(event.get('max_cash',0))
         )
     elif event_type == 'rebalance':
         is_glide = event.get('is_glide', False)
         if not is_glide: #FixedInvestment
-            assets = parse_fixed_investment(event.get('initial_allocation', {}))
+            assets = parse_fixed_investment(event.get('initial', {}))
         else:
             assets = parse_glide_investment(
-                event.get('initial_allocation', {}),
-                event.get('final_allocation', {})
+                event.get('initial', {}),
+                event.get('final', {})
             )
         details = Rebalance(
             is_glide=is_glide,
@@ -204,7 +207,6 @@ async def parse_events(event):
         # event.tax_status #APPARENTLY Rebalance has tax-status
         #I guess if we do need tax_status just grab from event_series initial_allocation 2nd half after "|" and just not store in db?
         
-    await details.save() #should update itself as well
     return {
         'name': event.get('name',''),
         'descripton': event.get('description', ''),
@@ -213,6 +215,9 @@ async def parse_events(event):
         'type': event_type,
         'details': details
     }
+
+def parse_float(f):
+    return float(f) if f else None
 
 def parse_life_expectancy(life_expect):
     # print("LIFE EXPECTANCY")
@@ -224,19 +229,19 @@ def parse_life_expectancy(life_expect):
         if life_type == 'fixed':
             res.append(LifeExpectancy(
                 type='fixed',
-                value=float(life.get('fixed'))
+                value=parse_float(life.get('value'))
             ))
         elif life_type == 'normal':
             res.append(LifeExpectancy(
                 type='normal',
-                mean=float(life.get('mean')),
-                stdev=float(life.get('stddev'))
+                mean=parse_float(life.get('mean')),
+                stdev=parse_float(life.get('stdev'))
             ))
         elif life_type == 'uniform':
             res.append(LifeExpectancy(
                 type='uniform',
-                lower=float(life.get('min')),
-                upper=float(life.get('max'))
+                lower=parse_float(life.get('min')),
+                upper=parse_float(life.get('max'))
             ))
         
     return res
@@ -248,14 +253,14 @@ def parse_inflation(inflation):
     res = {'type': inflation_type}
     
     if inflation_type == 'fixed':
-        fixed_value = inflation.get('fixed')
-        res['value'] = float(fixed_value)
+        fixed_value = inflation.get('value')
+        res['value'] = parse_float(fixed_value)
     elif inflation_type == 'normal':
-        res['mean'] = float(inflation.get('mean'))
-        res['stdev'] = float(inflation.get('stddev'))
+        res['mean'] = parse_float(inflation.get('mean'))
+        res['stdev'] = parse_float(inflation.get('stdev'))
     elif inflation_type == 'uniform':
-        res['lower'] = float(inflation.get('min'))
-        res['upper'] = float(inflation.get('max'))
+        res['lower'] = parse_float(inflation.get('min'))
+        res['upper'] = parse_float(inflation.get('max'))
     
     return res
 def parse_roth_optimizer(optimizer):

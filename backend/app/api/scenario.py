@@ -1,19 +1,283 @@
-from fastapi import APIRouter, HTTPException, File, UploadFile
+from fastapi import APIRouter, HTTPException
 from app.models.scenario import Scenario
 from app.models.investment import Investment, InvestmentType
 from app.models.event_series import EventSeries
-from app.api.yaml_helper import *
-from app.api.scenario_helper import *
+from app.models.user import User
+from app.api.utils.yaml_helper import *
+from app.api.utils.scenario_helper import *
 from app.db.db_utils import *
-import yaml
-import os
-from fastapi.responses import FileResponse
 from beanie import PydanticObjectId
-
+from beanie.odm.operators.update.array import AddToSet
+from typing import Set
+from fastapi import Depends
 router = APIRouter()
 
+
+
+'''------------------------SCENARIO CREATE/DELETE ROUTES------------------------'''
+#TESTED WITH NO USER YET
+@router.post("/new")
+async def new_scenario(user: dict):
+    try:
+        user_obj = await User.get(user.get("user"))
+        scenario_obj = Scenario(user=user_obj)
+        await scenario_obj.save()
+        print("saved id", scenario_obj.id)
+        user_obj.scenarios.append(scenario_obj)
+        await user_obj.save()
+        # print(user)
+        id = PydanticObjectId(scenario_obj.id)
+        return {"message":"ok","id":str(id)}
+    except Exception as e:
+        print(f"Error in new_scenario: {e}")  # Actually print the exception
+        raise HTTPException(status_code=400, detail="Error at new scenario creation")
+
+#TESTED WITH NO USER YET
+@router.delete("/delete/{scenario_id}")
+async def delete_scenario(scenario_id: str):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=400, detail=f"/delete/scenario_id, scenario does not exist")
+        await scenario.delete()
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Deleting scenario failed, {e}")
+
+
+@router.get("/all/{scenario_id}")
+async def fetch_scenario(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+                Scenario.id == scenario_id,
+                fetch_links=True
+            )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        print("FOUND THE SCENARIO",scenario)
+        return {"scenario": scenario.model_dump(exclude={
+                    "user": {"scenarios"}},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+'''----------------------------MAIN DATA ROUTES--------------------------------'''
+    
+@router.get("/main/{scenario_id}")
+async def fetch_main(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+            Scenario.id == scenario_id,
+        )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        return {"scenario": scenario.model_dump(include={'id','name','marital','birth_year','life_expectancy','inflation_assume','limit_posttax','fin_goal','state'},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+@router.put("/main/{scenario_id}")
+async def update_main(scenario_id: str, scenario: dict):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        
+        existing_scenario = await Scenario.get(scenario_obj_id)
+        if not existing_scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        print(scenario)
+
+        update_data = {
+            "name": scenario.get('name', existing_scenario.name),
+            "marital": scenario.get('marital', existing_scenario.marital),
+            "birth_year": [int(year) if year else None for year in scenario.get('birth_year', existing_scenario.birth_year)],
+            "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
+            "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
+            "fin_goal": float(scenario.get('fin_goal')) if scenario.get('fin_goal') else None,
+            "state": scenario.get('state', existing_scenario.state)
+        }
+        print(update_data)
+
+        # Update the scenario
+        await existing_scenario.update({"$set": update_data})
+
+        return {"message": "Scenario updated successfully"}
+    except Exception as e:
+        print(f"Error in update_main: {e}")
+        raise HTTPException(status_code=400, detail="Error updating main")
+
+'''----------------------------INVESTMENT TYPE ROUTES--------------------------------'''
+# fetch all investment types and investments associated with a scenario
+@router.get("/investments/{scenario_id}")
+async def fetch_investments(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+            Scenario.id == scenario_id,
+            fetch_links=True
+        )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        return {"scenario": scenario.model_dump(include={'investment_types','investment'},mode="json")}
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+@router.post("/investment_type/{scenario_id}")
+async def create_invest_type(scenario_id: str, investment_type: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="POST investment_type, scenario does not exist")
+        invest_type = InvestmentType(**investment_type)
+        await invest_type.insert()
+        await scenario.update(AddToSet({Scenario.investment_types: invest_type}))
+        updated_scenario = await Scenario.get(scenario.id)
+        return {"scenario": updated_scenario.model_dump(mode="json")}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error posting investment type, {e}")
+    
+
+@router.put("/investment_type/{scenario_id}/{invest_type_id}") #requires investment id
+async def update_invest_type(scenario_id: str, invest_type_id: str, investment: dict):
+    try:
+        invest_type = await InvestmentType.get(PydanticObjectId(invest_type_id))
+        await invest_type.update(Set(investment))
+        invest_type = await InvestmentType.get(PydanticObjectId(invest_type_id))
+        return {"investment_type": invest_type}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating investment type, {e}")
+        
+@router.delete("/investment_type/{scenario_id}/{invest_type_id}")
+async def delete_invest_type(scenario_id: str, invest_type_id: str):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        invest_type_obj_id = PydanticObjectId(invest_type_id)
+        
+        # get the scenario
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        # delete the investment type
+        await InvestmentType.get(invest_type_obj_id).delete()
+        
+        # potentially does not work
+        await scenario.update({"$pull": {"investment_types":{"$ref": "investment_types", "$id": invest_type_obj_id}}})
+        return { "success": True }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
+
+'''---------------------------INVESTMENT ROUTES-------------------------------------'''
+@router.post("/investment/{scenario_id}")
+async def create_invest(scenario_id: str, investment: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail= "POST create investment cenario does not exist")
+        investment = Investment(**investment)
+        await investment.insert()
+        await scenario.update(AddToSet({Scenario.investment: investment}))
+        updated_scenario = await Scenario.get(scenario.id)
+        return { "scenario": updated_scenario }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Create investment error, {e}")
+
+@router.put("/investment/{scenario_id}/{investment_id}") #requires investment id
+async def update_invest(scenario_id: str, investment: dict, investment_id: str):
+    try:
+        scenario = await Scenario.get(scenario_id)
+        if not scenario:
+            raise HTTPException(status_code=400, detail="UPDATE investment scenario not found")
+        investments = await InvestmentType.get(PydanticObjectId(investment_id))
+        #MAY BE WRONG MIGHT NEED TO PARSE IT
+        await investments.update(Set(investment))
+        return {"investment": investments}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Update investment error, {e}")
+    
+@router.delete("/investment/{scenario_id}/{investment_id}")
+async def delete_invest(scenario_id: str, investment_id: str):
+    try:
+        scenario_obj_id = PydanticObjectId(scenario_id)
+        investment_obj_id = PydanticObjectId(investment_id)
+        
+        # get the scenario
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        # delete the investment type
+        await Investment.get(investment_obj_id).delete()
+        
+        # potentially does not work
+        await scenario.update({"$pull": {"investments":{"$ref": "investments", "$id": investment_obj_id}}})
+        return { "success": True }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
+
+'''-------------------------------EVENT SERIES ROUTES--------------------------------'''
+@router.get("/event_series/{scenario_id}")
+async def get_event_series(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        scenario = await Scenario.get(scenario_id, fetch_links=True)
+        if not scenario:
+            raise HTTPException(status_code=400, detail="get Eventseries scenario does not exist")
+        return {"event_series": scenario.model_dump(include={'event_series'}, mode="json")}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"get Eventseries does not work: {e}")
+
+@router.post("/event_series/{scenario_id}")
+async def create_event_series(scenario_id: str, event_data: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="POST event series scenario does not exist")
+        event = parse_events(event_data)
+        event_series = EventSeries(**event)
+        await event_series.insert()
+        await scenario.update(AddToSet({Scenario.event_series: event_series}))
+        return { "event_series": event_series }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Create event series error, {e}")
+
+@router.put("/event_series/{scenario_id}/{event_series_id}") #requires event series id
+async def update_event_series(scenario_id: str, event_series_id: str, event_data: dict):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="PUT event series scenario does not exist")
+        event_series = await EventSeries.get(PydanticObjectId(event_series_id))
+        #NOT SURE IF THIS WORKS
+        new_event_series = EventSeries(**parse_events(event_data))
+        await event_series.update(Set(new_event_series))
+        return { "event_series": event_series}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Update event series error, {e}")
+
+@router.delete("/event_series/{scenario_id}/{event_series_id}")
+async def delete_event_series(scenario_id: str, event_series_id: str):
+    try:
+        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        if not scenario:
+            raise HTTPException(status_code=400, detail="DELETE event series scenario does not exist")
+        await EventSeries.get(PydanticObjectId(event_series_id)).delete()
+        # potentially does not work
+        await scenario.update({"$pull": {"event_series":{"$ref": "event_series", "$id": event_series_id}}})
+        return { "success": True }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Delete event series error {e}")
+
+
 #NOT TESTED
+#MOSt LIKELY PHASING OUT
 #update existing scenario given its id
+
+
+
 @router.put("/update_scenario/{scenario_id}")
 async def update_scenario(scenario_id: str, scenario: dict):
     try:
@@ -49,7 +313,7 @@ async def update_scenario(scenario_id: str, scenario: dict):
         new_event_series_ids = []
         event_series_id_map = {}
         for e in scenario.get('event_series', []):
-            event = await parse_events(e)
+            event = parse_events(e)
             event_obj = await EventSeries.find_one(EventSeries.name == event['name'])
             if not event_obj:
                 event_obj = EventSeries(**event)
@@ -84,6 +348,9 @@ async def update_scenario(scenario_id: str, scenario: dict):
     except Exception as e:
         print(f"Error in update_scenario: {e}")
         raise HTTPException(status_code=400, detail="Error updating scenario")
+
+
+
 
 
 @router.post("/create_scenario")
@@ -201,238 +468,3 @@ async def create_scenario(scenario:  dict):
 #         return {"scenario": scenario}
 #     except Exception as e:
 #         raise HTTPException(status_code=400, detail=f"Scenario not found, bad request, error: {e}")
-
-@router.post("/import")
-async def import_scenario(file: UploadFile = File(...)):
-    try:
-        if not file.filename.endswith(('.yaml', '.yml')):
-            raise HTTPException(status_code=400, detail="Importing scenarios only accepts YAML files.")
-        content = await file.read()
-        data = yaml.safe_load(content)
-        
-        #NEED TO IMPORT INVESTMENT_TYPES FIRST
-        #THEN INVESTMENTS
-        #THEN EVENT SERIES
-        #THEN SCENARIO ITSELF
-        investtype_ids = []
-        invest_ids = []
-        event_ids = []
-        for investment_type in data.get('investmentTypes'):
-            invest_type = create_investment_type_from_yaml(investment_type)
-            # print("INVEST TYPE")
-            # print(invest_type)
-            # print("MODEL DUMP: ", invest_type.model_dump(exclude={"id", "name"}))
-            exists = await InvestmentType.find_one(InvestmentType.name == invest_type.name)
-            if exists:
-                update_data = invest_type.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                await exists.save()
-                investtype_ids.append(exists.id)
-            else:
-                await invest_type.save()
-                investtype_ids.append(invest_type.id)    
-            # res = await InvestmentType.find_one(InvestmentType.name == invest_type.name).upsert(
-            #     Set(invest_type.model_dump(exclude={"id", "name"})),
-            #     on_insert=invest_type
-            # )
-            # investtype_ids.append(res.id)
-            # print(f"Post insert/update: {res}")
-        
-        for investment in data.get('investments'):
-            # print(investment)
-            invest = create_investment_from_yaml(investment)
-            # print("INVEST", invest)
-            
-            exists = await Investment.find_one(Investment.invest_id == invest.invest_id)
-            
-            if exists:
-                # Update fields manually
-                update_data = invest.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                
-                await exists.save()
-                invest_ids.append(exists.id)
-            else:
-                # Save new
-                await invest.save()
-                invest_ids.append(invest.id)
-                
-        event_series = []
-        for event in data.get('eventSeries'):
-            # print(event)
-            #NEED FIX SHOULD BE FIXED WITH NAME
-            e = await create_event_from_yaml(event)
-            exists = await EventSeries.find_one(EventSeries.name == e.name)
-            
-            if exists:
-                # Update fields manually
-                update_data = e.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                
-                await exists.save()
-                event_series.append(exists)
-                event_ids.append(exists.id)
-            else:
-                # Save new
-                await e.save()
-                event_series.append(e)
-                event_ids.append(e.id)
-        
-        
-        # print("INVESTTYPE ID", investtype_ids)
-        # print("INVEST ID", invest_ids)
-        # print("EVENT ID", event_ids)
-        investments = await Investment.find_all().to_list()
-        # print(investments)
-        spending_strat = await eventnames_to_id(data.get('spendingStrategy'), event_series)
-        expense_withdraw = await investmentnames_to_id(data.get('expenseWithdrawalStrategy'),investments)
-        rmd_strat = await investmentnames_to_id(data.get('RMDStrategy'), investments)
-        roth_conversion_strat = await investmentnames_to_id(data.get('RothConversionStrategy'), investments)
-        
-        scenario = Scenario(
-            name=data.get('name'),
-            marital=data.get('maritalStatus'),
-            birth_year=data.get('birthYears'),
-            life_expectancy=parse_life(data),
-            # GRAB ID FROM PREVIOUS RUNS
-            investment_types= investtype_ids,
-            investment=invest_ids,
-            event_series=event_ids,
-            inflation_assume=parse_inflation_assumption(data),
-            limit_posttax=data.get('afterTaxContributionLimit'),
-        #REQUIRES MAPPING NAME -> OBJECT ID REF
-            spending_strat= spending_strat,
-            expense_withdraw= expense_withdraw,
-            rmd_strat= rmd_strat,
-            roth_conversion_strat= roth_conversion_strat,
-        #NEED TO PARSE with true and dates
-            roth_optimizer=parse_roth_opt(data),
-            fin_goal=data.get('financialGoal'),
-            state=data.get('residenceState')
-        )
-        scenario_exists = await Scenario.find_one(Scenario.name == scenario.name)
-        if scenario_exists:
-            scenario_data = scenario.model_dump(exclude={"id"})
-            for key, value in scenario_data.items():
-                setattr(scenario_exists, key, value)
-            print("SCENARIO UPDATED")
-            print("SCENARIO ID = ", str(scenario_exists.id))
-            await scenario_exists.save()
-        else:
-            print("SCENARIO SAVED")
-            print("SCENARIO ID = ", str(scenario.id))
-            await scenario.save()
-        
-        return {
-            "name": scenario.name,
-            "id": str(scenario.id),
-            "message": "Scenario imported successfully"
-        }
-        
-    except yaml.YAMLError as e:
-        raise HTTPException(status_code=400, detail="yaml file cannot be parsed for some reason")
-    except HTTPException as e:
-        raise HTTPException(status_code=400, detail="Bad request for importing scenario")
-    
-
-    
-    
-@router.get("/export/{scenario_name}")
-async def export_scenario(scenario_name: str):
-    try:
-        scenario = await Scenario.find_one(Scenario.name == scenario_name, fetch_links=True)
-        if not scenario:
-            raise HTTPException(status_code=404, detail=f"Scenario: {scenario_name} does not exist.")
-
-        # print("\n\n\n BEGINNING OF EXPORT")
-        # print(scenario)
-        #handle InvestmentType, Investment, EventSeries
-        
-        investment_types = []
-        for type_id in scenario.investment_types:
-            # print("\n\n\n ", type_id)
-            investment_types.append(invest_type_to_yaml(type_id))
-        # print("INVESTMENT TYPES:", investment_types)
-        
-        investments = []
-        for invest_id in scenario.investment:
-            # print("\n\n\n INVEST", invest_id)
-            investments.append(invest_to_yaml(invest_id))
-        event_series = []
-        for event in scenario.event_series:
-            event_series.append(event_to_yaml(event))
-        
-        # print("\n\n\n",event_series)
-        #Scenario no processing needed: name, marital, birth_years, after tax contrib, financialGoal, residenceState
-        
-        #Scenario processing needed: life_expectancy, inflation_assume, spending_strat, expense_withdraw, rmd_strat, roth_opt, roth_conversion_strat
-        spending_strategy = []
-        for event in scenario.spending_strat:
-            if hasattr(event, 'name'):
-                spending_strategy.append(event.name)
-        
-        expense_withdraw_strategy = []
-        for invest in scenario.expense_withdraw:
-            if hasattr(invest, 'invest_id'):
-                expense_withdraw_strategy.append(invest.invest_id)
-        
-        rmd_strategy = []
-        for invest in scenario.rmd_strat:
-            if hasattr(invest, 'invest_id'):
-                rmd_strategy.append(invest.invest_id)
-        
-        roth_conversion_strategy = []
-        for invest in scenario.roth_conversion_strat:
-            if hasattr(invest, 'invest_id'):
-                roth_conversion_strategy.append(invest.invest_id)
-        
-        yaml_data = {
-            "name": scenario.name,
-            "maritalStatus": scenario.marital,
-            "birthYears": scenario.birth_year,
-            "lifeExpectancy": life_to_yaml(scenario.life_expectancy),
-            "investmentTypes": investment_types,
-            "investments": investments,
-            "eventSeries": event_series,
-            "inflationAssumption": inflat_to_yaml(scenario.inflation_assume),
-            "afterTaxContributionLimit": scenario.limit_posttax,
-            "spendingStrategy": spending_strategy,
-            "expenseWithdrawalStrategy": expense_withdraw_strategy,
-            "RMDStrategy": rmd_strategy,
-        }
-        if scenario.roth_optimizer:
-            yaml_data["RothConversionOpt"] = scenario.roth_optimizer.is_enable
-            yaml_data["RothConversionStart"] = scenario.roth_optimizer.start_year
-            yaml_data["RothConversionEnd"] = scenario.roth_optimizer.end_year
-        else:
-            yaml_data["RothConversionOpt"] = False
-        yaml_data["RothConversionStrategy"] = roth_conversion_strategy
-        yaml_data["financialGoal"] = scenario.fin_goal
-        yaml_data["residenceState"] = scenario.state
-        
-        # print("\n\n\n YAML:", yaml_data)
-        
-        yaml_content = yaml.dump(yaml_data, sort_keys=False, default_flow_style=False)
-        
-        #set up at directory exports
-        export_dir = os.path.join(os.getcwd(), "exports")
-        os.makedirs(export_dir, exist_ok=True)
-        file_path = os.path.join(export_dir, f"{scenario_name}.yaml")
-        
-        #write it
-        with open(file_path, "w") as f:
-            f.write(yaml_content)
-        # print(f"YAML file saved at: {file_path}")
-        
-        return FileResponse(
-            path=file_path,
-            filename=f"{scenario_name}.yaml",
-            media_type="application/x-yaml"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error exporting {scenario_name}")
-    
-    
