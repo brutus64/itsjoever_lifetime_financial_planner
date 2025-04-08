@@ -76,6 +76,7 @@ const EventSeries = ({scenario_id}:any) => {
     }
 
     const deleteEventSeries = async(event_id:any) => {
+        console.log(`im deleting ${event_id}`);
     }
 
     useEffect(() => {
@@ -99,10 +100,10 @@ const EventSeries = ({scenario_id}:any) => {
             </div>
             
             <div className="bg-white shadow-md rounded-lg p-2 flex flex-1 gap-4">
-                <GenericEventSeries key={'income'} eventSeriesType={'income'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
-                <GenericEventSeries key={'expense'} eventSeriesType={'expense'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
-                <GenericEventSeries key={'invest'} eventSeriesType={'invest'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
-                <GenericEventSeries key={'rebalance'} eventSeriesType={'rebalance'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'income'} eventSeriesType={'income'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} deleteEventSeries={deleteEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'expense'} eventSeriesType={'expense'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} deleteEventSeries={deleteEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'invest'} eventSeriesType={'invest'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} deleteEventSeries={deleteEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'rebalance'} eventSeriesType={'rebalance'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} deleteEventSeries={deleteEventSeries} sis_married={isMarried}/>
             </div>
         </div>
     )
