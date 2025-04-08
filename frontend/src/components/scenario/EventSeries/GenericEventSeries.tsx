@@ -61,7 +61,7 @@ const defaultGenericEventForm = {
     // REBALANCE
     tax_status: "non-retirement"
 }
-const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEventSeries, updateEventSeries, is_married}: {eventSeriesType: string, eventSeries:any, investments:any, createEventSeries:any, updateEventSeries:any, is_married:boolean}) => {
+const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEventSeries, updateEventSeries, deleteEventSeries, is_married}: {eventSeriesType: string, eventSeries:any, investments:any, createEventSeries:any, updateEventSeries:any, deleteEventSeries:any, is_married:boolean}) => {
     const [ open, setOpen] = useState(false);
     const [ genericEventData, setGenericEventData ] = useState(defaultGenericEventForm);
     const [ error, setError ] = useState("");
@@ -264,6 +264,7 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
                         type={eventSeriesType}
                         event_series={event_series} 
                         handleEdit={handleEdit} 
+                        handleDelete={deleteEventSeries}
                         i = {event_series.index}/>
                 ))}
             </div>
@@ -598,41 +599,40 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
     )
 }
 
-const GenericEventItem = ({type, event_series, handleEdit, i}:{type:string, event_series:any, handleEdit:any, i:number }) => {
-    if(type == 'income') {
-        return (
-            <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
-                <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
-                <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
-            </div>
-        )
-    } else if(type == 'expense') {
-        return (
-            <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
-                <h2 className="text-md font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
-                <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
-            </div>
-        )
-    } else if(type == 'invest') {
-        return (
-            <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
-                <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
-            </div>
-        )
-    } else if(type == 'rebalance') {
-        return (
-            <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.tax_status}</h2>
-                <h2 className="text-md font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
-                <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
-            </div>
-        )
-    } else {
-        return (<p>tf</p>)
-    }
+const GenericEventItem = ({type, event_series, handleEdit, handleDelete, i}:{type:string, event_series:any, handleEdit:any, handleDelete:any, i:number }) => {
+    return (
+        <div className='bg-white shadow-md rounded-lg p-4 flex w-full hover:bg-sky-100'>
+            {type == 'income' &&(
+                <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+                    <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
+                </div> 
+            )}
+            {type == 'expense' &&(
+                <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+                    <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
+                </div> 
+            )}
+            {type == 'invest' &&(
+                <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+                    <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
+                </div> 
+            )}
+            {type == 'rebalance' &&(
+                <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
+                    <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
+                </div> 
+            )}
+            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={() => handleDelete(event_series.id)}>x</button>
+        </div>
+    )
 }
 
 const InitialAssetAllocationCard = ({ investment, genericEventData, handleInitialAssetAllocation } : { investment:any, genericEventData:any, handleInitialAssetAllocation:any}) => {
