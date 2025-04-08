@@ -16,7 +16,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import Popup from "reactjs-popup"
   
-export default function SpendingStrategy({formData,setFormData}) {
+export default function SpendingStrategy({spendingStrat,setSpendingStrat,eventSeries,setDirty}) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -28,24 +28,20 @@ export default function SpendingStrategy({formData,setFormData}) {
         const {active, over} = event;
         
         if (active.id !== over.id) {
-            const oldIndex = formData.spending_strat.indexOf(active.id);
-            const newIndex = formData.spending_strat.indexOf(over.id);
-            setFormData({
-                ...formData,
-                spending_strat: arrayMove(formData.spending_strat,oldIndex,newIndex)
-            })
+            const oldIndex = spendingStrat.findIndex((es) => es.id === active.id)
+            const newIndex = spendingStrat.findIndex((es) => es.id === over.id)
+            setSpendingStrat(arrayMove(spendingStrat,oldIndex,newIndex))
+            setDirty(true)
         }
     }
 
     const handleAddExpense = (expense) => {
-        setFormData({
-            ...formData,
-            spending_strat: [...formData.spending_strat,expense]
-        })
+        setSpendingStrat([...spendingStrat,expense])
+        setDirty(true)
     }
 
-    const canAdd = formData.event_series.filter((es) => {
-        return es.type === "expense" && es.is_discretionary && !formData.spending_strat.includes(es.name)
+    const canAdd = eventSeries.filter((es) => {
+        return es.type === "expense" && es.details.is_discretionary && !spendingStrat.some(spend_es => spend_es.id == es.id)
     })
 
     return (
@@ -64,7 +60,7 @@ export default function SpendingStrategy({formData,setFormData}) {
             >
                 <div className="max-h-90 overflow-y-scroll">
                     {canAdd.length >= 1 && canAdd.map((es) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={es.name} onClick={() => handleAddExpense(es.name)}>
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={es.id} onClick={() => handleAddExpense(es)}>
                             {es.name}
                             
                         </div>
@@ -77,10 +73,10 @@ export default function SpendingStrategy({formData,setFormData}) {
             <div className='flex flex-col gap-3 overflow-y-scroll h-90'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
-                    items={formData.spending_strat}
+                    items={spendingStrat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.spending_strat.map((es,i) => <SortableItem key={es} es={es} ind={i}/>)}
+                        {spendingStrat.map((es,i) => <SortableItem key={es.id} es={es} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -96,7 +92,7 @@ const SortableItem = ({es,ind}) => {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: es});
+    } = useSortable({id: es.id});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -106,7 +102,7 @@ const SortableItem = ({es,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{es}</div>
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{es.name}</div>
             
         </div>
     );

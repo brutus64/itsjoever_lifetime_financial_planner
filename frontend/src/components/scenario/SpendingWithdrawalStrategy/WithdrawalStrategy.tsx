@@ -16,7 +16,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import Popup from "reactjs-popup"
   
-export default function WithdrawalStrategy({formData,setFormData}) {
+export default function WithdrawalStrategy({withdrawalStrat,setWithdrawalStrat,investments,setDirty}) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -28,24 +28,20 @@ export default function WithdrawalStrategy({formData,setFormData}) {
         const {active, over} = event;
         
         if (active.id !== over.id) {
-            const oldIndex = formData.expense_withdraw.indexOf(active.id);
-            const newIndex = formData.expense_withdraw.indexOf(over.id);
-            setFormData({
-                ...formData,
-                expense_withdraw: arrayMove(formData.expense_withdraw,oldIndex,newIndex)
-            })
+            const oldIndex = withdrawalStrat.findIndex((inv) => inv.id === active.id)
+            const newIndex = withdrawalStrat.findIndex((inv) => inv.id === over.id)
+            setWithdrawalStrat(arrayMove(withdrawalStrat,oldIndex,newIndex))
+            setDirty(true)
         }
     }
 
     const handleAddInvestment = (investment) => {
-        setFormData({
-            ...formData,
-            expense_withdraw: [...formData.expense_withdraw,investment]
-        })
+        setWithdrawalStrat([...withdrawalStrat,investment])
+        setDirty(true)
     }
 
-    const canAdd = formData.investment.filter((inv) => {
-        return !formData.expense_withdraw.includes(`${inv.invest_type} ${inv.tax_status}`)
+    const canAdd = investments.filter((inv) => {
+        return !withdrawalStrat.some(with_inv => with_inv.id == inv.id)
     })
 
     return (
@@ -64,8 +60,9 @@ export default function WithdrawalStrategy({formData,setFormData}) {
             >
                 <div className="max-h-90 overflow-y-scroll">
                     {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.invest_type} onClick={() => handleAddInvestment(`${inv.invest_type} ${inv.tax_status}`)}>
-                            {inv.invest_type + " - " + inv.tax_status}
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.id} onClick={() => handleAddInvestment(inv)}>
+                            {inv.invest_type.name} - {inv.tax_status}
+
                         </div>
                     ))}
                     {canAdd.length === 0 && <div className="flex flex-col p-1 w-70 h-8">
@@ -76,10 +73,10 @@ export default function WithdrawalStrategy({formData,setFormData}) {
             <div className='flex flex-col gap-3 overflow-y-scroll h-90'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
-                    items={formData.expense_withdraw}
+                    items={withdrawalStrat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.expense_withdraw.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
+                        {withdrawalStrat.map((inv,i) => <SortableItem key={inv.id} inv={inv} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -95,7 +92,7 @@ const SortableItem = ({inv,ind}) => {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: inv});
+    } = useSortable({id: inv.id});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -105,7 +102,7 @@ const SortableItem = ({inv,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv}</div>
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv.invest_type.name} - {inv.tax_status}</div>
             
         </div>
     );

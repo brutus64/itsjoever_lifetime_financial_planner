@@ -333,7 +333,6 @@ async def update_rmd_roth(scenario_id: str, rmd_roth_data: dict):
         existing_scenario = await Scenario.get(scenario_obj_id)
         if not existing_scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        print(rmd_roth_data.get("roth_conversion_strat"))
 
         # transform all id to links
         existing_scenario.rmd_strat = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in rmd_roth_data.get("rmd_strat")]
@@ -344,23 +343,48 @@ async def update_rmd_roth(scenario_id: str, rmd_roth_data: dict):
 
         return {"message": "RMD and Roth updated successfully"} # will be sent using save button, no send back
     except Exception as e:
-        print(f"Error in update_rmd: {e}")
-        raise HTTPException(status_code=400, detail="Error updating rmd")
+        print(f"Error in update_rmd_roth: {e}")
+        raise HTTPException(status_code=400, detail="Error updating rmd and roth")
 
-@router.put("/roth/{scenario_id}")
-async def update_roth(scenario_id: str, roth_data):
+@router.get("/spendwith/{scenario_id}")
+async def fetch_spend_withdraw(scenario_id: str):
+    try:
+        scenario_id = PydanticObjectId(scenario_id)
+        
+        scenario = await Scenario.find_one(
+            Scenario.id == scenario_id,
+            fetch_links=True # THIS DOESN'T PRESERVE THE ORDER AHHHHHHHHHH
+        )
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        scenario_unfetched = await Scenario.find_one(
+            Scenario.id == scenario_id 
+        )#this has order preserved
+        correct_spend = {es.ref.id:i for i,es in enumerate(scenario_unfetched.spending_strat)}
+        correct_withdraw = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.expense_withdraw)}
+        scenario.spending_strat.sort(key=lambda es:correct_spend[es.id])
+        scenario.expense_withdraw.sort(key=lambda inv:correct_withdraw[inv.id])
+        
+        return scenario.model_dump(include={'spending_strat','expense_withdraw','event_series','investment'}, mode="json")
+    except ValueError: #occurs if pydantic conversion fails
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+@router.put("/spendwith/{scenario_id}")
+async def update_spend_withdraw(scenario_id: str, strategy_data: dict):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
         
         existing_scenario = await Scenario.get(scenario_obj_id)
         if not existing_scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        print(roth_data)
 
-        # Update the scenario
-        await existing_scenario.update({"$set": roth_data})
+        # transform all id to links
+        existing_scenario.spending_strat = [Link(ref = DBRef(collection="event_series", id=PydanticObjectId(id)),document_class=EventSeries) for id in strategy_data.get("spending_strat")]
+        existing_scenario.expense_withdraw = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in strategy_data.get("expense_withdraw")]
 
-        return {"message": "Scenario updated successfully"} # will be sent using save button, no send back
+        await existing_scenario.save(link_rule=WriteRules.WRITE)
+
+        return {"message": "Strategies updated successfully"} # will be sent using save button, no send back
     except Exception as e:
-        print(f"Error in update_roth: {e}")
-        raise HTTPException(status_code=400, detail="Error updating roth")
+        print(f"Error in update_spend_withdraw: {e}")
+        raise HTTPException(status_code=400, detail="Error updating strategies")
