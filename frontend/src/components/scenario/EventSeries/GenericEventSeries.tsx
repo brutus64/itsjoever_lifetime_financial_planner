@@ -147,8 +147,6 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
                 Object.keys(genericEventData.initial).length != num_assets ||
                 genericEventData.is_glide && (Object.keys(genericEventData.final).length != num_assets)
             ) {
-                console.log(genericEventData.initial)
-                console.log(genericEventData.final)
                 setError("Please fill out Asset Allocation fields");
                 return false;
             }
@@ -188,7 +186,6 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
             updateEventSeries(eventSeries[editing].id, genericEventData)
         }
         handleClose(true)
-        console.log(genericEventData);
     }
 
     const fillGenericEventData = (event_series: any) => {
@@ -222,9 +219,16 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
                 copy[key] = value
             }
         }
-
+  
         for (const [key, value] of Object.entries(event_series.start)) {
-            if (value) {
+            if (key == 'event_series') {
+                if (event_series.start.type == 'start_with') {
+                    copy.start_year['start_with'] = value
+                } else {
+                    copy.start_year['end_with'] = value
+                    
+                }
+            } else if (value) {
                 copy.start_year[key] = value;
             }
         }
@@ -240,8 +244,6 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
     const handleEdit = (index : number) => {
         setEditing(index);
         const filledGeneric = fillGenericEventData(eventSeries[index]);
-        console.log(filledGeneric);
-        console.log(eventSeries[index]);
         setGenericEventData(filledGeneric)
         setOpen(true)
     }
@@ -293,7 +295,6 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
         if(float_names.has(name)) {
             value = parseFloat(value);
         }
-        console.log(`${name}, ${value}`)
         setGenericEventData({
             ...genericEventData,
             start_year: {
@@ -601,7 +602,7 @@ const GenericEventItem = ({type, event_series, handleEdit, i}:{type:string, even
     if(type == 'income') {
         return (
             <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.initial_amt}</p>
+                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
                 <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
                 <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
             </div>
@@ -609,7 +610,7 @@ const GenericEventItem = ({type, event_series, handleEdit, i}:{type:string, even
     } else if(type == 'expense') {
         return (
             <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.initial_amt}</p>
+                <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
                 <h2 className="text-md font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
                 <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
             </div>

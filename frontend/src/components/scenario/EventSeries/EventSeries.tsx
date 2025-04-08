@@ -49,13 +49,11 @@ const EventSeries = ({scenario_id}:any) => {
             return
         }
         const scenario = res.data.scenario;
-        console.log(scenario.marital);
         setIsMarried(scenario.marital === "couple")
     }
 
     const createEventSeries = async (newData:any) => {
         try {
-            console.log(newData);
             const res = await axios.post(`http://localhost:8000/api/scenarios/event_series/${scenario_id}`, newData);
             console.log(res);
             setEventSeries(res.data.event_series);
@@ -68,7 +66,6 @@ const EventSeries = ({scenario_id}:any) => {
 
     const updateEventSeries = async (event_id:any, newData:any) => {
         try {
-            console.log(newData);
             const res = await axios.put(`http://localhost:8000/api/scenarios/event_series/${scenario_id}/${event_id}`, newData);
             console.log(res);
             setEventSeries(res.data.event_series);
@@ -141,19 +138,6 @@ const Description = ({handleChange, eventData}: {handleChange:any, eventData:any
 };
 
 const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStartYearChange:any, eventData:any, eventSeries:any}) => {
-    const getEventSeriesYear = (event_id:string) => {
-        console.log(event_id);
-        if (event_id === "") {
-            return ""
-        }
-        const event = eventSeries.find((event_series:any) => event_series.id === event_id)
-        if (event) {
-            console.log(event.name);
-            return event.name;
-        }
-        console.log("empty");
-        return ""
-    }
     
     return (
         <div>
@@ -204,7 +188,7 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                         <div className="">Same year event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-start_with"
-                            value={eventData.start_with}
+                            value={eventData.start_year.start_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {eventSeries && eventSeries
@@ -219,7 +203,7 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                         <div className="">Year after event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-end_with"
-                            value={eventData.end_with}
+                            value={eventData.start_year.end_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {eventSeries && eventSeries
@@ -233,7 +217,6 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
             </div>
         </div>
     )
-
 };
 
 const Duration = ({handleDurationChange, eventData}: {handleDurationChange:any, eventData:any}) => {
