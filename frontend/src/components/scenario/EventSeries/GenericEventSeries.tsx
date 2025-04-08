@@ -60,7 +60,6 @@ const defaultGenericEventForm = {
     max_cash: 0.0,
     // REBALANCE
     tax_status: "non-retirement"
-
 }
 const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEventSeries, updateEventSeries, is_married}: {eventSeriesType: string, eventSeries:any, investments:any, createEventSeries:any, updateEventSeries:any, is_married:boolean}) => {
     const [ open, setOpen] = useState(false);
@@ -191,10 +190,57 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
         handleClose(true)
         console.log(genericEventData);
     }
+
+    const fillGenericEventData = (event_series: any) => {
+        const copy = structuredClone(defaultGenericEventForm);
+        copy.type = event_series.type;
+        copy.name = event_series.name;
+        copy.description = event_series.description;
+        copy.start_year = event_series.start;
+        copy.duration = event_series.duration;
+        if (event_series.initial_amt) {
+            copy.initial_amt = event_series.initial_amt;
+        }
+        if (event_series.exp_annual_change) {
+            copy.exp_annual_change = event_series.exp_annual_change;
+        }
+        if (event_series.inflation_adjust) {
+            copy.inflation_adjust = event_series.inflation_adjust;
+        }
+        if (event_series.user_split) {
+            copy.user_split = event_series.user_split;
+        }
+        if (event_series.social_security) {
+            copy.social_security = event_series.social_security;
+        }
+        if (event_series.is_discretionary) {
+            copy.is_discretionary = event_series.is_discretionary;
+        }
+        if (event_series.is_glide) {
+            copy.is_glide = event_series.is_glide;
+        }
+        if (event_series.initial) {
+            copy.initial = event_series.initial;
+        }
+        if (event_series.final) {
+            copy.final = event_series.final;
+        }
+        if (event_series.max_cash) {
+            copy.max_cash = event_series.max_cash;
+        }
+        if (event_series.tax_status) {
+            copy.tax_status = event_series.tax_status;
+        }
+
+        return copy
+    }
     
     const handleEdit = (index : number) => {
         setEditing(index);
-        setGenericEventData(eventSeries[index])
+        const filledGeneric = fillGenericEventData(eventSeries[index]);
+        console.log(filledGeneric);
+        console.log(eventSeries[index]);
+        setGenericEventData(filledGeneric)
         setOpen(true)
     }
 
@@ -205,17 +251,17 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
             </div>
 
             <div className="flex flex-col gap-3 h-60 overflow-y-scroll py-2">
-            {eventSeries
+            {eventSeries && eventSeries
                 .map((event_series: any, index: number) => ({ ...event_series, index }))  // Add index to each item
                 .filter((event_series: { type: string; }) => event_series.type === eventSeriesType)  // Only keep items with specified type
-                .map((event_series: any) => {
+                .map((event_series: any) => (
                     <GenericEventItem 
                         key={event_series.index}
                         type={eventSeriesType}
                         event_series={event_series} 
                         handleEdit={handleEdit} 
                         i = {event_series.index}/>
-                })}
+                ))}
             </div>
             <GenericEventSeriesPopup 
                 eventSeriesType={eventSeriesType}
@@ -468,16 +514,16 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
                 
                 {eventSeriesType == 'invest' && (
                     <div className="flex gap-4">
-                        {investments.length == 0 || investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
+                        {!investments || investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
                             <h1 className="text-center">No investments to allocate</h1>
                         )}
 
                         <div className="flex flex-col">
-                            {investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                            {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
                                 <h1 className="text-center">{genericEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
                             )}
                             <div className="flex flex-col  gap-3">
-                                {investments
+                                {investments && investments
                                 .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
                                 .map((investment: unknown) =>
                                     <InitialAssetAllocationCard investment={investment} genericEventData={genericEventData} handleInitialAssetAllocation={handleInitialAssetAllocation}/>
@@ -487,12 +533,12 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
 
                         {genericEventData.is_glide && (
                             <div className="flex flex-col">
-                                {investments.length == 0 || investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                                {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
                                     <h1 className="text-center">Final Percentages</h1>
                                 )}
                                 
                                 <div className="flex flex-col gap-3">
-                                {investments
+                                {investments && investments
                                     .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
                                     .map((investment: unknown) => (
                                         <FinalAssetAllocationCard investment={investment} genericEventData={genericEventData} handleFinalAssetAllocation={handleFinalAssetAllocation}/>
@@ -505,16 +551,16 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
                     
                 {eventSeriesType ==  'rebalance' && (
                     <div className="flex gap-4">
-                        {investments.length == 0 || investments.filter((investment: { tax_status: string; }) => investment.tax_status === genericEventData.tax_status).length == 0 && (
+                        {!investments || investments.filter((investment: { tax_status: string; }) => investment.tax_status === genericEventData.tax_status).length == 0 && (
                             <h1 className="text-center">No investments to allocate</h1>
                         )}
 
                         <div className="flex flex-col">
-                            {investments.filter((investment: { tax_status: string; }) => investment.tax_status ===  genericEventData.tax_status).length > 0 && (
+                            {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status ===  genericEventData.tax_status).length > 0 && (
                                 <h1 className="text-center">{genericEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
                             )}
                             <div className="flex flex-col gap-3">
-                                {investments
+                                {investments && investments
                                 .filter((investment: { tax_status: string; }) => investment.tax_status ===  genericEventData.tax_status)
                                 .map((investment: any) =>
                                     <InitialAssetAllocationCard investment={investment} genericEventData={genericEventData} handleInitialAssetAllocation={handleInitialAssetAllocation}/>
@@ -524,12 +570,12 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
 
                         {genericEventData.is_glide && (
                             <div className="flex flex-col">
-                                {investments.length == 0 || investments.filter((investment: { tax_status: string; }) => investment.tax_status ==  genericEventData.tax_status).length > 0 && (
+                                {investments &&  investments.filter((investment: { tax_status: string; }) => investment.tax_status ==  genericEventData.tax_status).length > 0 && (
                                     <h1 className="text-center">Final Percentages</h1>
                                 )}
                                 
                                 <div className="flex flex-col gap-3">
-                                {investments
+                                {investments && investments
                                     .filter((investment: { tax_status: string; }) => investment.tax_status ==  genericEventData.tax_status)
                                     .map((investment: any) => (
                                         <FinalAssetAllocationCard investment={investment} genericEventData={genericEventData} handleFinalAssetAllocation={handleFinalAssetAllocation}/>
@@ -581,6 +627,8 @@ const GenericEventItem = ({type, event_series, handleEdit, i}:{type:string, even
                 <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
             </div>
         )
+    } else {
+        return (<p>tf</p>)
     }
 }
 

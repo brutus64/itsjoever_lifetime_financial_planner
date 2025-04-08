@@ -18,7 +18,7 @@ const EventSeries = ({scenario_id}:any) => {
             console.error("Could not fetch event series: ", err);
             return
         }
-        const event_series = res.data.event_series.event_series;
+        const event_series = res.data.event_series;
         console.log(event_series);
         setEventSeries(event_series);
     }
@@ -34,7 +34,7 @@ const EventSeries = ({scenario_id}:any) => {
             return
         }
         const scenario = res.data.scenario;
-        console.log(scenario)
+        // console.log(scenario)
         setInvestments(scenario.investment)
     }
 
@@ -49,7 +49,8 @@ const EventSeries = ({scenario_id}:any) => {
             return
         }
         const scenario = res.data.scenario;
-        setIsMarried(scenario === "couple")
+        console.log(scenario.marital);
+        setIsMarried(scenario.marital === "couple")
     }
 
     const createEventSeries = async (newData:any) => {
@@ -83,6 +84,7 @@ const EventSeries = ({scenario_id}:any) => {
     useEffect(() => {
         fetchEventSeries();
         fetchInvestments();
+        fetchIsMarried();
     },[])
 
 
@@ -191,9 +193,9 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                             value={eventData.start_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
-                            {eventSeries
+                            {eventSeries && eventSeries
                             .map(event_series => 
-                                <option key={event_series.name} value={event_series.name}>{event_series.name}</option>
+                                <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
                             )}
                         </select>
                         <div className=""> starts</div> 
@@ -206,9 +208,9 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                             value={eventData.end_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
-                            {eventSeries
+                            {eventSeries && eventSeries
                             .map(event_series => 
-                                <option key={event_series.name} value={event_series.name}>{event_series.name}</option>
+                                <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
                             )}
                         </select>
                         <div className=""> ends</div>
@@ -294,7 +296,7 @@ const ExpectedAnnualChange = ({handleAnnualChange, eventData}: {handleAnnualChan
                             onChange={handleAnnualChange}
                             name="value"
                             value={eventData.exp_annual_change.value}
-                            type="number" min="0"/> 
+                            type="number" min="0"/>%
                     </div>
                     <div className="flex gap-2 align-middle">
                         <input className="ml-1" type="radio" name="exp-type" value="normal" onChange={handleAnnualChange} checked={eventData.exp_annual_change.type === 'normal'}/>
