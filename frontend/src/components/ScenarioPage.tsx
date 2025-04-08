@@ -22,20 +22,23 @@ const ScenarioPage: React.FC = () => {
     
     const [user, setUser] = useState<User | null>(null);
     const [scenarios, setScenarios] = useState([])
-    const [searchTerm, setSearchTerm] = useState('')
+    const [error, setError] = useState("")
+    // const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
     
     // Fetch user data and then scenarios
     useEffect(() => {
         const fetchUserAndScenarios = async () => {
             try {
+                console.log("Hello")
                 // get the access token from cookies
                 const accessToken = Cookies.get("access_token");
                 if (!accessToken) {
                     setLoading(false);
+                    setError("Please log in to see your saved scenarios!")
                     return;
                 }
-                
+                setError("")
                 // fetch user info, mainly want email
                 const googleResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
                     method: "GET",
@@ -61,6 +64,7 @@ const ScenarioPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
+                setError("Error fetching data")
             } finally {
                 setLoading(false);
             }
@@ -82,6 +86,7 @@ const ScenarioPage: React.FC = () => {
         }
         catch(error:any){
             console.error("Error creating new scenario: ", error);
+            setError("Error creating new scenario")
         }
         
     }
@@ -106,6 +111,7 @@ const ScenarioPage: React.FC = () => {
                     </button>
                 </div>
             </div>
+            <div className="text-red-600 font-bold">{error}</div>
             <div className='flex flex-col gap-4'>
                 {scenarios.map((scenario)=> {
                     return <ScenarioCard key={scenario.id} scenario={scenario} />

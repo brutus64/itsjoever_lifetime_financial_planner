@@ -2,15 +2,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
 import axios from "axios";
 
-const Scenario = ({}) => {
+const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState()
-    const [ collapse, setCollapse ] = useState({ //need to set the lengths to array sizes
+    const [ collapse, setCollapse ] = useState({ // FIX THIS SHIT
         investment_types: [],
         event_series: [],
     });
-    const [ editing, setEditing ] = useState(false);
 
     //fetch the scenario data from backend
     useEffect(() => {
@@ -30,7 +29,7 @@ const Scenario = ({}) => {
             }
         }
         fetchScenario();
-    },[params.id]);
+    },[]);
 
     const handleCollapse = (field,ind) => {
         setCollapse({
@@ -83,7 +82,10 @@ const Scenario = ({}) => {
         navigate(`/scenario/${params.id}/main`)
     }
 
-    return (scenario &&
+    if (!scenario)
+        return <div>Loading...</div>
+
+    return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center pb-5 mr-7 border-b-black border-b-2">
                 <div className="flex gap-4 items-end">
@@ -129,7 +131,7 @@ const Scenario = ({}) => {
                 <div className="flex flex-col gap-2">
                     {scenario.investment.map((investment,i) =>
                         <div className="font-medium bg-white shadow-md rounded-lg flex flex-col pl-4 py-4 gap-1 w-140 h-30">
-                            <div><b>Invest Type:</b> {investment.invest_type}</div>
+                            <div><b>Invest Type:</b> {investment.invest_type.name}</div>
                             <div><b>Value:</b> ${investment.value}</div>
                             <div><b>Tax Status:</b> {investment.tax_status}</div>
                         </div>
@@ -168,7 +170,7 @@ const Scenario = ({}) => {
                                         <b>Assets:</b> 
                                         <ul>
                                             {es.details.assets?.map(asset => 
-                                                <li>{asset.invest_id}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
+                                                <li>{asset.invest_id.invest_type.name} - {asset.invest_id.tax_status}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
                                             )}
                                         </ul>
                                     </div>
@@ -178,7 +180,7 @@ const Scenario = ({}) => {
                                         <b>Assets:</b> 
                                         <ul>
                                             {es.details.assets?.map(asset => 
-                                                <li>{asset.invest_id}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
+                                                <li>{asset.invest_id.invest_type.name} - {asset.invest_id.tax_status}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
                                             )}
                                         </ul>
                                     </div>
@@ -204,7 +206,7 @@ const Scenario = ({}) => {
                     {scenario.expense_withdraw.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name} - {investment.tax_status}</div>
                         </div>))}
                     
                 </div>
@@ -213,7 +215,7 @@ const Scenario = ({}) => {
                     {scenario.rmd_strat.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
                         </div>))}
 
                 </div>
@@ -226,7 +228,7 @@ const Scenario = ({}) => {
                                 {scenario.roth_conversion_strat.map((investment,i) => 
                                 (<div className="flex items-center">
                                     <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_id}</div>
+                                    <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
                                 </div>))}
                             </div>
                             

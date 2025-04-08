@@ -55,12 +55,25 @@ async def fetch_scenario(scenario_id: str):
         scenario_id = PydanticObjectId(scenario_id)
         
         scenario = await Scenario.find_one(
-                Scenario.id == scenario_id,
-                fetch_links=True
-            )
+            Scenario.id == scenario_id,
+            fetch_links=True
+        )
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
         print("FOUND THE SCENARIO",scenario)
+
+        # strategies are not in order
+        scenario_unfetched = await Scenario.find_one(
+            Scenario.id == scenario_id 
+        )
+        correct_rmd = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.rmd_strat)}
+        correct_roth = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.roth_conversion_strat)}
+        correct_spend = {es.ref.id:i for i,es in enumerate(scenario_unfetched.spending_strat)}
+        correct_withdraw = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.expense_withdraw)}
+        scenario.rmd_strat.sort(key=lambda inv:correct_rmd[inv.id])
+        scenario.roth_conversion_strat.sort(key=lambda inv:correct_roth[inv.id])
+        scenario.spending_strat.sort(key=lambda es:correct_spend[es.id])
+        scenario.expense_withdraw.sort(key=lambda inv:correct_withdraw[inv.id])
         return {"scenario": scenario.model_dump(exclude={
                     "user": {"scenarios"}},mode="json")}
     except ValueError: #occurs if pydantic conversion fails
