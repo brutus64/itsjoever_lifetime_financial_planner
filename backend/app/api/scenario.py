@@ -280,8 +280,12 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
             raise HTTPException(status_code=400, detail="PUT event series scenario does not exist")
         event_series = await EventSeries.get(PydanticObjectId(event_series_id))
         #NOT SURE IF THIS WORKS
-        new_event_series = EventSeries(**parse_events(event_data))
+        print("attemp to parse")
+        new_event_series = parse_events(event_data)
+        print(new_event_series)
+        print("Parse success?")
         await event_series.update({"$set":new_event_series})
+        print("updated")
         updated_scenario = await Scenario.get(PydanticObjectId(scenario_id), fetch_links=True)
         return updated_scenario.model_dump(include={'event_series'}, mode="json")
     except Exception as e:
