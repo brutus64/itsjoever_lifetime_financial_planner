@@ -6,10 +6,6 @@ const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState()
-    const [ collapse, setCollapse ] = useState({ // FIX THIS SHIT
-        investment_types: [],
-        event_series: [],
-    });
 
     //fetch the scenario data from backend
     useEffect(() => {
@@ -19,10 +15,6 @@ const Scenario = () => {
                 const res = await axios.get(`http://localhost:8000/api/scenarios/all/${params.id}`);
                 console.log(res.data);
                 setScenario(res.data.scenario)
-                setCollapse({
-                    investment_types: Array(res.data.scenario.investment_types.length).fill(false),
-                    event_series: Array(res.data.scenario.event_series.length).fill(false)
-                })
             }
             catch(err){
                 console.log("Could not fetch scenario: ", err);
@@ -30,15 +22,6 @@ const Scenario = () => {
         }
         fetchScenario();
     },[]);
-
-    const handleCollapse = (field,ind) => {
-        setCollapse({
-            ...collapse,
-            [field]:collapse[field].map((b,i) => 
-                i === ind ? !b : b
-            )
-        })
-    }
 
     const handlePercent = ({type,is_percent,value,mean,stdev,lower,upper}) => {
         let string_amt = ""
@@ -89,39 +72,37 @@ const Scenario = () => {
         <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center pb-5 mr-7 border-b-black border-b-2">
                 <div className="flex gap-4 items-end">
-                    <h1 className="text-5xl font-bold text-wrap break-words">{scenario.name}</h1>
+                    <h1 className="text-5xl font-bold text-wrap break-words">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h1>
                     <h2 className="text-3xl font-medium">By {scenario.user.name}</h2>
                 </div>
                 <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
             </div>
             <div className="">
                 <h1 className="text-3xl font-medium">General Information</h1>
-                <div><b>Financial Goal:</b> ${scenario.fin_goal}</div>
-                <div><b>State:</b> {scenario.state}</div>
-                <div><b>Birth Year:</b> {scenario.birth_year[0]}</div>
-                <div><b>Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[0])} years</div>
+                <div><b>Financial Goal:</b> <RedText>{scenario.fin_goal}</RedText></div>
+                <div><b>State:</b> <RedText>{scenario.state}</RedText></div>
+                <div><b>Birth Year:</b> <RedText>{scenario.birth_year[0]}</RedText></div>
+                <div><b>Life Expectancy:</b> <RedText>{handleNotPercent(scenario.life_expectancy[0])}</RedText></div>
                 <div><b>Marital Status:</b> {scenario.marital}</div>
-                {scenario.birth_year.length === 2 && scenario.life_expectancy.length === 2 && <div>
-                    <div><b>Spouse Birth Year:</b> {scenario.birth_year[1]}</div>
-                    <div><b>Spouse Life Expectancy:</b> {handleNotPercent(scenario.life_expectancy[1])}</div>
+                {scenario.marital === "couple" && <div>
+                    <div><b>Spouse Birth Year:</b> <RedText>{scenario.birth_year[1]}</RedText></div>
+                    <div><b>Spouse Life Expectancy:</b> <RedText>{handleNotPercent(scenario.life_expectancy[1])}</RedText></div>
                 </div>}
-                <div><b>Inflation Assumption:</b> {handleNotPercent(scenario.inflation_assume)}%</div>
+                <div><b>Inflation Assumption:</b> <RedText>{handleNotPercent(scenario.inflation_assume) ? handleNotPercent(scenario.inflation_assume) : ""}</RedText></div>
             </div>
             <div className="flex flex-col gap-3">
                 <h1 className="text-3xl font-medium">Investment Types</h1>
                 <div className="flex flex-col gap-2">
                     {scenario.investment_types.map((investment,i) =>
-                        <div>
-                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("investment_types",i)}>{investment.name}</div>
-                            {collapse.investment_types[i] && 
+                        <Collapse base={<div className="text-xl font-medium">{investment.name}</div>}>
                             <div className="p-4 gap-3 w-140">
                                 <div><b>Description:</b> {investment.description}</div>
                                 <div><b>Expected Annual Return:</b> {handlePercent(investment.exp_annual_return)}</div>
                                 <div><b>Expected Annual Income:</b> {handlePercent(investment.exp_annual_income)}</div>
                                 <div><b>Expense Ratio:</b> {investment.expense_ratio}</div>
                                 <div><b>Taxability:</b> {investment.taxability ? "yes" : "no"}</div>
-                            </div>}
-                        </div>
+                            </div>
+                        </Collapse>
                     )}
                 </div>
             </div>
@@ -143,9 +124,7 @@ const Scenario = () => {
                 <h1 className="text-3xl font-medium">Event Series</h1>
                 <div className="flex flex-col gap-2">
                     {scenario.event_series.map((es,i) =>
-                        <div >
-                            <div className="text-xl font-medium bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 w-140 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => handleCollapse("event_series",i)}>{es.name}<span className="text-gray-400 font-normal text-sm"> - {es.type}</span></div>
-                            {collapse.event_series[i] && 
+                        <Collapse base={<div className="text-xl font-medium">{es.name}<span className="text-gray-400 font-normal text-sm"> - {es.type}</span></div>}>
                             <div className="flex flex-col p-4 gap-1 w-140">
                                 <div><b>Description:</b> {es.description}</div>
                                 <div><b>Start year:</b> {handleNotPercent(es.start)}</div>
@@ -189,9 +168,9 @@ const Scenario = () => {
                                         </ul>
                                     </div>
                                 </div>}
-                            </div>}
-                        </div>
-                    )}
+                            </div>
+                        </Collapse>)
+                    }
                 </div>
             </div>
 
@@ -226,7 +205,7 @@ const Scenario = () => {
                 <div className="flex flex-col gap-2">
                     <div><b>Roth Conversion:</b> {scenario.roth_optimizer.is_enable ? "yes" : "no"}</div>
                     {scenario.roth_optimizer.is_enable && <div>
-                            <div><b>Year Range:</b> {scenario.roth_optimizer.start_year}-{scenario.roth_optimizer.end_year}</div>
+                            <div><b>Year Range:</b> <RedText>{scenario.roth_optimizer.start_year}</RedText> - <RedText>{scenario.roth_optimizer.end_year}</RedText></div>
                             <div className="text-xl font-medium bg-white shadow-md rounded-lg flex flex-col p-4 gap-3 w-140">
                                 <h2 className="text-xl font-medium">Roth Conversion Strategy</h2>
                                 {scenario.roth_conversion_strat.map((investment,i) => 
@@ -235,13 +214,26 @@ const Scenario = () => {
                                     <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name}</div>
                                 </div>))}
                             </div>
-                            
-
                         </div>}
-                    
-
                 </div>
             </div>
+        </div>
+    )
+}
+
+const RedText = ({children}) => {
+    return (
+        <span style={{"color": (children ? "black" : "red")}} className="text-red-600 font-bold">{children ? children : "???"}</span>
+    )
+}
+
+const Collapse = ({children,base}) => {
+    const [ open, setOpen ] = useState(false)
+    return (
+        <div className="w-140">
+            <div className="bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(!open)}>{base}</div>
+            <div className={`mx-1 px-2 border-x-2 border-gray-100 bg-gray-100 rounded-b-xl transition-all duration-500 ease-out ${
+            open ? "overflow-visible py-1 border-b-2 opacity-100" : "h-0 overflow-hidden opacity-0"}`}>{children}</div>
         </div>
     )
 }
