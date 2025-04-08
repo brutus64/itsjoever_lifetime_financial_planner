@@ -1,7 +1,94 @@
 import "reactjs-popup/dist/index.css"
-import GenericEventSeriesPopup from "./GenericEventSeries";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import GenericEventSeries from "./GenericEventSeries";
 
-const EventSeries = ({ formData,setFormData }:any) => {
+const EventSeries = ({scenario_id}:any) => {
+    const [eventSeries, setEventSeries] = useState(null);
+    const [investments, setInvestments] = useState(null);
+    const [isMarried, setIsMarried] = useState(false);
+
+    const fetchEventSeries = async () => {
+        console.log("Fetching event series")
+        let res;
+        try {
+            res = await axios.get(`http://localhost:8000/api/scenarios/event_series/${scenario_id}`);
+        }
+        catch(err){
+            console.error("Could not fetch event series: ", err);
+            return
+        }
+        const event_series = res.data.event_series;
+        console.log(event_series);
+        setEventSeries(event_series);
+    }
+
+    const fetchInvestments = async () => {
+        console.log("Fetching investments")
+        let res;
+        try {
+            res = await axios.get(`http://localhost:8000/api/scenarios/investments/${scenario_id}`);
+        }
+        catch(err){
+            console.error("Could not fetch investments: ", err);
+            return
+        }
+        const scenario = res.data.scenario;
+        // console.log(scenario)
+        setInvestments(scenario.investment)
+    }
+
+    const fetchIsMarried = async () => {
+        console.log("Fetching main info for is married")
+        let res;
+        try {
+            res = await axios.get(`http://localhost:8000/api/scenarios/main/${scenario_id}`);
+        }
+        catch(err){
+            console.error("Could not fetch main data: ", err);
+            return
+        }
+        const scenario = res.data.scenario;
+        setIsMarried(scenario.marital === "couple")
+    }
+
+    const createEventSeries = async (newData:any) => {
+        try {
+            const res = await axios.post(`http://localhost:8000/api/scenarios/event_series/${scenario_id}`, newData);
+            console.log(res);
+            setEventSeries(res.data.event_series);
+        }
+        catch(err) {
+            console.error("Could not create event series: ",err);
+            return;
+        }
+    }
+
+    const updateEventSeries = async (event_id:any, newData:any) => {
+        try {
+            const res = await axios.put(`http://localhost:8000/api/scenarios/event_series/${scenario_id}/${event_id}`, newData);
+            console.log(res);
+            setEventSeries(res.data.event_series);
+        } catch(err) {
+            console.error("Could not modify event series: ",err);
+            return;
+        }
+    }
+
+    const deleteEventSeries = async(event_id:any) => {
+    }
+
+    useEffect(() => {
+        fetchEventSeries();
+        fetchInvestments();
+        fetchIsMarried();
+    },[])
+
+
+    if (eventSeries === null) {
+        return (<div>Loading</div>)
+    }
+
     return (
         <div className="m-5 flex align-center h-full gap-5">
             <div className='flex gap-4 w-60 '>
@@ -12,10 +99,10 @@ const EventSeries = ({ formData,setFormData }:any) => {
             </div>
             
             <div className="bg-white shadow-md rounded-lg p-2 flex flex-1 gap-4">
-                <GenericEventSeriesPopup key={'income'} eventSeriesType={'income'} formData={formData} setFormData={setFormData} />
-                <GenericEventSeriesPopup key={'expense'} eventSeriesType={'expense'} formData={formData} setFormData={setFormData} />
-                <GenericEventSeriesPopup key={'invest'} eventSeriesType={'invest'} formData={formData} setFormData={setFormData} />
-                <GenericEventSeriesPopup key={'rebalance'} eventSeriesType={'rebalance'}formData={formData} setFormData={setFormData} />
+                <GenericEventSeries key={'income'} eventSeriesType={'income'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'expense'} eventSeriesType={'expense'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'invest'} eventSeriesType={'invest'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
+                <GenericEventSeries key={'rebalance'} eventSeriesType={'rebalance'} eventSeries={eventSeries} investments={investments} createEventSeries={createEventSeries} updateEventSeries={updateEventSeries} is_married={isMarried}/>
             </div>
         </div>
     )
@@ -50,7 +137,8 @@ const Description = ({handleChange, eventData}: {handleChange:any, eventData:any
     )
 };
 
-const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYearChange:any, eventData:any, formData:any}) => {
+const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStartYearChange:any, eventData:any, eventSeries:any}) => {
+    
     return (
         <div>
             <h2 className="font-medium">Start Year:</h2>
@@ -100,12 +188,12 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <div className="">Same year event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-start_with"
-                            value={eventData.start_with}
+                            value={eventData.start_year.start_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
-                            {formData.event_series
+                            {eventSeries && eventSeries
                             .map(event_series => 
-                                <option key={event_series.name} value={event_series.name}>{event_series.name}</option>
+                                <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
                             )}
                         </select>
                         <div className=""> starts</div> 
@@ -115,12 +203,12 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
                         <div className="">Year after event series</div>
                         <select className="text-md px-1 border-2 border-gray-200 rounded-md w-fit"
                             name="start_year-end_with"
-                            value={eventData.end_with}
+                            value={eventData.start_year.end_with}
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
-                            {formData.event_series
+                            {eventSeries && eventSeries
                             .map(event_series => 
-                                <option key={event_series.name} value={event_series.name}>{event_series.name}</option>
+                                <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
                             )}
                         </select>
                         <div className=""> ends</div>
@@ -129,7 +217,6 @@ const StartYear = ({handleStartYearChange, eventData, formData}: {handleStartYea
             </div>
         </div>
     )
-
 };
 
 const Duration = ({handleDurationChange, eventData}: {handleDurationChange:any, eventData:any}) => {
@@ -206,7 +293,7 @@ const ExpectedAnnualChange = ({handleAnnualChange, eventData}: {handleAnnualChan
                             onChange={handleAnnualChange}
                             name="value"
                             value={eventData.exp_annual_change.value}
-                            type="number" min="0"/> 
+                            type="number" min="0"/>%
                     </div>
                     <div className="flex gap-2 align-middle">
                         <input className="ml-1" type="radio" name="exp-type" value="normal" onChange={handleAnnualChange} checked={eventData.exp_annual_change.type === 'normal'}/>

@@ -1,5 +1,6 @@
 from app.models.event_series import *
 from app.models.scenario import *
+from app.models.investment import *
 from beanie import PydanticObjectId, Link
 from bson import DBRef
 
