@@ -141,6 +141,20 @@ const Description = ({handleChange, eventData}: {handleChange:any, eventData:any
 };
 
 const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStartYearChange:any, eventData:any, eventSeries:any}) => {
+    const getEventSeriesYear = (event_id:string) => {
+        console.log(event_id);
+        if (event_id === "") {
+            return ""
+        }
+        const event = eventSeries.find((event_series:any) => event_series.id === event_id)
+        if (event) {
+            console.log(event.name);
+            return event.name;
+        }
+        console.log("empty");
+        return ""
+    }
+    
     return (
         <div>
             <h2 className="font-medium">Start Year:</h2>

@@ -193,7 +193,7 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
 
     const fillGenericEventData = (event_series: any) => {
         const copy = structuredClone(defaultGenericEventForm);
-        const skip = ['start', 'duration']
+        const skip = ['start', 'duration', 'details']
         for (const [key, value] of Object.entries(event_series)) {
             if(!skip.includes(key) && value !== null) {
                 copy[key] = value
@@ -207,7 +207,18 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
                         copy.exp_annual_change[key2] = value2
                     }
                 }
-            } else {
+            } else if (key == 'assets') {
+                for (let i = 0; i < event_series.details.assets.length; i++) {
+                    const data = event_series.details.assets[i]
+                    if (event_series.details.is_glide) {
+                        copy.initial[data.invest_id.id] = data.initial*100
+                        copy.final[data.invest_id.id] = data.final*100
+                    } else {
+                        copy.initial[data.invest_id.id] = data.percentage*100
+                    }
+                }
+            } 
+            else {
                 copy[key] = value
             }
         }
@@ -282,7 +293,7 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
         if(float_names.has(name)) {
             value = parseFloat(value);
         }
-
+        console.log(`${name}, ${value}`)
         setGenericEventData({
             ...genericEventData,
             start_year: {
