@@ -47,18 +47,18 @@ const Scenario = () => {
         let string_lower = ""
         let string_upper = ""
         if (is_percent) {
-            string_amt = value + "%";
-            string_mean = mean + "%";
-            string_stdev = stdev + "%";
-            string_lower = lower + "%";
-            string_upper = upper + "%"
+            string_amt = (typeof value === "number" ? value.toFixed(2) : "") + "%";
+            string_mean = (typeof mean === "number" ? mean.toFixed(2) : "") + "%";
+            string_stdev = (typeof stdev === "number" ? stdev.toFixed(2) : "") + "%";
+            string_lower = (typeof lower === "number" ? lower.toFixed(2) : "") + "%";
+            string_upper = (typeof upper === "number" ? upper.toFixed(2) : "") + "%";
         }
         else {
-            string_amt = "$" + value;
-            string_mean = "$" + mean;
-            string_stdev = "$" + stdev;
-            string_lower = "$" + lower;
-            string_upper = "$" + upper;
+            string_amt = "$" + (typeof value === "number" ? value.toFixed(2) : "");
+            string_mean = "$" + (typeof mean === "number" ? mean.toFixed(2) : "");
+            string_stdev = "$" + (typeof stdev === "number" ? stdev.toFixed(2) : "");
+            string_lower = "$" + (typeof lower === "number" ? lower.toFixed(2) : "");
+            string_upper = "$" + (typeof upper === "number" ? upper.toFixed(2) : "");
         }
         switch (type) {
             case "fixed": return string_amt;
@@ -169,9 +169,11 @@ const Scenario = () => {
                                     <div>
                                         <b>Assets:</b> 
                                         <ul>
-                                            {es.details.assets?.map(asset => 
-                                                <li>{asset.invest_id.invest_type.name} - {asset.invest_id.tax_status}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
-                                            )}
+                                            {es.details.assets?.map(asset => {
+                                                // asset investment link is not resolved properly
+                                                const investment = scenario.investment.find(inv => inv.id === asset.invest_id.id)
+                                                return <li>{investment.invest_type.name} - {investment.tax_status}: {es.details.is_glide ? `Glide(initial=${(asset.initial*100).toFixed(2)},final=${(asset.final*100).toFixed(2)})` : `${(asset.percentage*100).toFixed(2)}%`}</li>
+                                            })}
                                         </ul>
                                     </div>
                                 </div>}
@@ -179,9 +181,11 @@ const Scenario = () => {
                                     <div>
                                         <b>Assets:</b> 
                                         <ul>
-                                            {es.details.assets?.map(asset => 
-                                                <li>{asset.invest_id.invest_type.name} - {asset.invest_id.tax_status}: {es.details.is_glide ? `Glide(initial=${asset.initial},final=${asset.final})` : `${asset.percentage}%`}</li>
-                                            )}
+                                            {es.details.assets?.map(asset => {
+                                                // asset investment link is not resolved properly
+                                                const investment = scenario.investment.find(inv => inv.id === asset.invest_id.id)
+                                                return <li>{investment.invest_type.name} - {investment.tax_status}: {es.details.is_glide ? `Glide(initial=${(asset.initial*100).toFixed(2)},final=${(asset.final*100).toFixed(2)})` : `${(asset.percentage*100).toFixed(2)}%`}</li>
+                                            })}
                                         </ul>
                                     </div>
                                 </div>}
@@ -206,7 +210,7 @@ const Scenario = () => {
                     {scenario.expense_withdraw.map((investment,i) => 
                          (<div className="flex items-center">
                             <h1 className="text-3xl font-bold mr-5">{i+1}.</h1>
-                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name} - {investment.tax_status}</div>
+                            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{investment.invest_type.name} <span className="text-gray-400 font-normal text-sm"> - {investment.tax_status}</span></div>
                         </div>))}
                     
                 </div>

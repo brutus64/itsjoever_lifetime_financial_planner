@@ -134,7 +134,7 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
         if(eventSeriesType == 'invest' || eventSeriesType == 'rebalance') {
             let num_assets = 0
             if(eventSeriesType == 'invest'){
-                num_assets = investments.filter((investment: { tax_status: string; }) => investment.tax_status !== "pre-tax-retirement").length;
+                num_assets = investments.filter((investment: { tax_status: string; }) => investment.tax_status !== "pre-tax").length;
             } else {
                 num_assets = investments.filter((investment: { tax_status: string; }) => investment.tax_status == genericEventData.tax_status).length;
             }
@@ -502,8 +502,8 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
                                 value={genericEventData.tax_status}
                                 onChange={handleTaxStatusChange}>
                                 <option value="non-retirement">Non-retirement</option>
-                                <option value="pre-tax-retirement">Pre-tax retirement</option>
-                                <option value="after-tax-retirement">After-tax retirement</option>
+                                <option value="pre-tax">Pre-tax retirement</option>
+                                <option value="after-tax">After-tax retirement</option>
                             </select>
                         </div>
                         )}
@@ -517,17 +517,17 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
                 
                 {eventSeriesType == 'invest' && (
                     <div className="flex gap-4">
-                        {!investments || investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length == 0 && (
+                        {!investments || investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax').length == 0 && (
                             <h1 className="text-center">No investments to allocate</h1>
                         )}
 
                         <div className="flex flex-col">
-                            {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                            {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax').length > 0 && (
                                 <h1 className="text-center">{genericEventData.is_glide ? 'Initial Percentages' : 'Fixed Percent'}</h1>
                             )}
                             <div className="flex flex-col  gap-3">
                                 {investments && investments
-                                .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax-retirement')
+                                .filter((investment: { tax_status: string; }) => investment.tax_status != 'pre-tax')
                                 .map((investment: unknown) =>
                                     <InitialAssetAllocationCard investment={investment} genericEventData={genericEventData} handleInitialAssetAllocation={handleInitialAssetAllocation}/>
                                 )}
@@ -536,13 +536,13 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
 
                         {genericEventData.is_glide && (
                             <div className="flex flex-col">
-                                {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement').length > 0 && (
+                                {investments && investments.filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax').length > 0 && (
                                     <h1 className="text-center">Final Percentages</h1>
                                 )}
                                 
                                 <div className="flex flex-col gap-3">
                                 {investments && investments
-                                    .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax-retirement')
+                                    .filter((investment: { tax_status: string; }) => investment.tax_status !== 'pre-tax')
                                     .map((investment: unknown) => (
                                         <FinalAssetAllocationCard investment={investment} genericEventData={genericEventData} handleFinalAssetAllocation={handleFinalAssetAllocation}/>
                                     ))}

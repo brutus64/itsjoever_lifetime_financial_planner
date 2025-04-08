@@ -56,7 +56,7 @@ async def fetch_scenario(scenario_id: str):
         
         scenario = await Scenario.find_one(
             Scenario.id == scenario_id,
-            fetch_links=True
+            fetch_links=True,
         )
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
@@ -74,6 +74,7 @@ async def fetch_scenario(scenario_id: str):
         scenario.roth_conversion_strat.sort(key=lambda inv:correct_roth[inv.id])
         scenario.spending_strat.sort(key=lambda es:correct_spend[es.id])
         scenario.expense_withdraw.sort(key=lambda inv:correct_withdraw[inv.id])
+
         return {"scenario": scenario.model_dump(exclude={
                     "user": {"scenarios"}},mode="json")}
     except ValueError: #occurs if pydantic conversion fails
@@ -347,15 +348,17 @@ async def fetch_rmd_roth(scenario_id: str):
 async def update_rmd_roth(scenario_id: str, rmd_roth_data: dict):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
-        
+        print("Hello")
         existing_scenario = await Scenario.get(scenario_obj_id)
         if not existing_scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-
         # transform all id to links
         existing_scenario.rmd_strat = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in rmd_roth_data.get("rmd_strat")]
         existing_scenario.roth_conversion_strat = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in rmd_roth_data.get("roth_conversion_strat")]
         existing_scenario.roth_optimizer = rmd_roth_data.get("roth_optimizer")
+        existing_scenario.roth_optimizer["start_year"] = int(rmd_roth_data.get("roth_optimizer").get("start_year")) if rmd_roth_data.get("roth_optimizer").get("start_year") else None
+
+        existing_scenario.roth_optimizer["end_year"] = int(rmd_roth_data.get("roth_optimizer").get("end_year")) if rmd_roth_data.get("roth_optimizer").get("end_year") else None
 
         await existing_scenario.save(link_rule=WriteRules.WRITE)
 
@@ -389,6 +392,7 @@ async def fetch_spend_withdraw(scenario_id: str):
 
 @router.put("/spendwith/{scenario_id}")
 async def update_spend_withdraw(scenario_id: str, strategy_data: dict):
+    print(strategy_data)
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
         

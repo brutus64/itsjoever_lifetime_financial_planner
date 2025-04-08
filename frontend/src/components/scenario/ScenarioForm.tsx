@@ -3,10 +3,9 @@ import Investments from "./Investments/Investments";
 import EventSeries from "./EventSeries/EventSeries";
 import RMDRoth from "./RMDRoth/RMDRoth";
 import SpendingWithdrawal from "./SpendingWithdrawalStrategy/SpendingWithdrawal";
-import Summary from "./Summary";
 import MainInfo from "./MainInfo";
 
-const pages = ["main","investments","eventseries","rmdroth","strategy"]
+const pages = ["main","investments","eventseries","strategy","rmdroth"]
 
 const ScenarioForm = () => {
     const params = useParams();
@@ -142,9 +141,8 @@ const ScenarioForm = () => {
         "main": <MainInfo scenario_id={params.id} />,
         "investments":<Investments scenario_id={params.id} />,
         "eventseries":<EventSeries scenario_id={params.id} />,
-        "rmdroth":<RMDRoth scenario_id={params.id} />,
         "strategy":<SpendingWithdrawal scenario_id={params.id} />,
-        "summary":<Summary scenario_id={params.id}/>,
+        "rmdroth":<RMDRoth scenario_id={params.id} />,
     };
     if (!pageMap.hasOwnProperty(params.page))
         return (<div>Page not found</div>)
