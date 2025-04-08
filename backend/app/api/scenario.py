@@ -308,32 +308,41 @@ async def fetch_rmd_roth(scenario_id: str):
         
         scenario = await Scenario.find_one(
             Scenario.id == scenario_id,
-            fetch_links=True
+            fetch_links=True # THIS DOESN'T PRESERVE THE ORDER AHHHHHHHHHH
         )
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        return scenario.model_dump(include={'investment','rmd_strat','roth_conversion_strat','roth_optimizer'},mode="json")
+        scenario_unfetched = await Scenario.find_one(
+            Scenario.id == scenario_id 
+        )#this has order preserved
+        correct_rmd = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.rmd_strat)}
+        correct_roth = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.roth_conversion_strat)}
+        scenario.rmd_strat.sort(key=lambda inv:correct_rmd[inv.id])
+        scenario.roth_conversion_strat.sort(key=lambda inv:correct_roth[inv.id])
+
+        
+        return scenario.model_dump(include={'rmd_strat','investment','roth_conversion_strat','roth_optimizer'}, mode="json")
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
-@router.put("/rmd/{scenario_id}")
-async def update_rmd(scenario_id: str, rmd_strat):
+@router.put("/rmdroth/{scenario_id}")
+async def update_rmd_roth(scenario_id: str, rmd_roth_data: dict):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
         
         existing_scenario = await Scenario.get(scenario_obj_id)
         if not existing_scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        print(rmd_strat) # should be an array of ids
+        print(rmd_roth_data.get("roth_conversion_strat"))
 
-        update_data = {
-            "rmd_strat": rmd_strat.strategy
-        }
+        # transform all id to links
+        existing_scenario.rmd_strat = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in rmd_roth_data.get("rmd_strat")]
+        existing_scenario.roth_conversion_strat = [Link(ref = DBRef(collection="investments", id=PydanticObjectId(id)),document_class=Investment) for id in rmd_roth_data.get("roth_conversion_strat")]
+        existing_scenario.roth_optimizer = rmd_roth_data.get("roth_optimizer")
 
-        # Update the scenario
-        await existing_scenario.update({"$set": update_data})
+        await existing_scenario.save(link_rule=WriteRules.WRITE)
 
-        return {"message": "Scenario updated successfully"} # will be sent using save button, no send back
+        return {"message": "RMD and Roth updated successfully"} # will be sent using save button, no send back
     except Exception as e:
         print(f"Error in update_rmd: {e}")
         raise HTTPException(status_code=400, detail="Error updating rmd")

@@ -8,6 +8,7 @@ const RMDRoth = ({scenario_id}:any) => {
     const [ rothData, setRothData ] = useState();
     const [ rmdStrat, setRMDStrat ] = useState();
     const [ investments, setInvestments ] = useState();
+    const [ dirty, setDirty ] = useState(false);
 
     const fetchRMDRoth = async () => {
         console.log("Fetching RMD and Roth data")
@@ -26,12 +27,36 @@ const RMDRoth = ({scenario_id}:any) => {
         })
         setRMDStrat(res.data.rmd_strat)
         setInvestments(res.data.investment)
-
     }
 
     useEffect(() => {
         fetchRMDRoth();
     },[])
+
+    const updateRMDRoth = async () => {
+        if (!rmdStrat || !rothData)
+            return
+        console.log("Updating...")
+
+        const updated_scenario = {
+            "roth_conversion_strat":rothData.roth_conversion_strat.map(inv => inv.id),
+            "roth_optimizer":rothData.roth_optimizer,
+            "rmd_strat":rmdStrat.map(inv => inv.id)
+        }
+        
+        try {
+            let res = await axios.put(`http://localhost:8000/api/scenarios/rmdroth/${scenario_id}`,updated_scenario);
+            if (res.data.message === "RMD and Roth updated successfully") {
+                console.log("Update successful");
+                setDirty(false)
+            }
+            else
+                console.log("Update failed")
+        }
+        catch(err){
+            console.error("Could not update roth and rmd data: ", err);
+        }
+    }
 
     const handleRothOpt = (e) => {
         const {value} = e.target;
@@ -42,6 +67,7 @@ const RMDRoth = ({scenario_id}:any) => {
                 is_enable:(value === "opt-in")
             }
         })
+        setDirty(true)
     }
     const handleRothYear = (e) => {
         const {name,value} = e.target;
@@ -52,6 +78,7 @@ const RMDRoth = ({scenario_id}:any) => {
                 [name]:value
             }
         })
+        setDirty(true)
     }
     if (!rothData || !rmdStrat || !investments)
         return <div>Loading...</div>
@@ -80,9 +107,12 @@ const RMDRoth = ({scenario_id}:any) => {
             </div>
 
             <div className='flex gap-4'>
-                {/* <Roth rothData={rothData} setRothData={setRothData}/>
-                <RMD rmdStrat={rmdStrat} setRMDStrat={setRMDStrat}/> */}
+                <Roth rothData={rothData} setRothData={setRothData} investments={investments} setDirty={setDirty}/>
+                <RMD rmdStrat={rmdStrat} setRMDStrat={setRMDStrat} investments={investments} setDirty={setDirty}/>
                 
+            </div>
+            <div className="flex justify-center">
+                <button className="bg-blue-500 text-white w-40 px-4 py-1 mt-4 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" disabled={!dirty} onClick={updateRMDRoth}>Save</button>
             </div>
         </div>
     )

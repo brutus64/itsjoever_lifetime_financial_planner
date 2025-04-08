@@ -298,7 +298,7 @@ const MainInfo = ({scenario_id}:any) => {
                 </div> */}
             </div>
             <div className="flex justify-center">
-                <button className="bg-blue-500 text-white w-60 px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" disabled={!dirty} onClick={updateMain}>Save</button>
+                <button className="bg-blue-500 text-white w-40 px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" disabled={!dirty} onClick={updateMain}>Save</button>
             </div>
             
             

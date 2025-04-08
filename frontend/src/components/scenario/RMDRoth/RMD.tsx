@@ -16,7 +16,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import Popup from "reactjs-popup"
   
-export default function RMD({rmdStrat,setRMDStrat}) {
+export default function RMD({rmdStrat,setRMDStrat,investments,setDirty}) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -28,24 +28,22 @@ export default function RMD({rmdStrat,setRMDStrat}) {
         const {active, over} = event;
         
         if (active.id !== over.id) {
-            const oldIndex = rmd_strat.indexOf(active.id);
-            const newIndex = rmd_strat.indexOf(over.id);
-            setRMDStrat({
-                ...rmdStrat,
-                rmd_strat: arrayMove(rmd_strat,oldIndex,newIndex)
-            })
+            const oldIndex = rmdStrat.findIndex((inv) => inv.id === active.id)
+            const newIndex = rmdStrat.findIndex((inv) => inv.id === over.id)
+            setRMDStrat(arrayMove(rmdStrat,oldIndex,newIndex))
+            setDirty(true)
         }
     }
 
     const handleAddInvestment = (investment) => {
-        setRMDStrat({
-            ...rmdStrat,
-            rmd_strat: [...rmd_strat,investment]
-        })
+        setRMDStrat([...rmdStrat,investment])
+        setDirty(true)
     }
 
-    const canAdd = rmdStrat.investment.filter((inv) => {
-        return (inv.tax_status === "pre-tax" && !rmd_strat.includes(inv.invest_type))
+    
+
+    const canAdd = investments.filter((inv) => {
+        return (inv.tax_status === "pre-tax" && !rmdStrat.some(rmd_inv => rmd_inv.id === inv.id))
     })
 
     return (
@@ -64,8 +62,8 @@ export default function RMD({rmdStrat,setRMDStrat}) {
             >
                 <div className="max-h-90 overflow-y-scroll">
                     {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.invest_type} onClick={() => handleAddInvestment(inv.invest_type)}>
-                            {inv.invest_type}
+                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.id} onClick={() => handleAddInvestment(inv)}>
+                            {inv.invest_type.name}
                             
                         </div>
                     ))}
@@ -77,10 +75,10 @@ export default function RMD({rmdStrat,setRMDStrat}) {
             <div className='flex flex-col gap-3 overflow-y-scroll h-70'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
-                    items={rmd_strat}
+                    items={rmdStrat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {rmd_strat.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
+                        {rmdStrat.map((inv,i) => <SortableItem key={inv.id} inv={inv} ind={i}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -96,7 +94,7 @@ const SortableItem = ({inv,ind}) => {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: inv});
+    } = useSortable({id: inv.id});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -106,8 +104,7 @@ const SortableItem = ({inv,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv}</div>
-            
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv.invest_type.name}</div>
         </div>
     );
 }
