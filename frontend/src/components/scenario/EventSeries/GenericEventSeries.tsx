@@ -193,43 +193,34 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
 
     const fillGenericEventData = (event_series: any) => {
         const copy = structuredClone(defaultGenericEventForm);
-        copy.type = event_series.type;
-        copy.name = event_series.name;
-        copy.description = event_series.description;
-        copy.start_year = event_series.start;
-        copy.duration = event_series.duration;
-        if (event_series.initial_amt) {
-            copy.initial_amt = event_series.initial_amt;
+        const skip = ['start', 'duration']
+        for (const [key, value] of Object.entries(event_series)) {
+            if(!skip.includes(key) && value !== null) {
+                copy[key] = value
+            }
         }
-        if (event_series.exp_annual_change) {
-            copy.exp_annual_change = event_series.exp_annual_change;
+
+        for (const [key, value] of Object.entries(event_series.details)) {
+            if (key == 'exp_annual_change') {
+                for (const [key2, value2] of Object.entries(event_series.details.exp_annual_change)) {
+                    if(value2 !== null) {
+                        copy.exp_annual_change[key2] = value2
+                    }
+                }
+            } else {
+                copy[key] = value
+            }
         }
-        if (event_series.inflation_adjust) {
-            copy.inflation_adjust = event_series.inflation_adjust;
+
+        for (const [key, value] of Object.entries(event_series.start)) {
+            if (value) {
+                copy.start_year[key] = value;
+            }
         }
-        if (event_series.user_split) {
-            copy.user_split = event_series.user_split;
-        }
-        if (event_series.social_security) {
-            copy.social_security = event_series.social_security;
-        }
-        if (event_series.is_discretionary) {
-            copy.is_discretionary = event_series.is_discretionary;
-        }
-        if (event_series.is_glide) {
-            copy.is_glide = event_series.is_glide;
-        }
-        if (event_series.initial) {
-            copy.initial = event_series.initial;
-        }
-        if (event_series.final) {
-            copy.final = event_series.final;
-        }
-        if (event_series.max_cash) {
-            copy.max_cash = event_series.max_cash;
-        }
-        if (event_series.tax_status) {
-            copy.tax_status = event_series.tax_status;
+        for (const [key, value] of Object.entries(event_series.duration)) {
+            if (value) {
+                copy.duration[key] = value;
+            }
         }
 
         return copy
@@ -640,8 +631,8 @@ const InitialAssetAllocationCard = ({ investment, genericEventData, handleInitia
                 <input
                     type="number"
                     className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                    name={+investment.invest_type+' '+investment.tax_status}
-                    value={genericEventData.final_allocation_data[+investment.invest_type+' '+investment.tax_status]}
+                    name={investment.id}
+                    value={genericEventData.initial[investment.id]}
                     onChange={handleInitialAssetAllocation}
                     min="0"
                     max="100"
@@ -659,8 +650,8 @@ const FinalAssetAllocationCard = ({investment, genericEventData, handleFinalAsse
                 <input
                     type="number"
                     className="text-md px-1 border-2 border-gray-200 rounded-md w-full"
-                    name={investment.invest_type+' '+investment.tax_status}
-                    value={genericEventData.final_allocation_data[investment.invest_type+' '+investment.tax_status]}
+                    name={investment.id}
+                    value={genericEventData.final[investment.id]}
                     onChange={handleFinalAssetAllocation}
                     min="0"
                     max="100"
@@ -673,7 +664,7 @@ const FinalAssetAllocationCard = ({investment, genericEventData, handleFinalAsse
 const AssetAllocationCard = ({ investment } : { investment : any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col w-full ">            
-            <h1 className="text-md">{investment.invest_type} | {investment.tax_status}</h1>
+            <h1 className="text-md">{investment.invest_type.name} | {investment.tax_status}</h1>
             <h2 className="text-sm">${investment.value}</h2>
         </div>
     );

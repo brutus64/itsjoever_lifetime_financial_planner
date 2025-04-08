@@ -66,7 +66,7 @@ const EventSeries = ({scenario_id}:any) => {
         }
     }
 
-    const updateEventSeries = async ({event_id,newData}:{event_id:any,newData:any}) => {
+    const updateEventSeries = async (event_id:any, newData:any) => {
         try {
             console.log(newData);
             const res = await axios.put(`http://localhost:8000/api/scenarios/event_series/${scenario_id}/${event_id}`, newData);
