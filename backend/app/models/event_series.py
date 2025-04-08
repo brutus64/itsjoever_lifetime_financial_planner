@@ -34,7 +34,7 @@ class FixedInvestment(BaseModel):
     percentage: float
 
 class GlideInvestment(BaseModel):
-    invest_id: str
+    invest_id: Link['Investment']
     initial: float #both percentages apparently this is non-retirement?
     final: float #apparently this is after tax?
 
