@@ -273,8 +273,8 @@ def parse_inflation(inflation):
         res['mean'] = parse_float(inflation.get('mean'))
         res['stdev'] = parse_float(inflation.get('stdev'))
     elif inflation_type == 'uniform':
-        res['lower'] = parse_float(inflation.get('min'))
-        res['upper'] = parse_float(inflation.get('max'))
+        res['lower_bound'] = parse_float(inflation.get('lower_bound'))
+        res['upper_bound'] = parse_float(inflation.get('upper_bound'))
     
     return res
 def parse_roth_optimizer(optimizer):

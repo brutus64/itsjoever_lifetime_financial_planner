@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
 import axios from "axios";
+import Popup from "reactjs-popup";
 
 const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
-    const [ scenario, setScenario ] = useState()
+    const [ scenario, setScenario ] = useState();
+    const [ open, setOpen ] = useState(false)
 
     //fetch the scenario data from backend
     useEffect(() => {
@@ -17,11 +19,31 @@ const Scenario = () => {
                 setScenario(res.data.scenario)
             }
             catch(err){
-                console.log("Could not fetch scenario: ", err);
+                console.error("Could not fetch scenario: ", err);
             }
         }
         fetchScenario();
     },[]);
+
+    // To avoid concurrency issues, we should send present scenario data
+    // Whatever the user sees here is whatever the user expects to simulate
+    // If another user updates scenario to make it unrunnable, the simulation will fail
+    const handleSimulate = async (numSimulations) => {
+        console.log(`Simulating ${numSimulations} times!`)
+        try {
+            const res = await axios.post(`http://localhost:8000/api/simulate`,{scenario:scenario,num_sim:numSimulations});
+            if (res.data.success) {
+                // navigate to some results page that will poll backend
+                
+                setOpen(false)
+            }
+            else
+                console.log("Error simulating")
+        }
+        catch(err) {
+            console.error("Could not simulate scenario: ",err)
+        }
+    }
 
     const handlePercent = ({type,is_percent,value,mean,stdev,lower,upper}) => {
         let string_amt = ""
@@ -51,11 +73,11 @@ const Scenario = () => {
         return ""
     }
 
-    const handleNotPercent = ({type,value,lower,upper,mean,stdev,event_series}) => {
+    const handleNotPercent = ({type,value,lower,upper,mean,stdev,event_series,lower_bound,upper_bound}) => {
         switch(type) {
             case "fixed": return value
             case "normal": return `Normal(mean=${mean},stddev=${stdev})`
-            case "uniform": return `Uniform(lower=${lower},upper=${upper})`
+            case "uniform": return `Uniform(lower=${lower ? lower : lower_bound},upper=${upper ? upper : upper_bound})`
             case "start_with": return "With " + event_series
             default: return "After " + event_series
         }
@@ -65,11 +87,51 @@ const Scenario = () => {
         navigate(`/scenario/${params.id}/main`)
     }
 
-    const handleSimulate = () => {
-        // check to see if all fields are filled out
-        // Todo
+    // possibly incomplete fields
+    const canSimulate = () => {
+        if (scenario.fin_goal === null || scenario.state === "" || scenario.birth_year[0] === null)
+            return false;
+        if (scenario.life_expectancy[0].type === "fixed") {
+            if (scenario.life_expectancy[0].value === null)
+                return false;
+        }
+        else {
+            if (scenario.life_expectancy[0].mean === null || scenario.life_expectancy[0].stdev === null)
+                return false;
+        }
+        if (scenario.marital === "couple") {
+            if (scenario.birth_year[1] === null)
+                return false;
+            if (scenario.life_expectancy[1].type === "fixed") {
+                if (scenario.life_expectancy[1].value === null)
+                    return false;
+            }
+            else {
+                if (scenario.life_expectancy[1].mean === null || scenario.life_expectancy[1].stdev === null)
+                    return false;
+            }
+        }
+        if (scenario.inflation_assume.type === "fixed") {
+            if (scenario.inflation_assume.value === null)
+                return false;
+        }
+        else if (scenario.inflation_assume.type === "normal") {
+            if (scenario.inflation_assume.mean === null || scenario.inflation_assume.stdev === null)
+                return false;
+        }
+        else {
+            if (scenario.inflation_assume.lower_bound === null || scenario.inflation_assume.upper_bound === null)
+                return false;
+        }
+        if (scenario.investment.length === 0 || scenario.rmd_strat.length === 0 || scenario.expense_withdraw.length === 0)
+            return false;
+        if (scenario.roth_optimizer.is_enable) {
+            if (scenario.roth_optimizer.start_year === null || scenario.roth_optimizer.end_year === null)
+                return false;
+        }
 
-        // navigate(`/scenario/${params.id}/simulate`)
+        
+        return true;
     }
 
     if (!scenario)
@@ -84,7 +146,7 @@ const Scenario = () => {
                 </div>
                 <div className="flex gap-3 whitespace-pre-wrap">
                     <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={handleSimulate}>Simulate</button>
+                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={() => setOpen(true)} disabled={!canSimulate()}>Simulate</button>
                 </div>
                 
             </div>
@@ -228,13 +290,14 @@ const Scenario = () => {
                         </div>}
                 </div>
             </div>
+            <SimulatePopup open={open} setOpen={setOpen} handleSimulate={handleSimulate} />
         </div>
     )
 }
 
 const RedText = ({children}) => {
     return (
-        <span style={{"color": (children ? "black" : "red")}} className="text-red-600 font-bold">{children ? children : "???"}</span>
+        <span className={children ? "text-black" : "text-red-600 font-bold"}>{children ? children : "???"}</span>
     )
 }
 
@@ -246,6 +309,53 @@ const Collapse = ({children,base}) => {
             <div className={`mx-1 px-2 border-x-2 border-gray-100 bg-gray-100 rounded-b-xl transition-all duration-500 ease-out ${
             open ? "overflow-visible py-1 border-b-2 opacity-100" : "h-0 overflow-hidden opacity-0"}`}>{children}</div>
         </div>
+    )
+}
+
+const simulateModalStyling = { 
+    "border": "none",
+    "borderRadius":"8px",
+    "width":"300px",
+    "height":"200px"
+};
+const MAX_SIMULATIONS = 1000000;
+const SimulatePopup = ({open,setOpen,handleSimulate}) => {
+    const [ numSimulations, setNumSimulations] = useState();
+    const [ error, setError ] = useState("")
+
+    const handleChange = (event) => {
+        setNumSimulations(event.target.value);
+    };
+
+    const validate = () => {
+        if (typeof numSimulations !== 'number' || isNaN(numSimulations)) {
+            setError("Please enter a number");
+            return;
+        }
+        if (numSimulations <= 0) {
+            setError("Number must be non-negative")
+            return;
+        }
+        if (numSimulations > MAX_SIMULATIONS) {
+            setError("Max simulations: " + MAX_SIMULATIONS)
+            return;
+        }
+        handleSimulate(numSimulations);
+    }
+
+    return (
+        <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={simulateModalStyling} onClose={() => setOpen(false)}>
+            <div className="rounded-lg m-10 flex flex-col gap-3 items-center">
+                <div className="flex flex-col gap-1">
+                    <h2 className="font-medium">Simulations:</h2>
+                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="value" value={numSimulations} onChange={handleChange}/>
+                </div>
+                <div className="flex justify-between">
+                    <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-50" onClick={validate}>Run</button>
+                </div>
+                <div className="text-red-600 font-bold">{error}</div>
+            </div>
+        </Popup>
     )
 }
 export default Scenario;
