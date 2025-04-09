@@ -65,17 +65,28 @@ const Scenario = () => {
         navigate(`/scenario/${params.id}/main`)
     }
 
+    const handleSimulate = () => {
+        // check to see if all fields are filled out
+        // Todo
+
+        // navigate(`/scenario/${params.id}/simulate`)
+    }
+
     if (!scenario)
         return <div>Loading...</div>
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center pb-5 mr-7 border-b-black border-b-2">
-                <div className="flex gap-4 items-end">
-                    <h1 className="text-5xl font-bold text-wrap break-words">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h1>
-                    <h2 className="text-3xl font-medium">By {scenario.user.name}</h2>
+                <div className="flex gap-4 items-end w-7/8">
+                    <h1 className="text-4xl font-bold text-wrap break-words overflow-hidden max-w-3/4">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h1>
+                    <h2 className="text-xl font-medium ">By {scenario.user.name}</h2>
                 </div>
-                <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
+                <div className="flex gap-3 whitespace-pre-wrap">
+                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
+                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={handleSimulate}>Simulate</button>
+                </div>
+                
             </div>
             <div className="">
                 <h1 className="text-3xl font-medium">General Information</h1>
@@ -95,8 +106,8 @@ const Scenario = () => {
                 <div className="flex flex-col gap-2">
                     {scenario.investment_types.map((investment,i) =>
                         <Collapse base={<div className="text-xl font-medium">{investment.name}</div>}>
-                            <div className="p-4 gap-3 w-140">
-                                <div><b>Description:</b> {investment.description}</div>
+                            <div className="p-4 gap-3 w-140 box-border">
+                                <div className="overflow-ellipsis overflow-hidden text-wrap break-words"><b>Description:</b> {investment.description}</div>
                                 <div><b>Expected Annual Return:</b> {handlePercent(investment.exp_annual_return)}</div>
                                 <div><b>Expected Annual Income:</b> {handlePercent(investment.exp_annual_income)}</div>
                                 <div><b>Expense Ratio:</b> {investment.expense_ratio}</div>
@@ -126,7 +137,7 @@ const Scenario = () => {
                     {scenario.event_series.map((es,i) =>
                         <Collapse base={<div className="text-xl font-medium">{es.name}<span className="text-gray-400 font-normal text-sm"> - {es.type}</span></div>}>
                             <div className="flex flex-col p-4 gap-1 w-140">
-                                <div><b>Description:</b> {es.description}</div>
+                                <div className="overflow-ellipsis overflow-hidden text-wrap break-words"><b>Description:</b> {es.description}</div>
                                 <div><b>Start year:</b> {handleNotPercent(es.start)}</div>
                                 <div><b>Duration:</b> {handleNotPercent(es.duration)} years</div>
                                 {es.type === "income" && <div className="flex flex-col gap-1">
@@ -230,7 +241,7 @@ const RedText = ({children}) => {
 const Collapse = ({children,base}) => {
     const [ open, setOpen ] = useState(false)
     return (
-        <div className="w-140">
+        <div className="w-150">
             <div className="bg-white shadow-md rounded-lg flex items-center pl-4 gap-3 h-20 hover:bg-sky-100 cursor-pointer" onClick={() => setOpen(!open)}>{base}</div>
             <div className={`mx-1 px-2 border-x-2 border-gray-100 bg-gray-100 rounded-b-xl transition-all duration-500 ease-out ${
             open ? "overflow-visible py-1 border-b-2 opacity-100" : "h-0 overflow-hidden opacity-0"}`}>{children}</div>

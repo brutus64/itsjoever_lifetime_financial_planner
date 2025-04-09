@@ -312,8 +312,8 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
 const InvestmentCard = ({investment,i,handleEdit}:{investment:any,i:any,handleEdit:any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)} key={investment.id}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{investment.invest_type.name}</h2>
-            <p className="overflow-ellipsis w-85 overflow-hidden">{investment.tax_status} - ${investment.value}</p>
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{investment.invest_type.name}</h2>
+            <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{investment.tax_status} - ${investment.value}</p>
             {/* <button>Delete</button> */}
         </div>
     )

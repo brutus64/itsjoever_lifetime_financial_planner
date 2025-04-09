@@ -102,85 +102,7 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
         else { //modify investment type
             updateInvestmentType(investmentTypes[editing].id,investmentTypeData)
         }
-
         handleClose(true)
-        // // must change all locations on the form too
-        // if (editing !== -1) {
-        //     // change investment type array
-        //     const new_investment_types = formData.investment_types.map((investment,i) =>
-        //         i === editing ? investmentTypeData : investment);
-
-        //     // if the name has changed, change all investments and strategies that reference this 
-        //     // investment type, and also change any event series
-        //     const old_name = formData.investment_types[editing].name;
-        //     const new_name = investmentTypeData.name;
-        //     if (new_name !== old_name) {
-        //         const new_investment = formData.investment.map((inv) =>
-        //             inv.invest_type === old_name ? {...inv,invest_type:new_name} : inv);
-        //         const new_event_series = formData.event_series.map(es => {
-        //             if (es.type === "expense" || es.type === "income")
-        //                 return es;
-        //             const new_initial = {}
-        //             const new_final = {}
-    
-        //             // check if investment name is used in any allocation
-        //             for (const [key,val] of Object.entries(es.initial)) {
-        //                 const last_index = key.lastIndexOf("|")
-        //                 const type = key.slice(0,last_index);
-        //                 if (type === old_name)
-        //                     new_initial[`${new_name}|${key.slice(last_index+1)}`] = val
-        //                 else
-        //                     new_initial[key] = val;
-        //             }
-        //             for (const [key,val] of Object.entries(es.final)) {
-        //                 const last_index = key.lastIndexOf("|")
-        //                 const type = key.slice(0,last_index);
-        //                 if (type === old_name)
-        //                     new_final[`${new_name}|${key.slice(last_index+1)}`] = val
-        //                 else
-        //                     new_final[key] = val;
-        //             }
-    
-        //             return {...es,initial:new_initial,final:new_final}
-        //         });
-    
-        //         const new_withdrawal = formData.expense_withdraw.map((inv) => {
-        //             const last_index = inv.lastIndexOf(" ")
-        //             const type = inv.slice(0,last_index);
-        //             const tax = inv.slice(last_index+1);
-        //             if (type === old_name)
-        //                 return `${new_name} ${tax}`
-        //             return inv
-        //         })
-        //         const new_rmd = formData.rmd_strat.map((inv) =>
-        //             inv === old_name ? new_name : inv);
-        //         const new_roth = formData.roth_conversion_strat.map((inv) =>
-        //             inv === old_name ? new_name : inv);
-        //         setFormData({
-        //             ...formData,
-        //             investment_types: new_investment_types,
-        //             investment: new_investment,
-        //             event_series: new_event_series,
-        //             expense_withdraw: new_withdrawal,
-        //             rmd_strat: new_rmd,
-        //             roth_conversion_strat: new_roth
-        //         })
-        //     }
-        //     else {
-        //         setFormData({
-        //             ...formData,
-        //             investment_types: new_investment_types
-        //         })
-        //     }
-        //     console.log("edited")
-        // }
-        // else {// if adding, append to end
-        //     setFormData({
-        //         ...formData,
-        //         investment_types: [...formData.investment_types,investmentTypeData]
-        //     })
-        //     console.log("added")
-        // }        
     }
 
     const handleEdit = (index) => {
@@ -390,8 +312,8 @@ const InvestmentTypePopup = ({investmentTypeData,setInvestmentTypeData,open,hand
 const InvestmentTypeCard = ({name, description,i,handleEdit}:{name:any, description:any,i:any,handleEdit:any}) => {
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden">{name}</h2>
-            <p className="overflow-ellipsis w-85 overflow-hidden">{description}</p>
+            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{name}</h2>
+            <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{description}</p>
             {/* <button>Delete</button> */}
         </div>
     )
