@@ -158,57 +158,5 @@ def test_event_series_post(client):
     assert event_put_res.status_code == 200
     events = event_put_res.json()
     print(events)
-    # const defaultGenericEventForm = {
-    # // INCOME/EXPENSE/INVEST/REBALANCE
-    # type: "",
-    # name: "",
-    # description: "",
-    # start_year: {
-    #     type: "", //  "fixed", "uniform", "normal", "start_with", "end_with"
-    #     value: 2025,
-    #     lower: 0,
-    #     upper: 100,
-    #     mean: 0,
-    #     stdev: 1,
-    #     start_with: "", // if type is "start_with" or "end_with"
-    #     end_with: ""
-    # },
-    # duration: {
-    #     type: "", //fixed, uniform, normal
-    #     value: 0,
-    #     lower: 0,
-    #     upper: 0,
-    #     mean: 0,
-    #     stdev: 1,
-    # },
-
-    # // INCOME/EXPENSE
-    # initial_amt: 0.0,
-    # exp_annual_change: {
-    #     is_percent: null,
-    #     type: "", // either "fixed" or "normal" or "uniform"
-    #     value: 0,
-    #     mean:0,
-    #     stdev:1,
-    #     lower: 0,
-    #     upper: 0
-    # },
-    # inflation_adjust: false,
-    # user_split: 100.0,
-    # // INCOME
-    # social_security: false,
-    # // EXPENSE
-    # is_discretionary: false,
-    
-    # // INVEST/REBALANCE
-    # is_glide: false,
-    # initial: {}, //key = "investment_type tax_status", value = percentage AKA asset_allocation1
-    # final: {}, //key = "investment_type tax_status", value = percentage AKA asset_allocation2
-    # initial_allocation_data: {}, // used to display % in frontend; stores entirety of input's value parameter (eg in InitialAssetAllocationCard)
-    # final_allocation_data: {},
-
-    # // INVEST
-    # max_cash: 0.0,
-    # // REBALANCE
-    # tax_status: "non-retirement"
+    event_delete_res = client.delete(f"/api/scenarios/event_series/{scenario_id}/{newest_event}")
 

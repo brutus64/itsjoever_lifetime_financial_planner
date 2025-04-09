@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Cookies from "js-cookie";
+import axios from 'axios';
 
 
 // const userData = {
@@ -60,13 +61,24 @@ const ProfilePage: React.FC = () => {
 
 
 
-  const handleScenariosImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScenariosImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       // Here you would parse the file and add scenarios
-      console.log("Scenarios file selected:", files[0]);
-      
+      const file = files[0]
+      console.log("Scenarios file selected:", file);
+      const formData = new FormData();
+      formData.append('file', file);
       // For demo purposes, let's add a fake scenario with the filename
+      const res = await axios.post("http://localhost:8000/api/scenarios/import", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      })
+      if (res.status === 200){
+        const result = res.data;
+        console.log("Import successful", result)
+      }
       setUser({
         ...user,
         scenarios: []

@@ -123,6 +123,7 @@ def create_assetalloc(data):
     arr = []
     for key, value in asset1.items():
         invest = None
+        #CHECK: ISSUE HERE
         if glide:
             invest = GlideInvestment(
                 invest_id=key,

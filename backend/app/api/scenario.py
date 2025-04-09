@@ -281,6 +281,7 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
         event_series = await EventSeries.get(PydanticObjectId(event_series_id))
         #NOT SURE IF THIS WORKS
         print("attemp to parse")
+        #works with keeping it as a dictionary it does validation and conversion between types for us in set
         new_event_series = parse_events(event_data)
         print(new_event_series)
         print("Parse success?")
