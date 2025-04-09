@@ -18,6 +18,20 @@ def client():
         yield test_client
 
 # client = TestClient(app)
+# pytest_plugins = ('pytest_asyncio',)
+
+# @pytest.fixture(scope="module")
+# def event_loop():
+#     loop = asyncio.new_event_loop()
+#     asyncio.set_event_loop(loop)
+#     yield loop
+#     loop.close()
+
+# @pytest_asyncio.fixture(scope="module")
+# async def client():
+#     await init_db()  # Explicitly await async initialization
+#     with TestClient(app) as test_client:
+#         yield test_client
 
 # def test_import_scenario(client):
 #     file_path = "tests/scenario.yaml"
@@ -159,4 +173,5 @@ def test_event_series_post(client):
     events = event_put_res.json()
     print(events)
     event_delete_res = client.delete(f"/api/scenarios/event_series/{scenario_id}/{newest_event}")
+    assert event_delete_res.status_code == 200
 

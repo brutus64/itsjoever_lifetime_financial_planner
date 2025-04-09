@@ -7,55 +7,58 @@ from beanie.operators import And
 
 def create_investment_type_from_yaml(data):
     # Parse the return distribution
-    exp_annual_return, exp_annual_income = None, None
-    return_distribution = data.get("returnDistribution", {})
-    if return_distribution.get("type") == "fixed":
-        exp_annual_return = InvestAnnualChange(
-            type="fixed",
-            value=return_distribution.get("value"),
-            is_percent=True if data.get('returnAmtOrPct') == 'percent' else False,
-            normal=None
-        )
-    elif return_distribution.get("type") == "normal":
-        exp_annual_return = InvestAnnualChange(
-            type="normal",
-            fixed=None,
-            mean=return_distribution.get("mean"),
-            stdev=return_distribution.get("stdev"),
-            is_percent=True if data.get('returnAmtOrPct') == 'percent' else False
-        )
-    else:
-        raise ValueError("Invalid returnDistribution type")
+    try:        
+        exp_annual_return, exp_annual_income = None, None
+        return_distribution = data.get("returnDistribution", {})
+        if return_distribution.get("type") == "fixed":
+            exp_annual_return = InvestAnnualChange(
+                type="fixed",
+                value=return_distribution.get("value"),
+                is_percent=True if data.get('returnAmtOrPct') == 'percent' else False,
+                normal=None
+            )
+        elif return_distribution.get("type") == "normal":
+            exp_annual_return = InvestAnnualChange(
+                type="normal",
+                fixed=None,
+                mean=return_distribution.get("mean"),
+                stdev=return_distribution.get("stdev"),
+                is_percent=True if data.get('returnAmtOrPct') == 'percent' else False
+            )
+        else:
+            raise ValueError("Invalid returnDistribution type")
 
-    # Parse the income distribution
-    income_distribution = data.get("incomeDistribution", {})
-    if income_distribution.get("type") == "fixed":
-        exp_annual_income = InvestAnnualChange(
-            type="fixed",
-            value=income_distribution.get("value"),
-            is_percent=True if data.get('incomeAmtOrPct') == 'percent' else False
-        )
-    elif income_distribution.get("type") == "normal":
-        exp_annual_income = InvestAnnualChange(
-            type="normal",
-            mean=income_distribution.get("mean"),
-            stdev=income_distribution.get("stdev"),
-            is_percent=True if data.get('incomeAmtOrPct') == 'percent' else False
-        )
-    else:
-        raise ValueError("Invalid incomeDistribution type")
+        # Parse the income distribution
+        income_distribution = data.get("incomeDistribution", {})
+        if income_distribution.get("type") == "fixed":
+            exp_annual_income = InvestAnnualChange(
+                type="fixed",
+                value=income_distribution.get("value"),
+                is_percent=True if data.get('incomeAmtOrPct') == 'percent' else False
+            )
+        elif income_distribution.get("type") == "normal":
+            exp_annual_income = InvestAnnualChange(
+                type="normal",
+                mean=income_distribution.get("mean"),
+                stdev=income_distribution.get("stdev"),
+                is_percent=True if data.get('incomeAmtOrPct') == 'percent' else False
+            )
+        else:
+            raise ValueError("Invalid incomeDistribution type")
 
-    # Create the InvestmentType object
-    investment_type = InvestmentType(
-        name=data.get("name"),
-        description=data.get("description"),
-        exp_annual_return=exp_annual_return,
-        expense_ratio=data.get("expenseRatio"),
-        exp_annual_income=exp_annual_income,
-        taxability=data.get("taxability")
-    )
+        # Create the InvestmentType object
+        investment_type = InvestmentType(
+            name=data.get("name"),
+            description=data.get("description"),
+            exp_annual_return=exp_annual_return,
+            expense_ratio=data.get("expenseRatio"),
+            exp_annual_income=exp_annual_income,
+            taxability=data.get("taxability")
+        )
 
-    return investment_type
+        return investment_type
+    except Exception as e:
+        print(f"ERROR AT YAML -> INVESTMENT: {e}")
 
 
 def create_investment_from_yaml(data):
