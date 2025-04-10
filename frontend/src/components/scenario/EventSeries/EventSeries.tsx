@@ -193,9 +193,10 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {eventSeries && eventSeries
-                            .map(event_series => 
+                            .filter(event_series => event_series.id !== eventData.id)
+                            .map(event_series => (
                                 <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
-                            )}
+                            ))}
                         </select>
                         <div className=""> starts</div> 
                     </div>
@@ -208,6 +209,7 @@ const StartYear = ({handleStartYearChange, eventData, eventSeries}: {handleStart
                             onChange={handleStartYearChange}>
                             <option value="">Choose Event</option>
                             {eventSeries && eventSeries
+                            .filter(event_series => event_series.id !== eventData.id)
                             .map(event_series => 
                                 <option key={event_series.name} value={event_series.id}>{event_series.name}</option>
                             )}
