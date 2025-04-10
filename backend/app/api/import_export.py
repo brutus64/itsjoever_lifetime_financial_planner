@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, File, UploadFile
+from fastapi import APIRouter, HTTPException, File, UploadFile, Request
 from app.models.scenario import Scenario
 from app.models.investment import Investment, InvestmentType
 from app.models.event_series import EventSeries
@@ -12,96 +12,66 @@ from fastapi.responses import FileResponse
 router = APIRouter()
 
 @router.post("/import")
-async def import_scenario(file: UploadFile = File(...)):
+async def import_scenario(request: Request, file: UploadFile = File(...)):
     try:
+        user = None
+        if request:
+            user_id = request.session.get("user_id")
+            print("user id found:", user_id)
+            if user_id:
+                user = await User.get(PydanticObjectId(user_id))
+                print("user obj found", user)
         if not file.filename.endswith(('.yaml', '.yml')):
             raise HTTPException(status_code=400, detail="Importing scenarios only accepts YAML files.")
         content = await file.read()
         data = yaml.safe_load(content)
         
-        #NEED TO IMPORT INVESTMENT_TYPES FIRST
-        #THEN INVESTMENTS
-        #THEN EVENT SERIES
-        #THEN SCENARIO ITSELF
         investtype_ids = []
         invest_ids = []
         event_ids = []
         for investment_type in data.get('investmentTypes'):
             invest_type = create_investment_type_from_yaml(investment_type)
-            # print("INVEST TYPE")
-            # print(invest_type)
-            # print("MODEL DUMP: ", invest_type.model_dump(exclude={"id", "name"}))
-            exists = await InvestmentType.find_one(InvestmentType.name == invest_type.name)
-            if exists:
-                update_data = invest_type.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                await exists.save()
-                investtype_ids.append(exists.id)
-            else:
-                await invest_type.save()
-                investtype_ids.append(invest_type.id)    
-            # res = await InvestmentType.find_one(InvestmentType.name == invest_type.name).upsert(
-            #     Set(invest_type.model_dump(exclude={"id", "name"})),
-            #     on_insert=invest_type
-            # )
-            # investtype_ids.append(res.id)
-            # print(f"Post insert/update: {res}")
+            await invest_type.save()
+            investtype_ids.append(invest_type)
         
         for investment in data.get('investments'):
-            # print(investment)
-            invest = create_investment_from_yaml(investment)
-            # print("INVEST", invest)
-            
-            exists = await Investment.find_one(Investment.invest_id == invest.invest_id)
-            
-            if exists:
-                # Update fields manually
-                update_data = invest.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                
-                await exists.save()
-                invest_ids.append(exists.id)
-            else:
-                # Save new
-                await invest.save()
-                invest_ids.append(invest.id)
+            invest = create_investment_from_yaml(investment, investtype_ids) 
+            await invest.save()
+            invest_ids.append(invest)
                 
         event_series = []
+        event_series_map = {}
         for event in data.get('eventSeries'):
-            # print(event)
-            #NEED FIX SHOULD BE FIXED WITH NAME
-            e = create_event_from_yaml(event)
-            exists = await EventSeries.find_one(EventSeries.name == e.name)
+            #REQUIRE INVESTMENT ID MAPPED PROPERLY!
+            e = create_event_from_yaml(event, invest_ids)
+            await e.save()
+            event_series.append(e)
+            event_ids.append(e.id)
+            event_series_map[e.name] = e 
+        
+        #2nd pass
+        for event in event_series:
+            if event.start.type in ["start_with", "end_with"] and event.start.event_series:
+                referenced_event = event_series_map.get(event.start.event_series) #is the name
+                if referenced_event:
+                    event.start.event_series = str(referenced_event.id)
             
-            if exists:
-                # Update fields manually
-                update_data = e.model_dump(exclude={"id"})
-                for key, value in update_data.items():
-                    setattr(exists, key, value)
-                
-                await exists.save()
-                event_series.append(exists)
-                event_ids.append(exists.id)
-            else:
-                # Save new
-                await e.save()
-                event_series.append(e)
-                event_ids.append(e.id)
-        
-        
-        # print("INVESTTYPE ID", investtype_ids)
-        # print("INVEST ID", invest_ids)
-        # print("EVENT ID", event_ids)
+            if event.duration.type in ["start_with", "end_with"] and event.duration.event_series:
+                referenced_event = event_series_map.get(event.duration.event_series) #is the name
+                if referenced_event:
+                    event.duration.event_series = str(referenced_event.id)
+            
+            await event.save()
+            
+
         investments = await Investment.find_all().to_list()
-        # print(investments)
         spending_strat = await eventnames_to_id(data.get('spendingStrategy'), event_series)
         expense_withdraw = await investmentnames_to_id(data.get('expenseWithdrawalStrategy'),investments)
         rmd_strat = await investmentnames_to_id(data.get('RMDStrategy'), investments)
         roth_conversion_strat = await investmentnames_to_id(data.get('RothConversionStrategy'), investments)
         
         scenario = Scenario(
+            user=user,
             name=data.get('name'),
             marital=data.get('maritalStatus'),
             birth_year=data.get('birthYears'),
@@ -112,29 +82,19 @@ async def import_scenario(file: UploadFile = File(...)):
             event_series=event_ids,
             inflation_assume=parse_inflation_assumption(data),
             limit_posttax=data.get('afterTaxContributionLimit'),
-        #REQUIRES MAPPING NAME -> OBJECT ID REF
+            #REQUIRES MAPPING NAME -> OBJECT ID REF
             spending_strat= spending_strat,
             expense_withdraw= expense_withdraw,
             rmd_strat= rmd_strat,
             roth_conversion_strat= roth_conversion_strat,
-        #NEED TO PARSE with true and dates
+            #NEED TO PARSE with true and dates
             roth_optimizer=parse_roth_opt(data),
             fin_goal=data.get('financialGoal'),
             state=data.get('residenceState')
         )
-        scenario_exists = await Scenario.find_one(Scenario.name == scenario.name)
-        if scenario_exists:
-            scenario_data = scenario.model_dump(exclude={"id"})
-            for key, value in scenario_data.items():
-                setattr(scenario_exists, key, value)
-            print("SCENARIO UPDATED")
-            print("SCENARIO ID = ", str(scenario_exists.id))
-            await scenario_exists.save()
-        else:
-            print("SCENARIO SAVED")
-            print("SCENARIO ID = ", str(scenario.id))
-            await scenario.save()
-        
+        await scenario.save()
+        print("SCENARIO ID = ", str(scenario.id))
+
         return {
             "name": scenario.name,
             "id": str(scenario.id),
@@ -149,34 +109,27 @@ async def import_scenario(file: UploadFile = File(...)):
 
     
     
-@router.get("/export/{scenario_name}")
-async def export_scenario(scenario_name: str):
+@router.get("/export/{scenario_id}") #Fix scenario_id
+async def export_scenario(scenario_id: str):
     try:
-        scenario = await Scenario.find_one(Scenario.name == scenario_name, fetch_links=True)
+        print("EXPORT SCENARIO_ID", scenario_id)
+        scenario = await Scenario.get(PydanticObjectId(scenario_id), fetch_links=True)
         if not scenario:
-            raise HTTPException(status_code=404, detail=f"Scenario: {scenario_name} does not exist.")
+            raise HTTPException(status_code=404, detail=f"Scenario: {scenario_id} does not exist.")
 
-        # print("\n\n\n BEGINNING OF EXPORT")
-        # print(scenario)
-        #handle InvestmentType, Investment, EventSeries
         investment_types = []
         for type_id in scenario.investment_types:
-            # print("\n\n\n ", type_id)
             investment_types.append(invest_type_to_yaml(type_id))
-        # print("INVESTMENT TYPES:", investment_types)
-        
+
         investments = []
         for invest_id in scenario.investment:
-            # print("\n\n\n INVEST", invest_id)
             investments.append(invest_to_yaml(invest_id))
+        
         event_series = []
         for event in scenario.event_series:
-            event_series.append(event_to_yaml(event))
+            event_res = await event_to_yaml(event, scenario.event_series)
+            event_series.append(event_res)
         
-        # print("\n\n\n",event_series)
-        #Scenario no processing needed: name, marital, birth_years, after tax contrib, financialGoal, residenceState
-        
-        #Scenario processing needed: life_expectancy, inflation_assume, spending_strat, expense_withdraw, rmd_strat, roth_opt, roth_conversion_strat
         spending_strategy = []
         for event in scenario.spending_strat:
             if hasattr(event, 'name'):
@@ -185,17 +138,17 @@ async def export_scenario(scenario_name: str):
         expense_withdraw_strategy = []
         for invest in scenario.expense_withdraw:
             if hasattr(invest, 'invest_id'):
-                expense_withdraw_strategy.append(invest.invest_id)
+                expense_withdraw_strategy.append(invest.invest_type.name + " " + invest.tax_status)
         
         rmd_strategy = []
         for invest in scenario.rmd_strat:
             if hasattr(invest, 'invest_id'):
-                rmd_strategy.append(invest.invest_id)
+                rmd_strategy.append(invest.invest_type.name + " " + invest.tax_status)
         
         roth_conversion_strategy = []
         for invest in scenario.roth_conversion_strat:
             if hasattr(invest, 'invest_id'):
-                roth_conversion_strategy.append(invest.invest_id)
+                roth_conversion_strategy.append(invest.invest_type.name + " " + invest.tax_status)
         
         yaml_data = {
             "name": scenario.name,
@@ -220,15 +173,13 @@ async def export_scenario(scenario_name: str):
         yaml_data["RothConversionStrategy"] = roth_conversion_strategy
         yaml_data["financialGoal"] = scenario.fin_goal
         yaml_data["residenceState"] = scenario.state
-        
-        # print("\n\n\n YAML:", yaml_data)
-        
+                
         yaml_content = yaml.dump(yaml_data, sort_keys=False, default_flow_style=False)
         
         #set up at directory exports
         export_dir = os.path.join(os.getcwd(), "exports")
         os.makedirs(export_dir, exist_ok=True)
-        file_path = os.path.join(export_dir, f"{scenario_name}.yaml")
+        file_path = os.path.join(export_dir, f"{scenario_id}.yaml")
         
         #write it
         with open(file_path, "w") as f:
@@ -237,10 +188,10 @@ async def export_scenario(scenario_name: str):
         
         return FileResponse(
             path=file_path,
-            filename=f"{scenario_name}.yaml",
+            filename=f"{scenario_id}.yaml",
             media_type="application/x-yaml"
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error exporting {scenario_name}")
+        raise HTTPException(status_code=400, detail=f"Error exporting {scenario_id}")
     
     
