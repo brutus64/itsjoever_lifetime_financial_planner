@@ -18,7 +18,7 @@ export default function Login() {
         onClick={loginWithGoogle}
       >
         <img
-          src="./google_icon.webp"
+          src="/google_icon.webp"
           alt="Google Icon"
           className="bg-white w-6 h-6"
         />

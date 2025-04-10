@@ -8,11 +8,11 @@ const Menu: React.FC = () => {
             <h1 className="text-center font-bold pt-4">Discover</h1>
             <div className="flex flex-col justify-between flex-1 p-4 pt-2">
             <div className="flex flex-col">
-                <MenuItem imagePath="./menu_icons/scenario.png" text="Scenarios" router='scenario'/>
-                <MenuItem imagePath="./menu_icons/explore.png" text="Exploration" router='exploration'/>
-                <MenuItem imagePath="./menu_icons/simulation.png" text="Simulation Logs" router='simulation'/>
-                <MenuItem imagePath="./menu_icons/share.png" text="Shared" router='shared'/>
-                <MenuItem imagePath="./menu_icons/user.png" text="Personal" router='profile' />
+                <MenuItem imagePath="/menu_icons/scenario.png" text="Scenarios" router='scenario'/>
+                <MenuItem imagePath="/menu_icons/explore.png" text="Exploration" router='exploration'/>
+                <MenuItem imagePath="/menu_icons/simulation.png" text="Simulation Logs" router='simulation'/>
+                <MenuItem imagePath="/menu_icons/share.png" text="Shared" router='shared'/>
+                <MenuItem imagePath="/menu_icons/user.png" text="Personal" router='profile' />
             </div>
             
             <Logout />
