@@ -225,7 +225,7 @@ const InvestmentTypePopup = ({investmentTypeData,setInvestmentTypeData,open,hand
                 <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment Type</h1>
                 <div className="flex gap-4">
                     <h2 className="font-medium">Name:</h2>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="name" value={investmentTypeData.name} onChange={handleChange}/>
+                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-75" name="name" value={investmentTypeData.name} onChange={handleChange} disabled={investmentTypeData.name === "cash"}/>
                 </div>
                 <h2 className="font-medium">Description:</h2>
                 <textarea className="px-1 border-2 border-gray-200 rounded-md w-150 h-25 resize-none " maxLength={1000} name="description" value={investmentTypeData.description} onChange={handleChange}/>
@@ -316,7 +316,7 @@ const InvestmentTypeCard = ({name, description,i,handleEdit,deleteInvestmentType
                 <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{name}</h2>
                 <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{description}</p>
             </div>
-            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestmentType(event,id)}>x</button>
+            {name !== "cash" && <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestmentType(event,id)}>x</button>}
         </div>
     )
 }

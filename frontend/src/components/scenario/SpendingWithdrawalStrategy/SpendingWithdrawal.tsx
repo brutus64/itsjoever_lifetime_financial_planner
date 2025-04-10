@@ -23,7 +23,7 @@ const SpendingWithdrawal = ({scenario_id}:any) => {
         console.log(res)
         setSpendingStrat(res.data.spending_strat)
         setWithdrawalStrat(res.data.expense_withdraw)
-        setInvestments(res.data.investment)
+        setInvestments(res.data.investment.filter(inv => inv.invest_type.name !== "cash"))
         setEventSeries(res.data.event_series)
     }
 

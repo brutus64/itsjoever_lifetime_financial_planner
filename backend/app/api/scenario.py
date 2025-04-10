@@ -17,6 +17,7 @@ router = APIRouter()
 
 
 
+
 '''------------------------SCENARIO CREATE/DELETE ROUTES------------------------'''
 #TESTED WITH NO USER YET
 @router.post("/new")
@@ -24,6 +25,47 @@ async def new_scenario(user: dict):
     try:
         user_obj = await User.get(user.get("user"))
         scenario_obj = Scenario(user=user_obj)
+
+        # create default cash investment type
+        DEFAULT_CASH_TYPE = {
+            "name":"cash",
+            "description":"default cash investment",
+            "exp_annual_return":{
+                "is_percent":False,
+                "type":"fixed",
+                "value":0,
+                "mean":0,
+                "stdev":1
+            },
+            "exp_annual_income":{
+                "is_percent":False,
+                "type":"fixed",
+                "value":0,
+                "mean":0,
+                "stdev":1
+            },
+            "expense_ratio": 0,
+            "taxability":False
+        }
+
+        invest_type = InvestmentType(**DEFAULT_CASH_TYPE)
+        await invest_type.insert()
+        db_ref = DBRef(collection="investment_types", id=invest_type.id)
+        scenario_obj.investment_types.append(Link(ref = db_ref,document_class=InvestmentType))
+
+        # create default cash investment
+        DEFAULT_CASH_INVESTMENT = {
+            "invest_type": invest_type.id,
+            "invest_id":"",
+            "value": 0,
+            "tax_status": "non-retirement",
+        }
+
+        investment = Investment(**DEFAULT_CASH_INVESTMENT)
+        await investment.insert()
+        db_ref = DBRef(collection="investments", id=investment.id)
+        scenario_obj.investment.append(Link(ref = db_ref,document_class=Investment))
+
         await scenario_obj.save()
         print("saved id", scenario_obj.id)
         user_obj.scenarios.append(scenario_obj)
@@ -147,6 +189,7 @@ async def fetch_investments(scenario_id: str):
 
 @router.post("/investment_type/{scenario_id}")
 async def create_invest_type(scenario_id: str, investment_type: dict):
+    print(investment_type)
     try:
         scenario = await Scenario.get(PydanticObjectId(scenario_id))
         if not scenario:

@@ -125,9 +125,10 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
                 <h1 className="text-2xl font-bold">{editing === -1 ?"New" : "Modify"} Investment</h1>
                 <div className="flex gap-4 items-center">
                     <h2 className="font-medium">Investment Type:</h2>
-                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="invest_type" value={investmentData.invest_type.name} onChange={handleChange}>
+                    <select className="text-lg px-1 border-2 border-gray-200 rounded-md w-70 h-10" name="invest_type" value={investmentData.invest_type.name} onChange={handleChange} disabled={investmentData.invest_type.name === "cash"}>
                         <option value=""></option>
-                        {investmentTypes.map((inv_type) => (
+                        {investmentData.invest_type.name === "cash" && <option value="cash">cash</option>}
+                        {investmentTypes.filter(inv_type => inv_type.name !== "cash").map((inv_type) => (
                             <option className="flex flex-col w-100 h-23" key={inv_type.name} value={inv_type.name}>
                                 {inv_type.name}
                             </option>
@@ -141,15 +142,15 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
                 <div className="flex flex-col gap-1">
                     <h2 className="font-medium">Tax Status:</h2>
                     <div className="flex gap-1">
-                        <input className="ml-1" type="radio" value="non-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "non-retirement"}/>
+                        <input className="ml-1" type="radio" value="non-retirement" onChange={handleTaxRadio} checked={investmentData.tax_status === "non-retirement"} disabled={investmentData.invest_type.name === "cash"}/>
                         <div className="">Non-retirement</div>
                     </div>
                     <div className="flex gap-1">
-                        <input className="ml-1" type="radio" value="pre-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "pre-tax"}/>
+                        <input className="ml-1" type="radio" value="pre-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "pre-tax"} disabled={investmentData.invest_type.name === "cash"}/>
                         <div className="">Pre-tax</div>
                     </div>
                     <div className="flex gap-1">
-                        <input className="ml-1" type="radio" value="after-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "after-tax"}/>
+                        <input className="ml-1" type="radio" value="after-tax" onChange={handleTaxRadio} checked={investmentData.tax_status === "after-tax"} disabled={investmentData.invest_type.name === "cash"}/>
                         <div className="">After-tax</div>
                     </div>
                 </div>
@@ -170,7 +171,8 @@ const InvestmentCard = ({investment,i,handleEdit,deleteInvestment}:{investment:a
                 <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{investment.invest_type.name}</h2>
                 <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{investment.tax_status} - ${investment.value}</p>
             </div>
-            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestment(event,investment.id)}>x</button>
+            {investment.invest_type.name !== "cash" &&
+            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestment(event,investment.id)}>x</button>}
         </div>
     )
 }
