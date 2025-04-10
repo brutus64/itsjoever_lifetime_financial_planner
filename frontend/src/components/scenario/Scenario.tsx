@@ -89,7 +89,7 @@ const Scenario = () => {
 
     // possibly incomplete fields
     const canSimulate = () => {
-        if (scenario.fin_goal === null || scenario.state === "" || scenario.birth_year[0] === null)
+        if (scenario.fin_goal === null || scenario.state === "" || scenario.birth_year[0] === null || scenario.limit_posttax === null)
             return false;
         if (scenario.life_expectancy[0].type === "fixed") {
             if (scenario.life_expectancy[0].value === null)
@@ -161,7 +161,8 @@ const Scenario = () => {
                     <div><b>Spouse Birth Year:</b> <RedText>{scenario.birth_year[1]}</RedText></div>
                     <div><b>Spouse Life Expectancy:</b> <RedText>{handleNotPercent(scenario.life_expectancy[1])}</RedText></div>
                 </div>}
-                <div><b>Inflation Assumption:</b> <RedText>{handleNotPercent(scenario.inflation_assume) ? handleNotPercent(scenario.inflation_assume) : ""}</RedText></div>
+                <div><b>Inflation Assumption:</b> <RedText>{handleNotPercent(scenario.inflation_assume) ? handleNotPercent(scenario.inflation_assume) + "%" : ""}</RedText></div>
+                <div><b>Initial Limit:</b> <RedText>{scenario.limit_posttax}</RedText></div>
             </div>
             <div className="flex flex-col gap-3">
                 <h1 className="text-3xl font-medium">Investment Types</h1>

@@ -113,6 +113,7 @@ async def update_main(scenario_id: str, scenario: dict):
             "life_expectancy": parse_life_expectancy(scenario.get('life_expectancy', [])),
             "inflation_assume": Inflation(**parse_inflation(scenario.get('inflation_assume', {}))),
             "fin_goal": float(scenario.get('fin_goal')) if scenario.get('fin_goal') else None,
+            "limit_posttax": float(scenario.get('limit_posttax')) if scenario.get('limit_posttax') else None,
             "state": scenario.get('state', existing_scenario.state)
         }
         print(update_data)

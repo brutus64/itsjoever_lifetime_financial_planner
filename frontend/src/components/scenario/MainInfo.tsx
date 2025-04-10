@@ -25,6 +25,7 @@ const MainInfo = ({scenario_id}:any) => {
             spouse_birth_year: scenario.birth_year[1],
             fin_goal: scenario.fin_goal,
             state: scenario.state,
+            limit_posttax: scenario.limit_posttax,
             life_expectancy: scenario.life_expectancy[0],
             spouse_life_expectancy: scenario.life_expectancy[1],
             inflation_assume: scenario.inflation_assume
@@ -44,6 +45,7 @@ const MainInfo = ({scenario_id}:any) => {
                 birth_year: [mainData.birth_year,mainData.spouse_birth_year],
                 life_expectancy: [mainData.life_expectancy,mainData.spouse_life_expectancy],
                 inflation_assume: mainData.inflation_assume,
+                limit_posttax: mainData.limit_posttax,
                 fin_goal: parseFloat(mainData.fin_goal),
                 state: mainData.state
             }
@@ -73,7 +75,7 @@ const MainInfo = ({scenario_id}:any) => {
     const handleChange = (e) => { // Not for radio  
         let { name, value } = e.target;
         
-        const float_names = new Set(['fin_goal', 'birth_year', 'spouse_birth_year']);
+        const float_names = new Set(['fin_goal', 'birth_year', 'spouse_birth_year','limit_posttax']);
         if (float_names.has(name)) {
             value = parseFloat(value);
         }
@@ -291,11 +293,10 @@ const MainInfo = ({scenario_id}:any) => {
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="upper_bound" value={mainData.inflation_assume.upper_bound} onChange={handleInflation}/> 
                     </div>
                 </div>
-                
-                {/* <div className="bg-white shadow-md rounded-lg p-6 flex flex-col w-full gap-3 w-55">
-                    <p className="text-2xl font-bold">Initial Limit on Annual Contributions (After-tax accounts)</p>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" min="0"></input>
-                </div> */}
+                <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-55">
+                    <p className="text-2xl font-bold">Initial Limit</p>
+                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-40" type="number" min="0" name="limit_posttax" value={mainData.limit_posttax} onChange={handleChange}></input>
+                </div>
             </div>
             <div className="flex justify-center">
                 <button className="bg-blue-500 text-white w-40 px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default" disabled={!dirty} onClick={updateMain}>Save</button>
