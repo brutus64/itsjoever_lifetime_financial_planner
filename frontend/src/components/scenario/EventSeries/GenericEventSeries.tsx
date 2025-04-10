@@ -11,6 +11,7 @@ const eventSeriesModalStyling = {
 // 
 const defaultGenericEventForm = {
     // INCOME/EXPENSE/INVEST/REBALANCE
+    id: "",
     type: "",
     name: "",
     description: "",
@@ -185,6 +186,7 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
         } else { // modify event series
             updateEventSeries(eventSeries[editing].id, genericEventData)
         }
+        console.log(genericEventData);
         handleClose(true)
     }
 
@@ -245,6 +247,7 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
         setEditing(index);
         const filledGeneric = fillGenericEventData(eventSeries[index]);
         setGenericEventData(filledGeneric)
+        console.log(filledGeneric);
         setOpen(true)
     }
 
@@ -494,7 +497,7 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
 
                 {(eventSeriesType == 'invest' || eventSeriesType == 'rebalance') && (
                     <div>
-                        <h1 className="font-medium">Asset Allocation</h1>
+                        <h1 className="font-medium">Asset Allocation:</h1>
                         {eventSeriesType == 'rebalance' && (
                             <div className='flex gap-4'>
                             <h2 className="font-medium">Tax-status is</h2>
