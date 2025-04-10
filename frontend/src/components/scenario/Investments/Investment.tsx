@@ -82,7 +82,7 @@ const Investment = ({investmentTypes,investments,createInvestment,updateInvestme
             </div>
             <div className="flex flex-col gap-3 overflow-y-scroll h-100">
                 {investments.map((inv,i) =>
-                    <InvestmentCard key={inv.id} investment={inv} handleEdit={handleEdit} i={i}/>
+                    <InvestmentCard key={inv.id} investment={inv} handleEdit={handleEdit} i={i} deleteInvestment={deleteInvestment}/>
                 )}
             </div>
             <InvestmentPopup investmentData={investmentData} setInvestmentData={setInvestmentData} investmentTypes={investmentTypes} open={open} handleClose={handleClose} error={error} handleAddInvestment={handleAddInvestment} editing={editing}/>
@@ -163,12 +163,14 @@ const InvestmentPopup = ({investmentData,setInvestmentData,investmentTypes,open,
     )
 }
 
-const InvestmentCard = ({investment,i,handleEdit}:{investment:any,i:any,handleEdit:any}) => {
+const InvestmentCard = ({investment,i,handleEdit,deleteInvestment}:{investment:any,i:any,handleEdit:any,deleteInvestment:any}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)} key={investment.id}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{investment.invest_type.name}</h2>
-            <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{investment.tax_status} - ${investment.value}</p>
-            {/* <button>Delete</button> */}
+        <div className="bg-white shadow-md rounded-lg flex justify-between gap-3 p-6 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)} key={investment.id}>
+            <div className="flex flex-col gap-3">
+                <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{investment.invest_type.name}</h2>
+                <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{investment.tax_status} - ${investment.value}</p>
+            </div>
+            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestment(event,investment.id)}>x</button>
         </div>
     )
 }

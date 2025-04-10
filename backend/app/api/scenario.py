@@ -184,22 +184,38 @@ async def update_invest_type(scenario_id: str, invest_type_id: str, investment: 
 @router.delete("/investment_type/{scenario_id}/{invest_type_id}")
 async def delete_invest_type(scenario_id: str, invest_type_id: str):
     try:
-        scenario_obj_id = PydanticObjectId(scenario_id)
-        invest_type_obj_id = PydanticObjectId(invest_type_id)
-        
-        # get the scenario
-        scenario = await Scenario.get(scenario_obj_id)
+        scen_id = PydanticObjectId(scenario_id)
+        invest_id = PydanticObjectId(invest_type_id)
+        scenario = await Scenario.get(scen_id,fetch_links=True)
         if not scenario:
-            raise HTTPException(status_code=404, detail="Scenario not found")
-        
-        # delete the investment type
-        await InvestmentType.get(invest_type_obj_id).delete()
-        
-        # potentially does not work
-        await scenario.update({"$pull": {"investment_types":{"$ref": "investment_types", "$id": invest_type_obj_id}}})
+            raise HTTPException(status_code=400, detail="DELETE investment_type scenario does not exist")
+
+        # check to see if there are any investments that are using this investment type
+        for inv in scenario.investment:
+            if inv.invest_type.id == invest_id:
+                print("Investment type is being used in an investment")
+                raise HTTPException(status_code=400, detail="DELETE investment_type investment type in use")
+        # delete investment from scenario first
+        # dbref = DBRef(collection="investments", id=invest_id)
+        # res = await Scenario.find_one(Scenario.id == scen_id).update(
+        #     Pull({
+        #             "investment": dbref,
+        #             "rmd_strat": dbref,
+        #             "roth_conversion_strat": dbref,
+        #             "expense_withdraw": dbref
+        #         })
+        # )
+        # print(res)
+
+        # # delete actual investment
+        # investment = await Investment.get(invest_id)
+        # print(investment)
+        # delete_res = await investment.delete()
+        # print("DELETE", delete_res)
+
         return { "success": True }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
+        raise HTTPException(status_code=400, detail=f"Delete investment error {e}")
 
 '''---------------------------INVESTMENT ROUTES-------------------------------------'''
 @router.post("/investment/{scenario_id}")
@@ -238,22 +254,41 @@ async def update_invest(scenario_id: str, investment: dict, investment_id: str):
 @router.delete("/investment/{scenario_id}/{investment_id}")
 async def delete_invest(scenario_id: str, investment_id: str):
     try:
-        scenario_obj_id = PydanticObjectId(scenario_id)
-        investment_obj_id = PydanticObjectId(investment_id)
-        
-        # get the scenario
-        scenario = await Scenario.get(scenario_obj_id)
+        scen_id = PydanticObjectId(scenario_id)
+        invest_id = PydanticObjectId(investment_id)
+        scenario = await Scenario.get(scen_id, fetch_links=True)
         if not scenario:
-            raise HTTPException(status_code=404, detail="Scenario not found")
+            raise HTTPException(status_code=400, detail="DELETE investment scenario does not exist")
+
+        # check to see if there are any event series that are using this investment
+        for es in scenario.event_series:
+            if es.type == "invest" or es.type == "rebalance":
+                for asset in es.details.assets:
+                    if asset.invest_id.ref.id == invest_id:
+                        print("Investment is being used in event series")
+                        raise HTTPException(status_code=400, detail="DELETE investment investment in use")
         
-        # delete the investment type
-        await Investment.get(investment_obj_id).delete()
-        
-        # potentially does not work
-        await scenario.update({"$pull": {"investments":{"$ref": "investments", "$id": investment_obj_id}}})
+        # delete investment from scenario first
+        dbref = DBRef(collection="investments", id=invest_id)
+        res = await Scenario.find_one(Scenario.id == scen_id).update(
+            Pull({
+                    "investment": dbref,
+                    "rmd_strat": dbref,
+                    "roth_conversion_strat": dbref,
+                    "expense_withdraw": dbref
+                })
+        )
+        print(res)
+
+        # delete actual investment
+        investment = await Investment.get(invest_id)
+        print(investment)
+        delete_res = await investment.delete()
+        print("DELETE", delete_res)
+
         return { "success": True }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error deleting investment type, {e}")
+        raise HTTPException(status_code=400, detail=f"Delete investment error {e}")
 
 '''-------------------------------EVENT SERIES ROUTES--------------------------------'''
 @router.get("/event_series/{scenario_id}")

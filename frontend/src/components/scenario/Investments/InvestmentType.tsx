@@ -120,7 +120,7 @@ const InvestmentType = ({investmentTypes,investments,createInvestmentType,update
             </div>
             <div className="flex flex-col gap-3 overflow-y-scroll h-100">
                 {investmentTypes.map((investment_type,i) => 
-                    <InvestmentTypeCard key={investment_type.name} name={investment_type.name} description={investment_type.description} i={i} handleEdit={handleEdit}/>
+                    <InvestmentTypeCard key={investment_type.name} name={investment_type.name} description={investment_type.description} i={i} handleEdit={handleEdit} deleteInvestmentType={deleteInvestmentType} id={investment_type.id}/>
                 )}
             </div>
             <InvestmentTypePopup investmentTypeData={investmentTypeData} setInvestmentTypeData={setInvestmentTypeData} open={open} handleClose={handleClose} error={error} handleAddInvestmentType={handleAddInvestmentType} editing={editing}/>
@@ -309,12 +309,14 @@ const InvestmentTypePopup = ({investmentTypeData,setInvestmentTypeData,open,hand
 }
 
 // click to edit
-const InvestmentTypeCard = ({name, description,i,handleEdit}:{name:any, description:any,i:any,handleEdit:any}) => {
+const InvestmentTypeCard = ({name, description,i,handleEdit,deleteInvestmentType,id}:{name:any, description:any,i:any,handleEdit:any,deleteInvestmentType:any,id:any}) => {
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
-            <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{name}</h2>
-            <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{description}</p>
-            {/* <button>Delete</button> */}
+        <div className="bg-white shadow-md rounded-lg p-6 flex justify-between gap-3 w-120 h-30 hover:bg-sky-100 cursor-pointer" onClick={() => handleEdit(i)}>
+            <div className="flex flex-col gap-3">
+                <h2 className="text-xl font-medium w-85 overflow-ellipsis overflow-hidden whitespace-nowrap">{name}</h2>
+                <p className="overflow-ellipsis w-85 overflow-hidden whitespace-nowrap">{description}</p>
+            </div>
+            <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => deleteInvestmentType(event,id)}>x</button>
         </div>
     )
 }

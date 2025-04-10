@@ -123,8 +123,6 @@ const Scenario = () => {
             if (scenario.inflation_assume.lower_bound === null || scenario.inflation_assume.upper_bound === null)
                 return false;
         }
-        if (scenario.investment.length === 0 || scenario.rmd_strat.length === 0 || scenario.expense_withdraw.length === 0)
-            return false;
         if (scenario.roth_optimizer.is_enable) {
             if (scenario.roth_optimizer.start_year === null || scenario.roth_optimizer.end_year === null)
                 return false;

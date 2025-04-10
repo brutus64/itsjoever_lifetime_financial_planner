@@ -103,12 +103,30 @@ const Investments = ({scenario_id}:any) => {
         }
     }
 
-    const deleteInvestmentType = async (invest_id) => {
-
+    const deleteInvestmentType = async (event,invest_id) => {
+        event.stopPropagation();
+        console.log(`im deleting ${invest_id}`);
+        try {
+            const res = await axios.delete(`http://localhost:8000/api/scenarios/investment_type/${scenario_id}/${invest_id}`);
+            console.log(res);
+            setInvestmentTypes(investmentTypes.filter(inv => inv.id !== invest_id));
+        } catch(err) {
+            console.error("Could not delete investment type: ",err);
+            return;
+        }
     }
 
-    const deleteInvestment = async (invest_id) => {
-        
+    const deleteInvestment = async (event,invest_id) => {
+        event.stopPropagation();
+        console.log(`im deleting ${invest_id}`);
+        try {
+            const res = await axios.delete(`http://localhost:8000/api/scenarios/investment/${scenario_id}/${invest_id}`);
+            console.log(res);
+            setInvestments(investments.filter(inv => inv.id !== invest_id));
+        } catch(err) {
+            console.error("Could not delete investment: ",err);
+            return;
+        }
     }
 
     useEffect(() => {

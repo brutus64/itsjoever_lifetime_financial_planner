@@ -77,6 +77,14 @@ const EventSeries = ({scenario_id}:any) => {
 
     const deleteEventSeries = async(event_id:any) => {
         console.log(`im deleting ${event_id}`);
+        try {
+            const res = await axios.delete(`http://localhost:8000/api/scenarios/event_series/${scenario_id}/${event_id}`);
+            console.log(res);
+            setEventSeries(eventSeries.filter(es => es.id !== event_id));
+        } catch(err) {
+            console.error("Could not delete event series: ",err);
+            return;
+        }
     }
 
     useEffect(() => {
