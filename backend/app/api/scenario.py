@@ -195,23 +195,21 @@ async def delete_invest_type(scenario_id: str, invest_type_id: str):
             if inv.invest_type.id == invest_id:
                 print("Investment type is being used in an investment")
                 raise HTTPException(status_code=400, detail="DELETE investment_type investment type in use")
-        # delete investment from scenario first
-        # dbref = DBRef(collection="investments", id=invest_id)
-        # res = await Scenario.find_one(Scenario.id == scen_id).update(
-        #     Pull({
-        #             "investment": dbref,
-        #             "rmd_strat": dbref,
-        #             "roth_conversion_strat": dbref,
-        #             "expense_withdraw": dbref
-        #         })
-        # )
-        # print(res)
 
-        # # delete actual investment
-        # investment = await Investment.get(invest_id)
-        # print(investment)
-        # delete_res = await investment.delete()
-        # print("DELETE", delete_res)
+        # delete investment type from scenario first
+        dbref = DBRef(collection="investment_types", id=invest_id)
+        res = await Scenario.find_one(Scenario.id == scen_id).update(
+            Pull({
+                    "investment_types": dbref,
+                })
+        )
+        print(res)
+
+        # delete actual investment type
+        invest_type = await InvestmentType.get(invest_id)
+        print(invest_type)
+        delete_res = await invest_type.delete()
+        print("DELETE", delete_res)
 
         return { "success": True }
     except Exception as e:
