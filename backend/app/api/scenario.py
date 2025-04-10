@@ -8,7 +8,7 @@ from app.api.utils.scenario_helper import *
 from app.db.db_utils import *
 from beanie import PydanticObjectId, Link, WriteRules
 from bson import DBRef
-from beanie.odm.operators.update.array import AddToSet
+from beanie.odm.operators.update.array import AddToSet, Pull
 from typing import Set
 from fastapi import Depends
 from beanie import WriteRules
@@ -296,6 +296,7 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
         event_series = await EventSeries.get(PydanticObjectId(event_series_id))
         #NOT SURE IF THIS WORKS
         print("attemp to parse")
+        #works with keeping it as a dictionary it does validation and conversion between types for us in set
         new_event_series = parse_events(event_data)
         print(new_event_series)
         print("Parse success?")
@@ -309,12 +310,28 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
 @router.delete("/event_series/{scenario_id}/{event_series_id}")
 async def delete_event_series(scenario_id: str, event_series_id: str):
     try:
-        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        scen_id = PydanticObjectId(scenario_id)
+        event_id = PydanticObjectId(event_series_id)
+        scenario = await Scenario.get(scen_id)
         if not scenario:
             raise HTTPException(status_code=400, detail="DELETE event series scenario does not exist")
-        await EventSeries.get(PydanticObjectId(event_series_id)).delete()
-        # potentially does not work
-        await scenario.update({"$pull": {"event_series":{"$ref": "event_series", "$id": event_series_id}}})
+        event_series = await EventSeries.get(event_id)
+        print(event_series)
+        delete_res = await event_series.delete()
+        print("DELETE", delete_res)
+        dbref = DBRef(collection="event_series", id=event_id)
+        
+        res = await Scenario.find_one(Scenario.id == scen_id).update(
+            Pull({
+                    "event_series": dbref,
+                    "spending_strat": dbref,
+                })
+        )
+        print(res)
+        # # Update the scenario with the filtered list
+        # scenario.event_series = filtered_events
+        # await scenario.save()
+
         return { "success": True }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Delete event series error {e}")

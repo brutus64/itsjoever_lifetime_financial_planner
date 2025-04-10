@@ -13,6 +13,7 @@ class EventDate(BaseModel):
     mean: Optional[float] = None
     stdev: Optional[float] = None
     # For references to other event series, CONSIDER whether keep it as string or not
+    #ID as a string
     event_series: Optional[str] = None 
     
     model_config = ConfigDict(exclude_none=True)
