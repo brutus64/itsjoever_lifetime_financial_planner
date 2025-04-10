@@ -237,9 +237,30 @@ async def update_invest(scenario_id: str, investment: dict, investment_id: str):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
         invest_obj_id = PydanticObjectId(investment_id)
+        scenario = await Scenario.get(scenario_obj_id)
+        if not scenario:
+            raise HTTPException(status_code=400, detail= "PUT investment scenario does not exist")
         existing_investment = await Investment.get(invest_obj_id)
         if not existing_investment:
             raise HTTPException(status_code=404, detail="Investment not found")
+
+        # if the new investment data is pre-tax -> must error if used in event series
+        # if the new investment data is not pre-tax -> must remove from rmd and roth
+        if investment["tax_status"] == "pre-tax":
+            for es in scenario.event_series:
+                if es.type == "invest" or es.type == "rebalance":
+                    for asset in es.details.assets:
+                        if asset.invest_id.ref.id == invest_obj_id:
+                            print("Investment is being used in event series")
+                            raise HTTPException(status_code=400, detail="PUT investment investment in use")
+        else:
+            dbref = DBRef(collection="investments", id=invest_obj_id)
+            await Scenario.find_one(Scenario.id == scenario_obj_id).update(
+                Pull({
+                        "rmd_strat": dbref,
+                        "roth_conversion_strat": dbref,
+                    })
+            )
         
         invest_obj = Investment(**investment)
         await existing_investment.update({"$set":invest_obj})
@@ -323,10 +344,13 @@ async def create_event_series(scenario_id: str, event_data: dict):
 @router.put("/event_series/{scenario_id}/{event_series_id}") #requires event series id
 async def update_event_series(scenario_id: str, event_series_id: str, event_data: dict):
     try:
-        scenario = await Scenario.get(PydanticObjectId(scenario_id))
+        scen_id = PydanticObjectId(scenario_id)
+        event_id = PydanticObjectId(event_series_id)
+        scenario = await Scenario.get(scen_id)
         if not scenario:
             raise HTTPException(status_code=400, detail="PUT event series scenario does not exist")
         event_series = await EventSeries.get(PydanticObjectId(event_series_id))
+
         #NOT SURE IF THIS WORKS
         print("attemp to parse")
         #works with keeping it as a dictionary it does validation and conversion between types for us in set
@@ -335,6 +359,18 @@ async def update_event_series(scenario_id: str, event_series_id: str, event_data
         print("Parse success?")
         await event_series.update({"$set":new_event_series})
         print("updated")
+
+        # If new expense event series is not a discretionary expense, remove from spending strategy (just in case)
+        print(event_data)
+        if (event_data["type"] == "expense" and not event_data["is_discretionary"]):
+            print("It changed")
+            dbref = DBRef(collection="event_series", id=event_id)
+            await Scenario.find_one(Scenario.id == scen_id).update(
+                Pull({
+                        "spending_strat": dbref,
+                    })
+            )
+        
         updated_scenario = await Scenario.get(PydanticObjectId(scenario_id), fetch_links=True)
         return updated_scenario.model_dump(include={'event_series'}, mode="json")
     except Exception as e:
