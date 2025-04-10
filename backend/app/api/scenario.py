@@ -305,8 +305,12 @@ async def delete_event_series(scenario_id: str, event_series_id: str):
         delete_res = await event_series.delete()
         print("DELETE", delete_res)
         dbref = DBRef(collection="event_series", id=event_id)
+        
         res = await Scenario.find_one(Scenario.id == scen_id).update(
-            Pull({"event_series": dbref})
+            Pull({
+                    "event_series": dbref,
+                    "spending_strat": dbref,
+                })
         )
         print(res)
         # # Update the scenario with the filtered list
