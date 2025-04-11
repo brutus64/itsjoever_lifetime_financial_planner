@@ -73,18 +73,21 @@ const ProfilePage: React.FC = () => {
       const res = await axios.post("http://localhost:8000/api/scenarios/import", formData, {
         headers: {
           "Content-Type": "multipart/form-data"
-        }
+        },
+        withCredentials: true
       })
       if (res.status === 200){
         const result = res.data;
         console.log("Import successful", result)
-      }
-      setUser({
-        ...user,
-        scenarios: []
-      });
+        if (result.scenarios) {
+          setUser({
+            ...user,
+            scenarios: result.scenarios
+          });
+        }
+      };
     }
-  };
+  }
 
 
   const triggerScenariosImport = () => {

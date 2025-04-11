@@ -8,6 +8,7 @@ from app.db.db_utils import *
 import yaml
 import os
 from fastapi.responses import FileResponse
+from bson import DBRef
 
 router = APIRouter()
 
@@ -94,11 +95,24 @@ async def import_scenario(request: Request, file: UploadFile = File(...)):
         )
         await scenario.save()
         print("SCENARIO ID = ", str(scenario.id))
-
+        all_scenarios = []
+        if user:
+            scenario_ref = Link(
+                ref=DBRef(collection="scenarios", id=scenario.id),
+                document_class=Scenario
+            )
+            if not hasattr(user, "scenarios") or user.scenarios is None:
+                user.scenarios = []
+            user.scenarios.append(scenario_ref)
+            await user.save()
+            user = await User.get(PydanticObjectId(user_id), fetch_links=True)
+            all_scenarios = user.scenarios
+        print("ALL SCENARIOS", all_scenarios)
         return {
             "name": scenario.name,
             "id": str(scenario.id),
-            "message": "Scenario imported successfully"
+            "message": "Scenario imported successfully",
+            "scenarios": all_scenarios
         }
         
     except yaml.YAMLError as e:

@@ -107,7 +107,11 @@ async def fetch_user_scenarios(user_id: str):
     except ValueError: #occurs if pydantic conversion fails
         raise HTTPException(status_code=400, detail="Invalid user ID format")
     
-    
+@router.post("/share/{scenario_id}")
+async def share_scenario(request: Request, scenario_id: str, perm: str):
+    pass
+
+   
 @router.post("/{user_id}/state_tax")
 async def yaml_parse():
     

@@ -226,13 +226,13 @@ def parse_inflation_assumption(data):
     inflat_type = inflat.get('type')
     inflation = Inflation(type=inflat_type)
     if inflat_type == 'fixed':
-        inflation.value = inflat.get('value')
+        inflation.value = inflat.get('value')*100
     elif inflat_type == 'normal':
-        inflation.mean = inflat.get('mean')
-        inflation.stdev = inflat.get('stdev')
+        inflation.mean = inflat.get('mean')*100
+        inflation.stdev = inflat.get('stdev')*100
     elif inflat_type == 'uniform':
-        inflation.lower_bound = inflat.get('lower')
-        inflation.upper_bound = inflat.get('upper')
+        inflation.lower_bound = inflat.get('lower')*100
+        inflation.upper_bound = inflat.get('upper')*100
     return inflation
  
 def parse_roth_opt(data):
@@ -496,17 +496,17 @@ def life_to_yaml(data):
     return arr
 def inflat_to_yaml(data):
     if data.type == 'fixed':
-        return {"type": data.type, "value": data.value}
+        return {"type": data.type, "value": data.value/100}
     elif data.type == 'normal':
         return {
             "type": data.type, 
-            "mean": data.mean, 
-            "stdev": data.stdev
+            "mean": data.mean/100, 
+            "stdev": data.stdev/100
                 }
     elif data.type == 'uniform':
         return {
             "type": data.type, 
-            "lower": data.lower_bound, 
-            "upper": data.upper_bound
+            "lower": data.lower_bound/100, 
+            "upper": data.upper_bound/100
                 }
     return None
