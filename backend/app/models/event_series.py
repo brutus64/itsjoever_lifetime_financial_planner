@@ -1,7 +1,9 @@
 from beanie import Document, Link
 from pydantic import BaseModel, ConfigDict
-from typing import Literal, Optional, Union, List
+from typing import Literal, Optional, Union, List, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.models.investment import Investment
 class EventDate(BaseModel):
     type: Literal['fixed', 'uniform', 'normal', 'start_with', 'end_with']
     # For fixed/uniform/normal distribution
@@ -11,6 +13,7 @@ class EventDate(BaseModel):
     mean: Optional[float] = None
     stdev: Optional[float] = None
     # For references to other event series, CONSIDER whether keep it as string or not
+    #ID as a string
     event_series: Optional[str] = None 
     
     model_config = ConfigDict(exclude_none=True)
@@ -28,11 +31,11 @@ class EventAnnualChange(BaseModel):
 
 
 class FixedInvestment(BaseModel):
-    invest_id: str
+    invest_id: Link['Investment']
     percentage: float
 
 class GlideInvestment(BaseModel):
-    invest_id: str
+    invest_id: Link['Investment']
     initial: float #both percentages apparently this is non-retirement?
     final: float #apparently this is after tax?
 

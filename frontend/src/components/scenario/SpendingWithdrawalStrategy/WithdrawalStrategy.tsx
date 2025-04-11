@@ -14,9 +14,11 @@ import {
 } from '@dnd-kit/sortable';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import Popup from "reactjs-popup"
+import Popup from "reactjs-popup";
+import { useState } from 'react';
   
-export default function WithdrawalStrategy({formData,setFormData}) {
+export default function WithdrawalStrategy({withdrawalStrat,setWithdrawalStrat,investments,setDirty}) {
+    const [ deleting, setDeleting ] = useState(false);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -28,58 +30,64 @@ export default function WithdrawalStrategy({formData,setFormData}) {
         const {active, over} = event;
         
         if (active.id !== over.id) {
-            const oldIndex = formData.expense_withdraw.indexOf(active.id);
-            const newIndex = formData.expense_withdraw.indexOf(over.id);
-            setFormData({
-                ...formData,
-                expense_withdraw: arrayMove(formData.expense_withdraw,oldIndex,newIndex)
-            })
+            const oldIndex = withdrawalStrat.findIndex((inv) => inv.id === active.id)
+            const newIndex = withdrawalStrat.findIndex((inv) => inv.id === over.id)
+            setWithdrawalStrat(arrayMove(withdrawalStrat,oldIndex,newIndex))
+            setDirty(true)
         }
     }
 
     const handleAddInvestment = (investment) => {
-        setFormData({
-            ...formData,
-            expense_withdraw: [...formData.expense_withdraw,investment]
-        })
+        setWithdrawalStrat([...withdrawalStrat,investment])
+        setDirty(true)
     }
 
-    const canAdd = formData.investment.filter((inv) => {
-        return !formData.expense_withdraw.includes(`${inv.invest_type} ${inv.tax_status}`)
+    const handleRemoveInvestment = (event,invest_id) => {
+        console.log(invest_id)
+        event.stopPropagation();
+        setWithdrawalStrat(withdrawalStrat.filter(inv => inv.id !== invest_id))
+        setDirty(true)
+    }
+
+    const canAdd = investments.filter((inv) => {
+        return !withdrawalStrat.some(with_inv => with_inv.id == inv.id)
     })
 
     return (
         <div className="bg-white shadow-md rounded-lg p-6 flex flex-col flex-1 gap-3 w-full h-130">
             <h1 className="text-xl font-bold">Expense Withdrawal Strategy</h1>
-
-            <Popup
-            trigger={<div className="bg-white shadow-md rounded-lg p-2 flex flex-col gap-3 w-80 hover:bg-sky-100 cursor-pointer">
-                        + Add an Investment to the Strategy
-                    </div>}
-            position="bottom center"
-            on="click"
-            closeOnDocumentClick
-            contentStyle={{ padding: '0px', border: 'none', width: "320px"}}
-            arrow={false}
-            >
-                <div className="max-h-90 overflow-y-scroll">
-                    {canAdd.length >= 1 && canAdd.map((inv) => (   
-                        <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.invest_type} onClick={() => handleAddInvestment(`${inv.invest_type} ${inv.tax_status}`)}>
-                            {inv.invest_type + " - " + inv.tax_status}
-                        </div>
-                    ))}
-                    {canAdd.length === 0 && <div className="flex flex-col p-1 w-70 h-8">
-                            No available investments!
+            <div className="flex gap-4">
+                <Popup
+                trigger={<div className="bg-white shadow-md rounded-lg p-2 flex flex-col gap-3 w-80 hover:bg-sky-100 cursor-pointer">
+                            + Add an Investment to the Strategy
                         </div>}
-                </div>
-            </Popup>
+                position="bottom center"
+                on="click"
+                closeOnDocumentClick
+                contentStyle={{ padding: '0px', border: 'none', width: "320px"}}
+                arrow={false}
+                >
+                    <div className="max-h-90 overflow-y-scroll">
+                        {canAdd.length >= 1 && canAdd.map((inv) => (   
+                            <div className="flex flex-col h-8 p-1 hover:bg-sky-100 " key={inv.id} onClick={() => handleAddInvestment(inv)}>
+                                {inv.invest_type.name} - {inv.tax_status}
+
+                            </div>
+                        ))}
+                        {canAdd.length === 0 && <div className="flex flex-col p-1 w-70 h-8">
+                                No available investments!
+                            </div>}
+                    </div>
+                </Popup>
+                <button className={"text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default w-20 " + (deleting ? "bg-blue-600" : "bg-red-600")} onClick={() => setDeleting(!deleting)}>{deleting ? "Sort" : "Delete"}</button>
+            </div>
             <div className='flex flex-col gap-3 overflow-y-scroll h-90'>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext 
-                    items={formData.expense_withdraw}
+                    items={withdrawalStrat}
                     strategy={verticalListSortingStrategy}
                     >
-                        {formData.expense_withdraw.map((inv,i) => <SortableItem key={inv} inv={inv} ind={i}/>)}
+                        {withdrawalStrat.map((inv,i) => <SortableItem key={inv.id} inv={inv} ind={i} handleRemoveInvestment={handleRemoveInvestment} deleting={deleting}/>)}
                     </SortableContext>
                 </DndContext>
             </div>
@@ -88,14 +96,14 @@ export default function WithdrawalStrategy({formData,setFormData}) {
     );
 }
 
-const SortableItem = ({inv,ind}) => {
+const SortableItem = ({inv,ind,handleRemoveInvestment,deleting}) => {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: inv});
+    } = useSortable({id: inv.id,disabled:deleting});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -105,8 +113,8 @@ const SortableItem = ({inv,ind}) => {
     return (
         <div className="cursor-pointer flex items-center bg-white shadow-md rounded-lg p-6 w-120 h-15 hover:bg-sky-100" ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <h1 className="text-3xl font-bold mr-10">{ind+1}.</h1>
-            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv}</div>
-            
+            <div className="w-100 whitespace-nowrap overflow-ellipsis overflow-hidden">{inv.invest_type.name} - {inv.tax_status}</div>
+            {deleting && <button className="rounded-full p-2 h-10 w-10 hover:bg-red-300 cursor-pointer" onClick={(event) => handleRemoveInvestment(event,inv.id)}>x</button>}
         </div>
     );
 }

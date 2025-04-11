@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Cookies from "js-cookie";
 import axios from 'axios';
+import { useAuth } from './Navigation/AuthContext';
 type User = {
     age: number;
     birthday: string;
@@ -18,21 +19,26 @@ type User = {
 
 const ScenarioPage: React.FC = () => {
     const navigate = useNavigate();
+    
     const [user, setUser] = useState<User | null>(null);
     const [scenarios, setScenarios] = useState([])
-    const [searchTerm, setSearchTerm] = useState('')
+    const [error, setError] = useState("")
+    // const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
+    
     // Fetch user data and then scenarios
     useEffect(() => {
         const fetchUserAndScenarios = async () => {
             try {
+                console.log("Hello")
                 // get the access token from cookies
                 const accessToken = Cookies.get("access_token");
                 if (!accessToken) {
                     setLoading(false);
+                    setError("Please log in to see your saved scenarios!")
                     return;
                 }
-                
+                setError("")
                 // fetch user info, mainly want email
                 const googleResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
                     method: "GET",
@@ -58,6 +64,7 @@ const ScenarioPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
+                setError("Error fetching data")
             } finally {
                 setLoading(false);
             }
@@ -66,8 +73,22 @@ const ScenarioPage: React.FC = () => {
         fetchUserAndScenarios();
     }, []);
 
-    const handleNewScenario = () => {
-        navigate('/scenario/new');
+    const handleNewScenario = async () => {
+        // create a new scenario in the backend
+        try {
+            const newScenarioResponse = await axios.post(`http://localhost:8000/api/scenarios/new`,{user:user._id});
+            if (newScenarioResponse.data.message === "ok") {
+                console.log("new scenario created")
+                navigate(`/scenario/${newScenarioResponse.data.id}/main`);
+            }
+            else
+                console.error(newScenarioResponse.data.detail)
+        }
+        catch(error:any){
+            console.error("Error creating new scenario: ", error);
+            setError("Error creating new scenario")
+        }
+        
     }
 
     return (
@@ -75,6 +96,7 @@ const ScenarioPage: React.FC = () => {
             <div className='flex item justify-between'>
                 <p className="text-5xl">Scenario Page</p>
                 <div className='flex '>
+                    
                     {/* <div className="flex items-center bg-gray-200 rounded-full px-4 py-2 ml-4">
                         <img src="./menu_icons/explore.png" alt="Search" className="w-5 h-5 mr-2"/>
                         <input
@@ -89,6 +111,7 @@ const ScenarioPage: React.FC = () => {
                     </button>
                 </div>
             </div>
+            <div className="text-red-600 font-bold">{error}</div>
             <div className='flex flex-col gap-4'>
                 {scenarios.map((scenario)=> {
                     return <ScenarioCard key={scenario.id} scenario={scenario} />
@@ -107,7 +130,7 @@ const ScenarioCard: React.FC = ({ scenario }) => {
     };
     return (
         <div className="border rounded-lg p-4 shadow-md hover:shadow-lg cursor-pointer" onClick={handleClick}>
-            <h3 className="text-xl font-bold mb-2">{scenario.name}</h3>
+            <h3 className="text-xl font-bold mb-2">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h3>
             <p className="text-gray-600">{scenario.marital}</p>
             <p className="text-gray-600">{scenario.fin_goal}</p>
 
@@ -116,3 +139,14 @@ const ScenarioCard: React.FC = ({ scenario }) => {
 };
 
 export default ScenarioPage;
+
+// import  DebugUser  from './Navigation/DebugUser'
+
+// export default function ScenarioPage() {
+//   return (
+//     <div>
+//       <h1>Scenario Page</h1>
+//       <DebugUser />
+//     </div>
+//   );
+// }
