@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from simulation.simulate import simulate_n
+from app.simulation.simulate import simulate_n
 router = APIRouter()
 
 @router.post("/")

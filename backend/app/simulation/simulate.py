@@ -5,7 +5,8 @@ from datetime import datetime
 from statistics import mean, median
 import os
 import sys
-
+# from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, StandardDeduct
+# from app.models.simulation import Simulation
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
 print(LOG_DIRECTORY)
@@ -18,16 +19,77 @@ print(LOG_DIRECTORY)
 class Simulator: # is this necessary?
     pass
 
-# classes for scenario objects
+# using objects will make referencing easier and cleaner
+# otherwise, we would have to use .get() and .set() or brackets
+
+# object that may vary between types
+class Vary:
+    def __init__(self,obj):
+        self.type = obj["type"]
+        if obj["type"] == "fixed":
+            self.value = obj["value"]
+        elif obj["type"] == "normal":
+            self.mean = obj["mean"]
+            self.stdev = obj["stdev"]
+        else:
+            self.lower = obj["lower"] if "lower" in obj else obj["lower_bound"]
+            self.upper = obj["upper"] if "upper" in obj else obj["upper_bound"]
+        
+    def generate(self):
+        if self.type == "fixed":
+            return self.value
+        elif self.type == "normal":
+            return normal(self.mean,self.stdev)
+        else:
+            return uniform(self.lower,self.upper)
+
+
 
 # flatten investment and investment type
 # note that there may be new investments created during the simulation
 # that would not be in the scenario object
 class Investment:
     def __init__(self,investment):
-        pass
+        self.value = investment["value"]
+        self.purchase = investment["value"] # this is the amount of money put into the investment
+        self.tax_status = investment["tax_status"]
+        self.name = investment["invest_type"]["name"]
+        self.exp_ret = Vary(investment["invest_type"]["exp_annual_return"])
+        self.exp_ret_percent = investment["invest_type"]["exp_annual_return"]["is_percent"]
+        self.exp_inc = Vary(investment["invest_type"]["exp_annual_income"])
+        self.exp_inc_percent = investment["invest_type"]["exp_annual_income"]["is_percent"]
+        self.taxability = investment["taxability"]
+        self.expense_ratio = investment["invest_type"]["expense_ratio"]
         
-# flatten event series and income event series
+    # update investment value, return income
+    def update(self):
+        start_val = self.value
+        # 4a: calculate generated income
+        inc = self.exp_inc.generate()
+        if self.exp_inc_percent:
+            inc = self.value * (inc*0.01)
+
+        # 4d: calculate change in value
+        ret_val = self.exp_ret.generate()
+        if self.exp_ret_percent:
+            self.value *= (1+ret_val*0.01)
+        else:
+            self.value += ret_val
+
+        # 4c: add income back to investment
+        self.value += inc
+        self.purchase += inc
+
+        # 4e: calculate expenses
+        avg = (self.value + start_val) // 2
+        self.value -= avg * self.expense_ratio
+        
+        return inc
+        
+        
+
+        
+# income event series
 class Income:
     def __init__(self,event_series):
         pass
@@ -35,10 +97,16 @@ class Income:
 class Tax: # tax brackets
     pass
 
-# flatten event series and expense event series
+# expense event series
 class Expense:
-    pass
+    
 
+# store simulation state
+class Simulation:
+    def __init__(self,scenario):
+        self.investments = [Investment(investment) for investment in scenario.get("investment")]
+        self.expenses = []
+        
 
 # data for a particular year in a simulation
 # create a copy of each scenario object
@@ -53,19 +121,29 @@ class YearlyResults:
         self.total_expenses = 0 # includes expense event series and taxes
         self.early_withdrawal_tax = 0 
         self.discretionary_percent = 0 # discretionary expenses paid / total discretionary
-        
+
 
 # set of n simulations
 def simulate_n(scenario,n,user):
-    # get tax data for scenario's state
+    # get tax data for scenario's state, federal tax, and rmd table
+    
+    # two processes do not use the same address space, so it is
+    # actually fine to create the simulation objects in the
+    # simulate_n function, then pass them in to simulate()
+    # using a big dictionary is too annoying
+    # create simulation objects based on scenario objects that will
+    # change over time
+
+    
+
 
     # spawn processes
     results = []
     with Pool() as pool:
-        log_result = pool.apply_async(simulate_log,args=(scenario,user,))
+        log_result = pool.apply_async(simulate_log,args=(scenario,tax_data,user,))
         results.append(log_result)
         for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(scenario,))
+            result = pool.apply_async(simulate,args=(scenario,tax_data,))
             results.append(result)
         # get all simulation results
         print("Getting results...")
@@ -82,17 +160,15 @@ def simulate_n(scenario,n,user):
 
     # store aggregated results in db to be viewed later
     # return id of simulation set
-        
+
+
 
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(scenario):
+def simulate(scenario, tax_data):
     res = [] #yearly data
-
-    # using a big dictionary is too annoying
-    # create simulation objects based on scenario objects that will
-    # change over time
+    
 
 
     return res
@@ -100,7 +176,7 @@ def simulate(scenario):
 # will be the exact same as simulate(), but with logging
 # this will make the other simulations more efficient
 # as it avoids using if-statements everywhere
-def simulate_log(scenario,user):
+def simulate_log(scenario,tax_data,user):
     # create log directory if it doesn't already exist
     if not os.path.exists(LOG_DIRECTORY):
         os.makedirs(LOG_DIRECTORY)

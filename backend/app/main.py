@@ -7,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import user, scrape_yaml, scenario, import_export, simulation
 from app.db.db import init_db
 from contextlib import asynccontextmanager
-from app.simulation.simulate import shutdown
 import cProfile
 import pstats
 import io
@@ -21,7 +20,6 @@ async def lifespan(app: FastAPI):
     print("HELLO!")
     yield #async context, so FastAPI app runs here, before=startup after=shutdown
     print("Shutting down FastAPI application.")
-    shutdown()
     
     
 app = FastAPI(lifespan=lifespan)

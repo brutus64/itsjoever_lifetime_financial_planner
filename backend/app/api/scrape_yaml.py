@@ -4,6 +4,7 @@ from app.models.tax import FederalTax, StateTax, StandardDeduct, CapitalGains, R
 async def scraped_db_check():
     fed = await FederalTax.find_all().to_list()
     state_res = await StateTax.find_all().to_list()
+    state_res = set([state_tax.state for state_tax in state_res])
     standard = await StandardDeduct.find_all().to_list()
     cap = await CapitalGains.find_all().to_list()
     rmd = await RMDTable.find_all().to_list()
