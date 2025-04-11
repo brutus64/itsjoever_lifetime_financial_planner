@@ -31,8 +31,8 @@ const Scenario = () => {
     const handleSimulate = async (numSimulations) => {
         console.log(`Simulating ${numSimulations} times!`)
         try {
-            const res = await axios.post(`http://localhost:8000/api/simulate`,{scenario:scenario,num_sim:numSimulations});
-            if (res.data.success) {
+            const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,num_sim:numSimulations});
+            if (res.data.message == "ok") {
                 // navigate to some results page that will poll backend
                 
                 setOpen(false)
@@ -327,19 +327,20 @@ const SimulatePopup = ({open,setOpen,handleSimulate}) => {
     };
 
     const validate = () => {
-        if (typeof numSimulations !== 'number' || isNaN(numSimulations)) {
+        const num = parseInt(numSimulations);
+        if (typeof num !== 'number' || isNaN(num)) {
             setError("Please enter a number");
             return;
         }
-        if (numSimulations <= 0) {
+        if (num <= 0) {
             setError("Number must be non-negative")
             return;
         }
-        if (numSimulations > MAX_SIMULATIONS) {
+        if (num > MAX_SIMULATIONS) {
             setError("Max simulations: " + MAX_SIMULATIONS)
             return;
         }
-        handleSimulate(numSimulations);
+        handleSimulate(num);
     }
 
     return (
