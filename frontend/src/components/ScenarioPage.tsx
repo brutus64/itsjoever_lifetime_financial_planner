@@ -25,28 +25,33 @@ const ScenarioPage: React.FC = () => {
     const [error, setError] = useState("")
     // const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
+    const { isGuest, isLoggedIn, userInfo } = useAuth();
     
     // Fetch user data and then scenarios
     useEffect(() => {
         const fetchUserAndScenarios = async () => {
             try {
-                console.log("Hello")
-                // get the access token from cookies
-                const accessToken = Cookies.get("access_token");
-                if (!accessToken) {
-                    setLoading(false);
-                    setError("Please log in to see your saved scenarios!")
-                    return;
+                let googleData = userInfo;
+
+                if (!isGuest) {
+                    console.log("Hello")
+                    // get the access token from cookies
+                    const accessToken = Cookies.get("access_token");
+                    if (!accessToken) {
+                        setLoading(false);
+                        setError("Please log in to see your saved scenarios!")
+                        return;
+                    }
+                    setError("")
+                    // fetch user info, mainly want email
+                    const googleResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    });
+                    googleData = await googleResponse.json();
                 }
-                setError("")
-                // fetch user info, mainly want email
-                const googleResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                });
-                const googleData = await googleResponse.json();
                 
                 // fetch user from your backend using email
                 const userResponse = await fetch(`http://localhost:8000/api/get_user?email=${googleData.email}`);
