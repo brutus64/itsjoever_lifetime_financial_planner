@@ -32,6 +32,8 @@ const ScenarioPage: React.FC = () => {
         const fetchUserAndScenarios = async () => {
             try {
                 let googleData = userInfo;
+                console.log('whats initial data bruh');
+                console.log(googleData);
 
                 if (!isGuest) {
                     console.log("Hello")
@@ -56,8 +58,12 @@ const ScenarioPage: React.FC = () => {
                 // fetch user from your backend using email
                 const userResponse = await fetch(`http://localhost:8000/api/get_user?email=${googleData.email}`);
                 const userData = await userResponse.json();
+                console.log('wtf');
+                console.log(userData);
                 if (userData.user) {
                     setUser(userData.user);
+                    console.log('user data is:')
+                    console.log(userData.user)
                     
                     // fetch scenarios for this user
                     const scenariosResponse = await fetch(`http://localhost:8000/api/${userData.user._id}/scenarios`);
@@ -74,12 +80,19 @@ const ScenarioPage: React.FC = () => {
                 setLoading(false);
             }
         };
+        console.log('finish');
 
         fetchUserAndScenarios();
     }, []);
 
     const handleNewScenario = async () => {
         // create a new scenario in the backend
+        console.log('before')
+        console.log(user);
+        if (!user) {
+            console.log("User not found")
+            return;
+        }
         try {
             const newScenarioResponse = await axios.post(`http://localhost:8000/api/scenarios/new`,{user:user._id});
             if (newScenarioResponse.data.message === "ok") {
@@ -110,7 +123,8 @@ const ScenarioPage: React.FC = () => {
                             className="bg-transparent outline-none text-sm"
                         />
                     </div> */}
-                    <button className="bg-gray-900 text-white rounded-full px-4 py-2 ml-4 hover:bg-gray-700 cursor-pointer"
+                    <button
+                        className="bg-gray-900 text-white rounded-full px-4 py-2 ml-4 hover:bg-gray-700 cursor-pointer"
                         onClick={handleNewScenario}>
                         New Scenario
                     </button>

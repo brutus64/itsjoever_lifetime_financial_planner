@@ -30,7 +30,7 @@ interface UserInfo {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const calledOnce = useRef(false);
 
-    const loginWithGuest = () => {
+    const loginWithGuest = async () => {
       const uniqueId = uuidv4();
       const guestData = {
         email: `guest-${uniqueId}@guest.com`,
@@ -38,9 +38,9 @@ interface UserInfo {
       };
 
       setUserInfo(guestData);
+      await createUser(guestData);
       setIsLoggedIn(true);
       setIsGuest(true);
-      createUser(guestData);
     }
   
     const loginWithGoogle = () => {
