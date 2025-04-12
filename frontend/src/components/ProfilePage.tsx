@@ -51,6 +51,7 @@ const ProfilePage: React.FC = () => {
           profileImage: "menu_icons/user.png",
         };
         setUser(newUser);
+        console.log(newUser.scenarios)
       })
       .catch((error) => {
         console.error("Error fetching user info", error);
@@ -69,6 +70,10 @@ const ProfilePage: React.FC = () => {
       console.log("Scenarios file selected:", file);
       const formData = new FormData();
       formData.append('file', file);
+      console.log(user)
+      if (user && user.email) {
+        formData.append('user_email', user.email);
+      }
       // For demo purposes, let's add a fake scenario with the filename
       const res = await axios.post("http://localhost:8000/api/scenarios/import", formData, {
         headers: {

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
 import app.db.db_utils as db
 from app.models.user import User
 from app.models.scenario import Scenario
@@ -22,14 +23,23 @@ async def login(request: Request, user_data: User):
         request.session['user_id'] = str(user.id)
         request.session['session_id'] = str(session_id)
         #requires checking if we need ot add new user or get user, then add a session to it.
-        return {
+        response = JSONResponse(content={
             "message": "Successful login",
             "user": {
                 "id": str(user.id),
                 "name": str(user.name),
                 "email": user.email
             }
-        }
+        })
+        response.set_cookie(
+            key="user_id", 
+            value=str(user.id),
+            httponly=True,
+            samesite="none",
+            secure=False,  # Set to True in production
+            max_age=86400
+        )
+        return response
     except Exception as e:
         raise HTTPException(status_code=400, detail="/api/login error")
     

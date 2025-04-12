@@ -7,21 +7,20 @@ from app.api.utils.scenario_helper import *
 from app.db.db_utils import *
 import yaml
 import os
+from fastapi import Form
 from fastapi.responses import FileResponse
 from bson import DBRef
 
 router = APIRouter()
 
 @router.post("/import")
-async def import_scenario(request: Request, file: UploadFile = File(...)):
+async def import_scenario(file: UploadFile = File(...), user_email: str = Form(None)):
     try:
         user = None
-        if request:
-            user_id = request.session.get("user_id")
-            print("user id found:", user_id)
-            if user_id:
-                user = await User.get(PydanticObjectId(user_id))
-                print("user obj found", user)
+        if user_email:
+            user = await User.find_one(User.email == user_email, fetch_links=True)
+            print("USER FOUND WITH EMAIL", user_email)
+            print(user)
         if not file.filename.endswith(('.yaml', '.yml')):
             raise HTTPException(status_code=400, detail="Importing scenarios only accepts YAML files.")
         content = await file.read()
@@ -105,8 +104,12 @@ async def import_scenario(request: Request, file: UploadFile = File(...)):
                 user.scenarios = []
             user.scenarios.append(scenario_ref)
             await user.save()
-            user = await User.get(PydanticObjectId(user_id), fetch_links=True)
-            all_scenarios = user.scenarios
+            user = await User.get(user.id, fetch_links=True)
+            for scen in user.scenarios:
+                all_scenarios.append({
+                    "id": str(scen.id),
+                    "name": scen.name
+                })
         print("ALL SCENARIOS", all_scenarios)
         return {
             "name": scenario.name,
