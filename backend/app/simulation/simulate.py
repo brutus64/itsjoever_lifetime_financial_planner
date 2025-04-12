@@ -6,10 +6,12 @@ from statistics import mean, median
 import os
 import sys
 import math
+import csv
 from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, StandardDeduct
 # from app.models.simulation import Simulation
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
+START_YEAR = 2025
 print(LOG_DIRECTORY)
 
 # I dont know how to make process pool global without
@@ -212,7 +214,6 @@ class Simulation:
         # places that require Event series objects: spending strategy
         id_to_obj = {es.id:es for es in self.expenses if es.is_discretionary}
         self.spending_strat = [id_to_obj[es["id"]] for es in scenario.get("spending_strat")]
-        print("resolving main...")
         # other important data
         self.name = scenario.get("name") # needed?
         self.fin_goal = scenario.get("fin_goal")
@@ -286,7 +287,7 @@ async def simulate_n(scenario,n,user):
     await tax_data.fetch_tax()
 
     # testing:
-    simulate(simulation_state,tax_data)
+    simulate_log(simulation_state,tax_data,user)
 
     # spawn processes
     # results = []
@@ -317,21 +318,21 @@ async def simulate_n(scenario,n,user):
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(simulation,tax_data):
-    res = [] #yearly data
+def simulate(simulation: Simulation,tax_data: Tax):
+    res = [] # yearly data
 
-    # things to do at the start of the simulation:
     # resolve event series durations and start times (in that order)
-    # resolve life expectancies to determine simulation duration
-
     simulation.resolve_event_time()
-    for es in simulation.event_series:
-        print(es.start)
 
-    
-    # note: if this is run before passing the object to
-    # a simulation process, all the start years will be the same!
-    # simulation.resolve_event_time()
+    # resolve life expectancy to determine main loop range
+    simulation.user_life = math.floor(0.5+simulation.user_life.generate())
+    if simulation.is_married:
+        simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
+
+    # main loop
+    for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
+        pass
+
 
 
     return res
@@ -339,18 +340,68 @@ def simulate(simulation,tax_data):
 # will be the exact same as simulate(), but with logging
 # this will make the other simulations more efficient
 # as it avoids using if-statements everywhere
-def simulate_log(simluation,tax_data,user):
+def simulate_log(simulation,tax_data,user):
     # create log directory if it doesn't already exist
     if not os.path.exists(LOG_DIRECTORY):
         os.makedirs(LOG_DIRECTORY)
     
     # create two log files
     cur_time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+    res = [] # yearly data
     with open(f"{LOG_DIRECTORY}/{user}_{cur_time}.log","w") as fin_log, \
          open(f"{LOG_DIRECTORY}/{user}_{cur_time}.csv","w") as inv_log:
-        fin_log.write("Test")
-        inv_log.write("Test")
-    res = 1
+        inv_writer = csv.writer(inv_log)
+        title_row = ["year"] + [f"{investment.name} - {investment.tax_status}" for investment in simulation.investments]
+        inv_writer.writerow(title_row) # title row
+
+
+        # from here on, same as simulate except with logging
+
+        # resolve event series durations and start times (in that order)
+        simulation.resolve_event_time()
+
+        # resolve life expectancy to determine main loop range
+        simulation.user_life = math.floor(0.5+simulation.user_life.generate())
+        if simulation.is_married:
+            simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
+
+        # tax values from previous year
+        prev_income = 0 # income
+        prev_ss = 0 # social security
+        prev_ew = 0 # early withdrawals
+        prev_cg = 0 # capital gains
+
+        # main loop
+        for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
+            # Step 1: Inflation
+
+
+            # Step 2: Income
+
+
+            # Step 3: RMD
+
+
+            # Step 4: Investments
+
+
+            # Step 5: Roth
+
+
+            # Step 6: Expenses and Taxes
+
+
+            # Step 7: Discretionary Expenses
+
+
+            # Step 8: Invest
+
+
+            # Step 9: Rebalance
+
+
+            # Step 10: Results
+            pass
 
     return res
 
