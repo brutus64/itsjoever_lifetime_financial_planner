@@ -58,7 +58,7 @@ class Investment:
         self.exp_ret_percent = investment["invest_type"]["exp_annual_return"]["is_percent"]
         self.exp_inc = Vary(investment["invest_type"]["exp_annual_income"])
         self.exp_inc_percent = investment["invest_type"]["exp_annual_income"]["is_percent"]
-        self.taxability = investment["taxability"]
+        self.taxability = investment["invest_type"]["taxability"]
         self.expense_ratio = investment["invest_type"]["expense_ratio"]
         
     # update investment value, return income
@@ -120,50 +120,50 @@ class Invest(EventSeries):
     def __init__(self,event_series):
         super().__init__(event_series)
         self.max_cash = event_series["details"]["max_cash"]
-        # assets will be stored in a size-3 array: [investment object, current percent, change each year]
+        # assets will be stored in a size-3 array: [investment object, start, end] (for fixed, start = end)
         if event_series["details"]["is_glide"]:
             self.assets = [] 
             for asset in event_series["details"]["assets"]:
+                investment = asset["invest_id"]["id"]
                 initial = asset["initial"]
                 final = asset["final"]
-                change = (final-initial) / (self.duration - 1) if self.duration != 1 else 0
-                self.assets.append([asset["invest_id"]["id"],initial,change])
+                self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["percentage"],0] for asset in event_series["details"]["assets"]]
-
-    # only update glide paths if the current year is not the start year
-    def update_glides(self):
-        for asset in self.assets:
-            asset[1] += asset[2]
+            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
     
 # rebalance event series
 class Rebalance(EventSeries):
     def __init__(self,event_series):
         super().__init__(event_series)
-        # assets will be stored in a size-3 array: [investment object, current percent, change each year]
+        # assets will be stored in a size-3 array: [investment object, start, end] (for fixed, start = end)
         if event_series["details"]["is_glide"]:
             self.assets = [] 
             for asset in event_series["details"]["assets"]:
+                investment = asset["invest_id"]["id"]
                 initial = asset["initial"]
                 final = asset["final"]
-                change = (final-initial) / (self.duration - 1) if self.duration != 1 else 0
-                self.assets.append([asset["invest_id"]["id"],initial,change])
+                self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["percentage"],0] for asset in event_series["details"]["assets"]]
+            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
 
-    # only update glide paths if the current year is not the start year
-    def update_glides(self):
-        for asset in self.assets:
-            asset[1] += asset[2]
+class Tax: # store tax rates and rmds
+    def __init__(self,state):
+        self.state = state
+    
+    async def fetch_tax(self):
+        self.federal_tax = await FederalTax.find_one()
+        self.state_tax = await StateTax.find_one(StateTax.state == self.state)
+        self.capital_gains = await CapitalGains.find_one()
+        self.rmd = await RMDTable.find_one()
+
+    def calculate_rmd(self,age):
+        pass
+
+    def calculate_tax(self,is_married):
+        pass
 
 
-
-class Tax: # tax brackets
-    pass
-
-
-
-# store simulation state
+# store simulation state from scenario
 class Simulation:
     def __init__(self,scenario):
         self.investments = [Investment(investment) for investment in scenario.get("investment")]
@@ -190,7 +190,7 @@ class Simulation:
                 re = Rebalance(es)
                 self.event_series.append(re)
                 self.rebalance.append(re)
-
+        
         # resolve ids to object references
         # places that require Investment objects: invest/rebalance event series, and strategies
         id_to_obj = {investment.id:investment for investment in self.investments}
@@ -200,10 +200,10 @@ class Simulation:
         for es in self.rebalance:
             for asset in es.assets:
                 asset[0] = id_to_obj[asset[0]]
-        self.expense_withdraw = [id_to_obj[investment.id] for investment in scenario.get("expense_withdraw")]
-        self.rmd_strat = [id_to_obj[investment.id] for investment in scenario.get("rmd_strat")]
+        self.expense_withdraw = [id_to_obj[investment["id"]] for investment in scenario.get("expense_withdraw")]
+        self.rmd_strat = [id_to_obj[investment["id"]] for investment in scenario.get("rmd_strat")]
         
-        self.roth_strat = [id_to_obj[investment.id] for investment in scenario.get("roth_conversion_strat")]
+        self.roth_strat = [id_to_obj[investment["id"]] for investment in scenario.get("roth_conversion_strat")]
         self.roth_enable = scenario.get("roth_optimizer").get("is_enable")
         if self.roth_enable:
             self.roth_start = scenario.get("roth_optimizer").get("start_year")
@@ -211,8 +211,8 @@ class Simulation:
         
         # places that require Event series objects: spending strategy
         id_to_obj = {es.id:es for es in self.expenses if es.is_discretionary}
-        self.spending_strat = [id_to_obj[es.id] for es in scenario.get("spending_strat")]
-
+        self.spending_strat = [id_to_obj[es["id"]] for es in scenario.get("spending_strat")]
+        print("resolving main...")
         # other important data
         self.name = scenario.get("name") # needed?
         self.fin_goal = scenario.get("fin_goal")
@@ -226,12 +226,12 @@ class Simulation:
             self.spouse_life = Vary(scenario.get("life_expectancy")[1])
         self.state = scenario.get("state")
     
-    async def fetch_tax(self):
-        self.federal_tax = await FederalTax.get
-    
-
     # dfs to get a fixed year for event start times
-    def resolve_event_start(self):
+    def resolve_event_time(self):
+        # resolve durations
+        for es in self.event_series:
+            es.duration = max(1,math.floor(es.duration.generate() + 0.5))
+        # resolve ids
         # starts_with and ends_with are both ids
         id_to_es = {es.id:es for es in self.event_series}
         visited = set() # visited during dfs, but may not be resolved
@@ -240,14 +240,13 @@ class Simulation:
             if es.id in resolved: # Start date already resolved
                 return es.start 
             if es.id in visited: # Cycle detected, set to default
-                es.start = 2025
                 resolved.add(es.id)
                 return 2025 
             visited.add(es.id)
             if es.start["type"] == "start_with": 
                 es.start = dfs(id_to_es[es.start["event_series"]])
             elif es.start["type"] == "end_with":
-                es.start = dfs(id_to_es[es.start["event_series"]]) + 1
+                es.start = dfs(id_to_es[es.start["event_series"]]) + id_to_es[es.start["event_series"]].duration
             else:
                 es.start = math.floor(0.5+Vary(es.start).generate())
             resolved.add(es.id)
@@ -257,7 +256,6 @@ class Simulation:
             dfs(es)
 
 # data for a particular year in a simulation
-# create a copy of each scenario object
 class YearlyResults:
     def __init__(self):
         self.investments = [] # list of tuples (investment identifier, value)
@@ -273,7 +271,7 @@ class YearlyResults:
 
 
 # set of n simulations
-def simulate_n(scenario,n,user):
+async def simulate_n(scenario,n,user):
     # get tax data for scenario's state, federal tax, and rmd table
     
     # two processes do not use the same address space, so it is
@@ -284,19 +282,24 @@ def simulate_n(scenario,n,user):
     # change over time
 
     simulation_state = Simulation(scenario)
+    tax_data = Tax(simulation_state.state)
+    await tax_data.fetch_tax()
+
+    # testing:
+    simulate(simulation_state,tax_data)
 
     # spawn processes
-    results = []
-    with Pool() as pool:
-        log_result = pool.apply_async(simulate_log,args=(simulation_state,user,))
-        results.append(log_result)
-        for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(simulation_state,))
-            results.append(result)
-        # get all simulation results
-        print("Getting results...")
-        results = [result.get() for result in results]
-    print(results)
+    # results = []
+    # with Pool() as pool:
+    #     log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
+    #     results.append(log_result)
+    #     for _ in range(n-1):
+    #         result = pool.apply_async(simulate,args=(simulation_state,tax_data,))
+    #         results.append(result)
+    #     # get all simulation results
+    #     print("Getting results...")
+    #     results = [result.get() for result in results]
+    # print(results)
     # aggregate results by category, then year
     # calculate success probability in each year for chart 4.1
     # the "totals", early-withdrawal, and percent-total-discretion must store
@@ -308,22 +311,27 @@ def simulate_n(scenario,n,user):
 
     # store aggregated results in db to be viewed later
     # return id of simulation set
-
+    return ""
 
 
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(simulation):
+def simulate(simulation,tax_data):
     res = [] #yearly data
 
     # things to do at the start of the simulation:
-    # resolve event series start times and durations
+    # resolve event series durations and start times (in that order)
     # resolve life expectancies to determine simulation duration
+
+    simulation.resolve_event_time()
+    for es in simulation.event_series:
+        print(es.start)
+
     
     # note: if this is run before passing the object to
     # a simulation process, all the start years will be the same!
-    # simulation.resolve_event_start()
+    # simulation.resolve_event_time()
 
 
     return res
@@ -331,7 +339,7 @@ def simulate(simulation):
 # will be the exact same as simulate(), but with logging
 # this will make the other simulations more efficient
 # as it avoids using if-statements everywhere
-def simulate_log(simluation,user):
+def simulate_log(simluation,tax_data,user):
     # create log directory if it doesn't already exist
     if not os.path.exists(LOG_DIRECTORY):
         os.makedirs(LOG_DIRECTORY)
