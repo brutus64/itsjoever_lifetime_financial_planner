@@ -96,38 +96,83 @@ class Investment:
 class Income:
     def __init__(self,event_series):
         self.id = event_series["id"] # just in case
+        self.name = event_series["name"] # for graphing and logging
+        self.start = event_series["start"] #resolved later
+        self.duration = max(0,math.floor(0.5+Vary(event_series["duration"]).generate())) # round to nearest integer, cannot be negative
         self.amt = event_series["details"]["initial_amt"]
         self.exp_change = Vary(event_series["details"]["exp_annual_change"])
         self.exp_change_percent = event_series["details"]["exp_annual_change"]["is_percent"]
         self.inflation_adjust = event_series["details"]["inflation_adjust"]
         self.user_split = event_series["details"]["user_split"]
         self.social_security = event_series["details"]["social_security"]
-        self.name = event_series["name"]
-        self.start = event_series["start"] #resolved later
-        self.duration = max(0,math.floor(0.5+Vary(event_series["duration"]).generate())) # round to nearest integer, cannot be negative
+        
 
 # expense event seriess
 class Expense:
     def __init__(self,event_series):
         self.id = event_series["id"] # just in case
+        self.name = event_series["name"] # for graphing and logging
+        self.start = event_series["start"] #resolved later
+        self.duration = max(0,math.floor(0.5+Vary(event_series["duration"]).generate())) # round to nearest integer, cannot be negative
         self.amt = event_series["details"]["initial_amt"]
         self.exp_change = Vary(event_series["details"]["exp_annual_change"])
         self.exp_change_percent = event_series["details"]["exp_annual_change"]["is_percent"]
         self.inflation_adjust = event_series["details"]["inflation_adjust"]
         self.user_split = event_series["details"]["user_split"]
         self.is_discretionary = event_series["details"]["is_discretionary"]
-        self.name = event_series["name"]
+        
+
+class Invest:
+    def __init__(self,event_series):
+        self.id = event_series["id"] # just in case
+        self.name = event_series["name"] # for graphing and logging
         self.start = event_series["start"] #resolved later
         self.duration = max(0,math.floor(0.5+Vary(event_series["duration"]).generate())) # round to nearest integer, cannot be negative
+        self.max_cash = event_series["details"]["max_cash"]
+        # assets will be stored in a size-3 array: [investment object, current percent, change each year]
+        if event_series["details"]["is_glide"]:
+            self.assets = [] 
+            for asset in event_series["details"]["assets"]:
+                initial = asset["initial"]
+                final = asset["final"]
+                change = (final-initial) / (self.duration - 1) if self.duration != 1 else 0
+                self.assets.append([asset["invest_id"]["id"],initial,change])
+        else:
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],0] for asset in event_series["details"]["assets"]]
+
+    # only update glide paths if the current year is not the start year
+    def update_glides(self):
+        for asset in self.assets:
+            asset[1] += asset[2]
+    
+
+class Rebalance:
+    def __init__(self,event_series):
+        self.id = event_series["id"] # just in case
+        self.name = event_series["name"] # for graphing and logging
+        self.start = event_series["start"] # resolved later
+        self.duration = max(1,math.floor(0.5+Vary(event_series["duration"]).generate())) # round to nearest integer, must be positive
+        # assets will be stored in a size-3 array: [investment object, current percent, change each year]
+        if event_series["details"]["is_glide"]:
+            self.assets = [] 
+            for asset in event_series["details"]["assets"]:
+                initial = asset["initial"]
+                final = asset["final"]
+                change = (final-initial) / (self.duration - 1) if self.duration != 1 else 0
+                self.assets.append([asset["invest_id"]["id"],initial,change])
+        else:
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],0] for asset in event_series["details"]["assets"]]
+
+    # only update glide paths if the current year is not the start year
+    def update_glides(self):
+        for asset in self.assets:
+            asset[1] += asset[2]
+
 
 class Tax: # tax brackets
     pass
 
-class Invest:
-    pass
 
-class Rebalance:
-    pass
 
 # store simulation state
 class Simulation:
@@ -136,6 +181,8 @@ class Simulation:
         event_series = [] # only used here
         self.income = []
         self.expenses = []
+        self.invest_strat = []
+        self.rebalance = []
         for es in scenario.get("event_series"):
             t = es.get("type")
             if t == "income":
@@ -156,7 +203,24 @@ class Simulation:
                 self.rebalance.append(re)
         resolve_event_start(event_series)
 
-        # places that require Investment objects: invest/rebalance event series, strategies, 
+        # places that require Investment objects: invest/rebalance event series, and strategies
+        id_to_obj = {investment.id:investment for investment in self.investments}
+        for es in self.invest_strat:
+            for asset in es.assets:
+                asset[0] = id_to_obj[asset[0]]
+        for es in self.rebalance:
+            for asset in es.assets:
+                asset[0] = id_to_obj[asset[0]]
+        self.expense_withdraw = [id_to_obj[investment.id] for investment in scenario.get("expense_withdraw")]
+        self.rmd_strat = [id_to_obj[investment.id] for investment in scenario.get("rmd_strat")]
+        self.roth_strat = [id_to_obj[investment.id] for investment in scenario.get("roth_conversion_strat")]
+        
+        # places that require Event series objects: spending strategy
+        id_to_obj = {es.id:es for es in self.expenses if es.is_discretionary}
+        self.spending_strat = [id_to_obj[es.id] for es in scenario.get("spending_strat")]
+
+        # other important data
+        
         
 
 # data for a particular year in a simulation
@@ -197,12 +261,7 @@ def resolve_event_start(event_series):
         return es.start
 
     for es in event_series:
-        if es.start["type"] == "start_with" or es.start["type"] == "end_with":
-            dfs(es)
-        else:
-            es.start
-
-
+        dfs(es)
 
 # set of n simulations
 def simulate_n(scenario,n,user):
