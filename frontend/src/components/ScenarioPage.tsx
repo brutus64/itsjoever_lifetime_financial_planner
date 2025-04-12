@@ -147,12 +147,40 @@ const ScenarioCard: React.FC = ({ scenario }) => {
     const handleClick = () => {
         navigate(`/scenario/${scenario.id}`);
     };
+    const handleExport = async (e) => {
+        e.stopPropagation();
+        try{
+            const res = await axios.get(`http://localhost:8000/api/scenarios/export/${scenario.id}`, {
+                withCredentials: true,
+                responseType: 'blob'
+            })
+            console.log(res)
+            const blob = new Blob([res.data], { type: 'application/x-yaml' });
+            const url = window.URL.createObjectURL(blob);
+            const linkElement = document.createElement('a');
+            linkElement.href = url;
+            linkElement.download = `${scenario.id}.yaml`
+            document.body.appendChild(linkElement)
+            linkElement.click()
+            linkElement.remove()
+        }
+        catch(e) {
+            console.log("error downloading yaml file from export", e)
+        }
+    }
     return (
-        <div className="border rounded-lg p-4 shadow-md hover:shadow-lg cursor-pointer" onClick={handleClick}>
+        <div className="border rounded-lg p-4 shadow-md hover:shadow-lg cursor-pointer relative" onClick={handleClick}>
+            <div className="absolute top-2 right-2">
+                <img 
+                    src="./menu_icons/download.png" 
+                    alt="Export" 
+                    className="w-6 h-6 cursor-pointer hover:opacity-80"
+                    onClick={handleExport}
+                />
+            </div>
             <h3 className="text-xl font-bold mb-2">{scenario.name ? scenario.name : <span className="italic">Untitled Scenario</span>}</h3>
             <p className="text-gray-600">{scenario.marital}</p>
             <p className="text-gray-600">{scenario.fin_goal}</p>
-
         </div>
     );
 };
