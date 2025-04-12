@@ -35,10 +35,8 @@ jobs:
       run: |
         cd backend
         python3 -m app.main &     # Start in background
-      
-    - name: Wait for backend to be ready
-      run: |
-        npx wait-on http://localhost:8000
+      env:
+        MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
     - name: Run Playwright tests
       run: |
