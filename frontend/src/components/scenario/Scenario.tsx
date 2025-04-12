@@ -45,6 +45,11 @@ const Scenario = () => {
         }
     }
 
+    // just want the name
+    const resolve_event_series = (id) => {
+        return scenario.event_series.find(es => es.id === id).name
+    }
+
     const handlePercent = ({type,is_percent,value,mean,stdev,lower,upper}) => {
         let string_amt = ""
         let string_mean = ""
@@ -78,8 +83,8 @@ const Scenario = () => {
             case "fixed": return value
             case "normal": return `Normal(mean=${mean},stddev=${stdev})`
             case "uniform": return `Uniform(lower=${lower ? lower : lower_bound},upper=${upper ? upper : upper_bound})`
-            case "start_with": return "With " + event_series
-            default: return "After " + event_series
+            case "start_with": return "With event series " + resolve_event_series(event_series)
+            default: return "After event series " + resolve_event_series(event_series)
         }
     }
 

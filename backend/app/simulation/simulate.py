@@ -175,20 +175,22 @@ class YearlyResults:
 
 # dfs to get a fixed year for event start times
 def resolve_event_start(event_series):
+    # starts_with and ends_with are both ids
+    id_to_es = {es.id:es for es in event_series}
     visited = set() # visited during dfs, but may not be resolved
     resolved = set()
     def dfs(es):
-        if es in resolved: # Start date already resolved
+        if es.id in resolved: # Start date already resolved
             return es.start 
-        if es in visited: # Cycle detected, set to default
+        if es.id in visited: # Cycle detected, set to default
             es.start = 2025
             resolved.add(es.id)
             return 2025 
         visited.add(es.id)
         if es.start["type"] == "start_with": 
-            es.start = dfs(es.start["event_series"])
+            es.start = dfs(id_to_es[es.start["event_series"]])
         elif es.start["type"] == "end_with":
-            es.start = dfs(es.start["event_series"]) + 1
+            es.start = dfs(id_to_es[es.start["event_series"]]) + 1
         else:
             es.start = math.floor(0.5+Vary(es.start).generate())
         resolved.add(es.id)
@@ -219,10 +221,10 @@ def simulate_n(scenario,n,user):
     # spawn processes
     results = []
     with Pool() as pool:
-        log_result = pool.apply_async(simulate_log,args=(scenario,tax_data,user,))
+        log_result = pool.apply_async(simulate_log,args=(scenario,user,))
         results.append(log_result)
         for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(scenario,tax_data,))
+            result = pool.apply_async(simulate,args=(scenario,))
             results.append(result)
         # get all simulation results
         print("Getting results...")
@@ -245,7 +247,7 @@ def simulate_n(scenario,n,user):
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(scenario, tax_data):
+def simulate(scenario):
     res = [] #yearly data
     
 
@@ -255,7 +257,7 @@ def simulate(scenario, tax_data):
 # will be the exact same as simulate(), but with logging
 # this will make the other simulations more efficient
 # as it avoids using if-statements everywhere
-def simulate_log(scenario,tax_data,user):
+def simulate_log(scenario,user):
     # create log directory if it doesn't already exist
     if not os.path.exists(LOG_DIRECTORY):
         os.makedirs(LOG_DIRECTORY)
