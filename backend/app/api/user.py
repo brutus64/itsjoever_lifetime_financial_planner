@@ -143,15 +143,15 @@ async def get_shared_scenarios(user_id: str):
     try:
         user_obj_id = PydanticObjectId(user_id)
         # print("USER", user_obj_id)
-        user = await User.get(user_obj_id, fetch_links=True)
+        user = await User.get(user_obj_id, fetch_links=True, nesting_depth=1)
         # print("PRINT", user)
         if not user:
             raise HTTPException(status_code=404, detail="User does not exist")
         read_only_scenarios, read_write_scenarios = [], []
         for scenario in user.shared_r_scenarios:
-            await scenario.fetch_all_link()
+            await scenario.fetch_all_links()
         for scenario in user.shared_rw_scenarios:
-            await scenario.fetch_all_link()
+            await scenario.fetch_all_links()
         read_only_scenarios = [scenario.model_dump(exclude={
                     "user": {"scenarios"}},mode="json")
                 for scenario in user.shared_r_scenarios]
