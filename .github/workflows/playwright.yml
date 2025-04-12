@@ -19,12 +19,27 @@ jobs:
       with:
         node-version: lts/*
     
-    - name: Install dependencies
+    - name: Install frontend dependencies
       run: |
         cd frontend
         npm ci
         npx playwright install --with-deps
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
     
+    - name: Start backend server
+      run: |
+        cd backend
+        python3 -m app.main &     # Start in background
+      
+    - name: Wait for backend to be ready
+      run: |
+        npx wait-on http://localhost:8000
+
     - name: Run Playwright tests
       run: |
         cd frontend
