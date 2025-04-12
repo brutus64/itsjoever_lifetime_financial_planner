@@ -58,7 +58,12 @@ app.add_middleware(
 #max age defaults to 2 weeks
 app.add_middleware(
     SessionMiddleware,
-    secret_key="haha_random_key123821"
+    secret_key="haha_random_key123821",
+    session_cookie="session",
+    max_age=86400,
+    same_site="none",
+    https_only=False,
+    path="/"
 )
 
 # @app.middleware('http')
