@@ -122,7 +122,7 @@ const ScenarioPage: React.FC = () => {
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
-                <p className="text-5xl">Scenario Page</p>
+                <p className="text-5xl">My Scenarios</p>
                 <div className='flex '>
                     
                     {/* <div className="flex items-center bg-gray-200 rounded-full px-4 py-2 ml-4">

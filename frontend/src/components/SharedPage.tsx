@@ -86,7 +86,7 @@ const SharedPage: React.FC = () => {
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
-                <p className="text-5xl">Shared Page</p>
+                <p className="text-5xl">Shared with me</p>
             </div>
             <div className="text-red-600 font-bold">{error}</div>
             <div className='flex flex-col gap-4'>
