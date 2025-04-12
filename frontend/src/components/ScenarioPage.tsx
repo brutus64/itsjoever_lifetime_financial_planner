@@ -19,7 +19,6 @@ type User = {
 
 const ScenarioPage: React.FC = () => {
     const navigate = useNavigate();
-    
     const [user, setUser] = useState<User | null>(null);
     const [scenarios, setScenarios] = useState([])
     const [error, setError] = useState("")
