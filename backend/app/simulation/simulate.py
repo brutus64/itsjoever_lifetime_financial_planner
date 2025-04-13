@@ -676,10 +676,6 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # Update Expenses
         sum_non_disc_exp = 0
         for expense in simulation.expenses:
-            # adjust inflation if needed
-            if expense.inflation_adjust and year != START_YEAR:
-                expense.amt *= inflation_rate
-
             # check to see if it is active
             if year >= expense.start and year < expense.start + expense.duration:
                 # do not do the following actions on the first year
@@ -690,6 +686,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     else:
                         expense.amt += expense.exp_change.generate()
 
+                # adjust inflation if needed
+                if expense.inflation_adjust and year != START_YEAR:
+                    expense.amt *= inflation_rate
+
                 exp = expense.amt
                 # omit spouse percentage
                 if simulation.is_married and not spouse_alive:
@@ -697,6 +697,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                 if not expense.is_discretionary:
                     sum_non_disc_exp += exp
+            else:
+                # adjust inflation if needed
+                if expense.inflation_adjust and year != START_YEAR:
+                    expense.amt *= inflation_rate
 
         sum_prev_year_tax = prev_federal_income_tax+prev_state_income_tax+prev_federal_cg_tax+prev_state_cg_tax+prev_ew_tax
         # 6d
