@@ -455,6 +455,10 @@ def simulate_log(simulation,tax_data,user):
         prev_ew = 0 # early withdrawals
         prev_cg = 0 # capital gains
 
+
+        tax_brackets = {}  # Will store inflation-adjusted tax brackets by year
+        retirement_limits = {}  # Will store inflation-adjusted retirement contribution limits by year
+        
         # main loop
         for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
             year_result = YearlyResults()
@@ -470,12 +474,36 @@ def simulate_log(simulation,tax_data,user):
 
             # Step 1: Inflation
             inflation_rate = simulation.inflation.generate()
-
+            
             if year == START_YEAR:
-                
+                tax_brackets[year] = {
+                    "federal": tax_data.federal_tax.brackets.copy(),
+                    "state": tax_data.state_tax.brackets.copy() if tax_data.state_tax else None,
+                    "standard_deduction": tax_data.federal_tax.standard_deduction
+                }
+                retirement_limits[year] = simulation.limit_posttax
+            else:
+                # Update from previous year based on inflation
+                tax_brackets[year] = {
+                    "federal": [(bracket[0] * (1 + inflation_rate/100), bracket[1]) for bracket in tax_brackets[year-1]["federal"]],
+                    "state": [(bracket[0] * (1 + inflation_rate/100), bracket[1]) for bracket in tax_brackets[year-1]["state"]] if tax_brackets[year-1]["state"] else None,
+                    "standard_deduction": tax_brackets[year-1]["standard_deduction"] * (1 + inflation_rate/100)
+                }
+                retirement_limits[year] = retirement_limits[year-1] * (1 + inflation_rate/100)
             # Step 2: Income
+            for income in simulation.income:
+                if year >= income.start and year < income.start + income.duration:
+                    if year == income.start:
+                        amount = income.amt
+                    else:
+                        if income.exp_change_percent:
+                            amount = prev_amount * (1+income.exp_change.generate()/100)
+                        else:
+                            amount = prev_amount + income.exp_change.generate()
+                    prev_amount = amount
 
-
+                    if income.inflation_adjust: #adjust for inflation if needed
+                            amount *= (1 + inflation_rate/100)
             # Step 3: RMD
 
 
