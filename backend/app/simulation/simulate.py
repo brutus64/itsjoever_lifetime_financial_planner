@@ -637,7 +637,20 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
 
         # Step 7: Discretionary Expenses
-
+        total_assets = total_inv_value(simulation.investments)
+        withdraw_index = 0
+        for disc_event in simulation.spending_strat:
+            if total_assets <= simulation.fin_goal:
+                break
+            amt = min(disc_event.amt, total_assets - simulation.fin_goal)
+            while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
+                investment = simulation.expense_withdraw[withdraw_index]
+                w = min(amt, investment.value)
+                amt -= w
+                investment.value -= w
+                total_assets -= w
+                if investment.value ==0:
+                    withdraw_index+=1
 
         # Step 8: Invest
 
@@ -706,3 +719,15 @@ def simulate_log(simulation,tax_data,user):
         # from here on, same as simulate except with logging
         res = simulate(simulation,tax_data,fin_log,inv_writer)
     return res
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Helper Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Get the total value for list of investments
+def total_inv_value(investments):
+    total = 0
+    for inv in investments:
+        total += inv.value
+
+    return total
