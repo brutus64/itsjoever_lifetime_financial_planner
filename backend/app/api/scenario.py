@@ -280,7 +280,7 @@ async def update_invest(scenario_id: str, investment: dict, investment_id: str):
     try:
         scenario_obj_id = PydanticObjectId(scenario_id)
         invest_obj_id = PydanticObjectId(investment_id)
-        scenario = await Scenario.get(scenario_obj_id)
+        scenario = await Scenario.get(scenario_obj_id,fetch_links=True)
         if not scenario:
             raise HTTPException(status_code=400, detail= "PUT investment scenario does not exist")
         existing_investment = await Investment.get(invest_obj_id)

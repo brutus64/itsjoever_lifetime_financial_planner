@@ -15,7 +15,6 @@ from collections import defaultdict
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
 START_YEAR = 2025
-print(LOG_DIRECTORY)
 
 # I dont know how to make process pool global without
 # running into shutdown issues
@@ -66,7 +65,7 @@ class Investment:
         self.taxability = investment["invest_type"]["taxability"]
         self.expense_ratio = investment["invest_type"]["expense_ratio"]
         
-    # update investment value, return income
+    # update investment value, return taxable income
     def update(self):
         start_val = self.value
         # 4a: calculate generated income
@@ -86,10 +85,11 @@ class Investment:
         self.purchase += inc
 
         # 4e: calculate expenses
-        avg = (self.value + start_val) // 2
-        self.value -= avg * self.expense_ratio
+        avg = (self.value + start_val) / 2
+        self.value -= avg * self.expense_ratio*0.01
         
-        return inc
+        # 4b: determine taxability
+        return inc if self.taxability and self.tax_status == "non-retirement" else 0
     
 class EventSeries:
     def __init__(self,event_series):
@@ -533,6 +533,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
             # pay the rmd
             for investment in simulation.rmd_strat:
+                if rmd == 0:
+                    break
                 if investment.value <= 0:
                     continue
 
@@ -544,7 +546,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                         break
                 if not target:
                     target = copy.copy(investment) # only shallow-copy is necessary
-                    target.tax_status = "after-tax"
+                    target.tax_status = "non-retirement"
                     target.value = 0
                     target.purchase = 0
                 
@@ -553,16 +555,78 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 target.value += withdraw_amt
                 investment.value -= withdraw_amt
                 rmd -= withdraw_amt
+                if investment.purchase > investment.value:
+                    # transfer the purchase amount
+                    diff = investment.purchase - investment.value
+                    target.purchase += diff
+                    investment.purchase -= diff
                 fin_write(fin_log,fin_format(year,"RMD",withdraw_amt,investment.name))
                 if rmd == 0:
                     break
-            
-
 
         # Step 4: Investments
-
+        for investment in simulation.investments:
+            # no logging required
+            # update() returns the taxable income from interest and dividends
+            taxable_income = investment.update()
+            cur_income += taxable_income
 
         # Step 5: Roth
+        # determine if roth optimizer is active for current year
+        
+        if simulation.roth_enable and year >= simulation.roth_start and year < simulation.roth_end:
+            # determine which brackets and deductions
+            if spouse_alive:
+                cur_deduction = tax_data.standard_deductions.married_deduct
+                brackets = tax_data.federal_tax.married_bracket
+            else:
+                cur_deduction = tax_data.standard_deductions.single_deduct
+                brackets = tax_data.federal_tax.single_bracket
+            cur_federal_income = cur_income - 0.15*cur_ss
+
+            # find the upper-limit of the user's tax brackets
+            upper_limit = 0
+            for bracket in brackets:
+                if bracket.max_income >= cur_federal_income:
+                    upper_limit = bracket.max_income
+                    break
+            roth_conversion = upper_limit - (cur_federal_income - min(cur_deduction,cur_federal_income))
+            cur_income += roth_conversion
+            # transfer pre-tax to after-tax based on strategy
+            for investment in simulation.roth_strat:
+                if roth_conversion == 0:
+                    break
+                if investment.value <= 0:
+                    continue
+
+                # find the target investment, creating one if needed
+                target = None
+                for candidate in simulation.investments:
+                    if candidate.name == investment.name and candidate.tax_status == "after-tax":
+                        target = candidate
+                        break
+                if not target:
+                    target = copy.copy(investment) # only shallow-copy is necessary
+                    target.tax_status = "after-tax"
+                    target.value = 0
+                    target.purchase = 0
+                
+                # transfer amounts
+                transfer_amt = min(roth_conversion,investment.value)
+                target.value += transfer_amt
+                investment.value -= transfer_amt
+                roth_conversion -= transfer_amt
+                if investment.purchase > investment.value:
+                    # transfer the purchase amount
+                    diff = investment.purchase - investment.value
+                    target.purchase += diff
+                    investment.purchase -= diff
+                
+                fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
+
+
+
+            
 
 
         # Step 6: Expenses and Taxes
