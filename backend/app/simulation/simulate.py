@@ -166,8 +166,44 @@ class Tax: # store tax rates and rmds
     def calculate_rmd(self,age):
         pass
 
-    def calculate_tax(self,is_married):
-        pass
+    def calculate_federal_tax(self, income, is_married):
+        brackets = self.federal_tax.married_bracket if is_married else self.federal_tax.single_bracket
+
+        tax = 0
+        # min_income <= income < max_income
+        # pay tax as percentage of income in tax brackets
+        for bracket in brackets:
+            if(income >= bracket.min_income and bracket.max_income == -1 or
+               income >= bracket.min_income):
+                tax += (income - bracket.min_income) * bracket.rate
+            else:
+                break
+
+        return tax
+
+    def calculate_state_tax(self, income, is_married):
+        brackets = self.state_tax.married_bracket if is_married else self.state_tax.single_bracket
+
+        # min_income < income <= max_income
+        for bracket in brackets:
+            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == -1):
+                base = bracket.base if self.state_tax.base_add else -bracket.base
+                tax = (income - bracket.min_income) * bracket.rate + base
+                break
+
+        return tax
+
+    def calculate_capital_gains_tax(self, income, capital_gains, is_married):
+        brackets = self.capital_gains.married_bracket if is_married else self.capital_gains.single_bracket
+
+        # min_income <= income < max_income
+        for bracket in brackets:
+            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == -1):
+                percent = (income - bracket.min_income) * bracket.rate
+                break
+
+        tax = percent * capital_gains
+        return max(0, tax) # capital gains tax can't be negative
 
 
 # store simulation state from scenario
@@ -448,6 +484,14 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         cur_cg = 0  # Capital gains
         cur_ew = 0  # Early withdrawals from retirement accounts
 
+        # FOR Step 6: Calculate prev years tax before tax bracket is updated
+        prev_federal_income = prev_income - 0.15*prev_ss
+        prev_federal_income_tax = tax_data.calculate_federal_tax(prev_federal_income, simulation.is_married)
+        prev_state_income_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
+        prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
+        prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
+        prev_ew_tax = tax_data.early_withdrawal * prev_ew
+
         # Step 1: Inflation
         inflation_rate = 1 + simulation.inflation.generate() / 100
         
@@ -577,7 +621,6 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
         # Step 5: Roth
         # determine if roth optimizer is active for current year
-        
         if simulation.roth_enable and year >= simulation.roth_start and year < simulation.roth_end:
             # determine which brackets and deductions
             if spouse_alive:
@@ -629,13 +672,66 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 
                 fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
 
-
-        # remember to update expense before using!
-            
-
-
         # Step 6: Expenses and Taxes
+        # Update Expenses
+        sum_non_disc_exp = 0
+        for expense in simulation.expenses:
+            # adjust inflation if needed
+            if expense.inflation_adjust and year != START_YEAR:
+                expense.amt *= inflation_rate
 
+            # check to see if it is active
+            if year >= expense.start and year < expense.start + expense.duration:
+                # do not do the following actions on the first year
+                if year != expense.start:
+                    # calculate annual change
+                    if expense.exp_change_percent:
+                        expense.amt *= (1+expense.exp_change.generate()/100)
+                    else:
+                        expense.amt += expense.exp_change.generate()
+
+                exp = expense.amt
+                # omit spouse percentage
+                if simulation.is_married and not spouse_alive:
+                    exp *= expense.user_split
+
+                if not expense.is_discretionary:
+                    sum_non_disc_exp += exp
+
+        sum_prev_year_tax = prev_federal_income_tax+prev_state_income_tax+prev_federal_cg_tax+prev_state_cg_tax+prev_ew_tax
+        # 6d
+        total_payment = sum_prev_year_tax + sum_non_disc_exp # how much money is needed to pay off
+        # 6e
+        cash_investment_withdrawal = min(simulation.cash.value ,total_payment)
+        # APPLY CAPITAL GAINS ON CASH INVESTMENT WITHDRAWAL?
+        total_withdrawal = total_payment - cash_investment_withdrawal # amount needed to be withdrawn from investments
+        simulation.cash.value -= cash_investment_withdrawal # update cash investment
+        
+        for investment in simulation.expense_withdraw:
+            if total_withdrawal == 0:
+                break
+            if investment.value == 0:
+                continue
+
+            withdraw = min(investment.value, total_withdrawal)
+            # 6fi
+            if investment.tax_status != "pre-tax":
+                fraction = withdraw/investment.value
+                cur_cg += fraction * (investment.value - investment.purchase_price)
+            else: # 6fiii
+                cur_income += withdraw
+                pass
+            
+            # 6fiv
+            if user_age < 59 and investment.tax_status != "non-retirement":
+                curr_ew += withdraw 
+
+            investment.value -= withdraw
+            total_withdrawal -= withdraw
+        
+        fin_write(fin_log,fin_format(year,"total expense",total_payment,"total expense including tax"))
+        fin_write(fin_log,fin_format(year,"total expense",simulation.cash.value,"remaining cash investment"))
+                
 
         # Step 7: Discretionary Expenses
         total_assets = total_inv_value(simulation.investments)
