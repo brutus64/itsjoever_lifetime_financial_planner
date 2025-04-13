@@ -134,7 +134,7 @@ class Invest(EventSeries):
                 final = asset["final"]
                 self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
     
 # rebalance event series
 class Rebalance(EventSeries):
@@ -149,7 +149,7 @@ class Rebalance(EventSeries):
                 final = asset["final"]
                 self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
 
 class Tax: # store tax rates and rmds
     def __init__(self,state):
@@ -491,7 +491,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     else:
                         income.amt += income.exp_change.generate()
 
-                    # adjust inflation if needed
+                    # adjust for inflation
                     if income.inflation_adjust and year != START_YEAR:
                         income.amt *= inflation_rate
                 
@@ -509,6 +509,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # update ss
                 if income.social_security:
                     cur_ss += inc
+            else:
+                # even if it is not active, still update inflation
+                if income.inflation_adjust and year != START_YEAR:
+                    income.amt *= inflation_rate
                 
         # Step 3: RMD
         if user_age >= 74:
@@ -639,9 +643,46 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
 
         # Step 9: Rebalance
+        for reb in simulation.rebalance:
+            # check if rebalance event is active
+            if year >= reb.start and year < reb.start + reb.duration:
+                # find the total value of the investments to rebalance
+                total_value = 0
+                for investment,_,_ in reb.assets:
+                    total_value += investment.value
+                # performing rebalancing
+                for investment,start,end in reb.assets:
+                    # calculate glide percentage
+                    year_diff = year - reb.start # how many years passed since start of event series
+                    yearly_change = (end-start) / (reb.duration-1) if reb.duration != 1 else 0
+                    percent = start + year_diff*yearly_change
+                    
+                    target = percent * total_value
+                    if target >= investment.value: # buy
+                        amt = target - investment.value
+                        investment.value += amt
+                        investment.purchase += amt
+                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"buy {investment.name}"))
+                    else: # sell
+                        amt = investment.value - target
+                        # pay capital gains if not pre-tax, else regular income tax
+                        if investment.tax_status != "pre-tax":
+                            fraction = amt / investment.value
+                            cur_cg += max(0,fraction * (investment.value - investment.purchase))
+                        else:
+                            cur_income += amt
+                        # pay early withdrawal tax
+                        if user_age < 59:
+                            cur_ew += amt
+                        investment.value -= amt
+                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
+
+                        
+
 
 
         # Step 10: Results
+        
 
     return res
 
