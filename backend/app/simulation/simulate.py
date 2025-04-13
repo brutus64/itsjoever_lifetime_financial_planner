@@ -639,11 +639,12 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             if total_assets <= simulation.fin_goal:
                 break
             amt = min(disc_event.amt, total_assets - simulation.fin_goal)
-            while amt > 0:
+            while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
                 investment = simulation.expense_withdraw[withdraw_index]
                 w = min(amt, investment.value)
                 amt -= w
                 investment.value -= w
+                total_assets -= w
                 if investment.value ==0:
                     withdraw_index+=1
 
