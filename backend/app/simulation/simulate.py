@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 from threading import Semaphore
 from numpy.random import normal, uniform
+from numpy import percentile
 from datetime import datetime
 from statistics import mean, median
 import os
@@ -8,6 +9,7 @@ import sys
 import math
 import csv
 from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, StandardDeduct
+from collections import defaultdict
 # from app.models.simulation import Simulation
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
@@ -259,6 +261,8 @@ class Simulation:
 # data for a particular year in a simulation
 class YearlyResults:
     def __init__(self):
+        self.year = 0
+        self.success = False
         self.investments = [] # list of tuples (investment identifier, value)
         self.total_investments = 0
         self.income = [] # list of tuples (income identifier, value)
@@ -287,32 +291,112 @@ async def simulate_n(scenario,n,user):
     await tax_data.fetch_tax()
 
     # testing:
-    simulate_log(simulation_state,tax_data,user)
+    # simulate_log(simulation_state,tax_data,user)
 
     # spawn processes
-    # results = []
-    # with Pool() as pool:
-    #     log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
-    #     results.append(log_result)
-    #     for _ in range(n-1):
-    #         result = pool.apply_async(simulate,args=(simulation_state,tax_data,))
-    #         results.append(result)
-    #     # get all simulation results
-    #     print("Getting results...")
-    #     results = [result.get() for result in results]
-    # print(results)
+    results = []
+    with Pool() as pool:
+        log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
+        results.append(log_result)
+        for _ in range(n-1):
+            result = pool.apply_async(simulate,args=(simulation_state,tax_data,))
+            results.append(result)
+        # get all simulation results
+        print("Getting results...")
+        results = [result.get() for result in results]
+    print(results)
     # aggregate results by category, then year
     # calculate success probability in each year for chart 4.1
     # the "totals", early-withdrawal, and percent-total-discretion must store
     # all values across the n simulations for chart 4.2
     # for individual investment, expense (including taxes), and income, only 
     # store the mean and medians for chart 4.3
-    agg_results = {}
-    
+    aggregated = aggregate(results)
 
     # store aggregated results in db to be viewed later
     # return id of simulation set
     return ""
+
+# nesting hell
+def aggregate(results):
+    agg_results = {}
+
+    # Chart 4.1: Probability of success
+    # Chart 5.1 also needs this
+    success_totals = defaultdict(lambda:[0,0]) # year -> [successes,total]
+    for result in results:
+        for yearly_result in result:
+            if yearly_result.success:
+                success_totals[yearly_result.year][0] += 1
+            success_totals[yearly_result.year][1] += 1
+    agg_results["success"] = {year:(successes/total) for year,(successes,total) in success_totals.items()}
+
+    # Chart 4.2: Percentiles
+    # 4.2a: Total investments
+    # 4.2b: Total income
+    # 4.2c: Total expenses
+    # 4.2d: Early withdrawal
+    # 4.2e: Percent discretionary
+    # Chart 5.1 only needs the median of total investments
+    # category --> year --> percentiles
+    percentiles = {}
+    yearly_arrays = {}
+    categories = ["total_investments","total_income","total_expenses","early_withdrawal","percent_discretionary"]
+    desired_percents = list(range(0,101,10)) # every 10-th percentile
+
+    for category in categories:
+        percentiles[category] = {}
+        yearly_arrays[category] = defaultdict(list)
+
+    # there is probably a data analysis library out there
+    for result in results:
+        for yr in result:
+            year = yr.year
+            yearly_arrays["total_investments"][year].append(yr.total_investments)
+            yearly_arrays["total_income"][year].append(yr.total_income)
+            yearly_arrays["total_expenses"][year].append(yr.total_expenses)
+            yearly_arrays["early_withdrawal"][year].append(yr.early_withdrawal)
+            yearly_arrays["percent_discretionary"][year].append(yr.percent_discretionary)
+    
+    # find percentiles for every category in every year
+    for category in categories:
+        for year,values in yearly_arrays[category].items():
+            percentiles[category][year] = percentile(values,desired_percents) # need to convert to list?
+    agg_results["percentiles"] = percentiles
+        
+    # Chart 4.3: Breakdowns
+    # 4.3a: total investment by investment
+    # 4.3b: total income by event series
+    # 4.3c: total expense by event series
+    # Note: mean of total values equals the sum of means of its sub-parts
+    # Note 2: median total value does not necessarily equal sum of medians of its sub-parts
+    # Thus, we cannot re-use results from 4.2
+    # category --> year --> individual parts --> mean/median
+    breakdowns = defaultdict(lambda:defaultdict(dict)) # mean, median
+    yearly_arrays = defaultdict(lambda:defaultdict(lambda:defaultdict(list)))
+    for result in results:
+        for yr in result:
+            year = yr.year
+            for investment,value in yr.investments:
+                yearly_arrays["investments"][year][investment].append(value)
+
+            for es,value in yr.income:
+                yearly_arrays["income"][year][es].append(value)
+
+            for es,value in yr.expenses:
+                yearly_arrays["expenses"][year][es].append(value)
+
+            for tax,value in yr.taxes:
+                yearly_arrays["expenses"][year][tax].append(value)
+    
+    categories = ["investments","income","expenses"]
+    for category in categories:
+        for year, instances in yearly_arrays[category].items():
+            for instance,values in instances.items():
+                breakdowns[category][year][instance] = [mean(values),median(values)]
+    agg_results["breakdowns"] = breakdowns
+
+    return agg_results
 
 
 # one simulation in a set of simulations
