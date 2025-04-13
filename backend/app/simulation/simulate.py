@@ -174,7 +174,6 @@ class Tax: # store tax rates and rmds
 class Simulation:
     def __init__(self,scenario):
         self.investments = [Investment(investment) for investment in scenario.get("investment")]
-        self.new_investments = [] # for new investments created during the simulation (dont forget to add these to regular investments at the end)
         # create a reference to the cash investment
         for investment in self.investments:
             if investment.name == "cash":
@@ -553,6 +552,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     target.tax_status = "non-retirement"
                     target.value = 0
                     target.purchase = 0
+                    simulation.investments.append(target)
                 
                 # transfer amounts
                 withdraw_amt = min(rmd,investment.value)
@@ -614,6 +614,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     target.tax_status = "after-tax"
                     target.value = 0
                     target.purchase = 0
+                    simulation.investments.append(target)
                 
                 # transfer amounts
                 transfer_amt = min(roth_conversion,investment.value)
@@ -665,12 +666,12 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     total_value += investment.value
                 # performing rebalancing
                 for investment,start,end in reb.assets:
-                    # calculate glide percentage
+                    # calculate glide percentage and target value
                     year_diff = year - reb.start # how many years passed since start of event series
                     yearly_change = (end-start) / (reb.duration-1) if reb.duration != 1 else 0
                     percent = start + year_diff*yearly_change
-                    
                     target = percent * total_value
+
                     if target >= investment.value: # buy
                         amt = target - investment.value
                         investment.value += amt
@@ -690,12 +691,20 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                         investment.value -= amt
                         fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
 
-                        
-
-
-
-        # Step 10: Results
+        # Step 10: Results and Set-up for next iteration
+        prev_income = cur_income
+        prev_ss = cur_ss
+        prev_cg = cur_cg
+        prev_ew = cur_ew
         
+        # write to csv log file the value of all investments
+        inv_write(inv_writer,year,simulation.investments)
+
+        # append data
+        res.append(year_result)
+
+
+    # the csv log file title row must be updated to contain newly-created investments
 
     return res
 
