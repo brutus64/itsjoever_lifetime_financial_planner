@@ -153,11 +153,13 @@ class Rebalance(EventSeries):
 class Tax: # store tax rates and rmds
     def __init__(self,state):
         self.state = state
+        self.early_withdrawal = 0.1
     
     async def fetch_tax(self):
         self.federal_tax = await FederalTax.find_one()
         self.state_tax = await StateTax.find_one(StateTax.state == self.state)
         self.capital_gains = await CapitalGains.find_one()
+        self.standard_deductions = await StandardDeduct.find_one()
         self.rmd = await RMDTable.find_one()
 
     def calculate_rmd(self,age):
@@ -171,6 +173,12 @@ class Tax: # store tax rates and rmds
 class Simulation:
     def __init__(self,scenario):
         self.investments = [Investment(investment) for investment in scenario.get("investment")]
+        self.new_investments = [] # for new investments created during the simulation (dont forget to add these to regular investments at the end)
+        # create a reference to the cash investment
+        for investment in self.investments:
+            if investment.name == "cash":
+                self.cash = investment 
+                break
         self.event_series = [] # used later on to resolve event series start dates
         self.income = []
         self.expenses = []
@@ -289,29 +297,28 @@ async def simulate_n(scenario,n,user):
     simulation_state = Simulation(scenario)
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
-
     # testing:
     # simulate_log(simulation_state,tax_data,user)
 
     # spawn processes
-    results = []
-    with Pool() as pool:
-        log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
-        results.append(log_result)
-        for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
-            results.append(result)
-        # get all simulation results
-        print("Getting results...")
-        results = [result.get() for result in results]
-    print(results)
+    # results = []
+    # with Pool() as pool:
+    #     log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
+    #     results.append(log_result)
+    #     for _ in range(n-1):
+    #         result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
+    #         results.append(result)
+    #     # get all simulation results
+    #     print("Getting results...")
+    #     results = [result.get() for result in results]
+    # print(results)
     # aggregate results by category, then year
     # calculate success probability in each year for chart 4.1
     # the "totals", early-withdrawal, and percent-total-discretion must store
     # all values across the n simulations for chart 4.2
     # for individual investment, expense (including taxes), and income, only 
     # store the mean and medians for chart 4.3
-    aggregated = aggregate(results)
+    # aggregated = aggregate(results)
 
     # store aggregated results in db to be viewed later
     # return id of simulation set
@@ -425,17 +432,13 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
     prev_ss = 0 # social security
     prev_ew = 0 # early withdrawals
     prev_cg = 0 # capital gains
-
-    tax_brackets = {}  # Will store inflation-adjusted tax brackets by year
-    retirement_limits = {}  # Will store inflation-adjusted retirement contribution limits by year
     
     # main loop
     for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
         year_result = YearlyResults(year)
         user_age = year - simulation.user_birth
         spouse_age = year-simulation.spouse_birth if simulation.is_married else None
-        user_alive = year <= simulation.user_birth + simulation.user_life
-        spouse_alive = simulation.is_married and year <= simulation.spouse_birth + simulation.spouse_life
+        spouse_alive = simulation.is_married and year < simulation.spouse_birth + simulation.spouse_life
 
         cur_income = 0
         cur_ss = 0  # Social Security benefits
@@ -443,38 +446,85 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         cur_ew = 0  # Early withdrawals from retirement accounts
 
         # Step 1: Inflation
-        inflation_rate = simulation.inflation.generate()/100
+        inflation_rate = 1 + simulation.inflation.generate() / 100
         
-        if year == START_YEAR:
-            tax_brackets[year] = {
-                "federal": tax_data.federal_tax.brackets.copy(),
-                "state": tax_data.state_tax.brackets.copy() if tax_data.state_tax else None,
-                "standard_deduction": tax_data.federal_tax.standard_deduction
-            }
-            retirement_limits[year] = simulation.limit_posttax
-        else:
-            # Update from previous year based on inflation
-            tax_brackets[year] = {
-                "federal": [(bracket[0] * (1 + inflation_rate), bracket[1]) for bracket in tax_brackets[year-1]["federal"]],
-                "state": [(bracket[0] * (1 + inflation_rate), bracket[1]) for bracket in tax_brackets[year-1]["state"]] if tax_brackets[year-1]["state"] else None,
-                "standard_deduction": tax_brackets[year-1]["standard_deduction"] * (1 + inflation_rate)
-            }
-            retirement_limits[year] = retirement_limits[year-1] * (1 + inflation_rate)
+        if year != START_YEAR:
+            # Update all brackets
+            for bracket in tax_data.federal_tax.single_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+            for bracket in tax_data.federal_tax.married_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+            if tax_data.state_tax:
+                tax_data.state_tax.single_deduct *= inflation_rate
+                tax_data.state_tax.married_deduct *= inflation_rate
+                for bracket in tax_data.state_tax.single_bracket:
+                    bracket.min_income *= inflation_rate
+                    bracket.max_income *= inflation_rate
+                for bracket in tax_data.state_tax.married_bracket:
+                    bracket.min_income *= inflation_rate
+                    bracket.max_income *= inflation_rate
+            for bracket in tax_data.capital_gains.single_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+            for bracket in tax_data.capital_gains.married_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+            tax_data.standard_deductions.single_deduct *= inflation_rate
+            tax_data.standard_deductions.married_deduct *= inflation_rate
+            simulation.limit_posttax *= inflation_rate
+        
         # Step 2: Income
         for income in simulation.income:
+            # check to see if it is active
             if year >= income.start and year < income.start + income.duration:
-                if year == income.start:
-                    amount = income.amt
-                else:
+                # do not do the following actions on the first year
+                if year != income.start:
+                    # calculate annual change
                     if income.exp_change_percent:
-                        amount = prev_amount * (1+income.exp_change.generate()/100)
+                        income.amt *= (1+income.exp_change.generate()/100)
                     else:
-                        amount = prev_amount + income.exp_change.generate()
-                prev_amount = amount
+                        income.amt += income.exp_change.generate()
 
-                if income.inflation_adjust: #adjust for inflation if needed
-                    amount *= (1 + inflation_rate)
+                    # adjust inflation if needed
+                    if income.inflation_adjust and year != START_YEAR:
+                        income.amt *= (1 + inflation_rate)
+                
+                inc = income.amt
+                # omit spouse percentage
+                if simulation.is_married and not spouse_alive:
+                    inc *= income.user_split
+
+                # update cash investment
+                simulation.cash.value += inc
+                
+                # update income
+                cur_income += inc
+                # update ss
+                if income.social_security:
+                    cur_ss += inc
+                
         # Step 3: RMD
+        if user_age >= 74:
+            # get distribution period
+            dist_period = -1
+            for entry in tax_data.rmd.table:
+                if entry.age == user_age:
+                    dist_period = entry.distribution_period
+                    break
+            
+            # sum values of pre-tax investments
+            pre_value = 0
+            for investment in simulation.investments:
+                if investment.tax_status == "pre-tax" and investment.value > 0:
+                    pre_value += investment.value
+            
+            rmd = pre_value / dist_period
+            cur_income += rmd
+
+            # we need a way of pre-making transfer-in-kind investments for investments in rmd and roth
+
 
 
         # Step 4: Investments
