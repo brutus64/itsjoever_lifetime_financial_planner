@@ -407,8 +407,19 @@ def simulate_log(simulation,tax_data,user):
                 }
                 retirement_limits[year] = retirement_limits[year-1] * (1 + inflation_rate/100)
             # Step 2: Income
+            for income in simulation.income:
+                if year >= income.start and year < income.start + income.duration:
+                    if year == income.start:
+                        amount = income.amt
+                    else:
+                        if income.exp_change_percent:
+                            amount = prev_amount * (1+income.exp_change.generate()/100)
+                        else:
+                            amount = prev_amount + income.exp_change.generate()
+                    prev_amount = amount
 
-
+                    if income.inflation_adjust: #adjust for inflation if needed
+                            amount *= (1 + inflation_rate/100)
             # Step 3: RMD
 
 
