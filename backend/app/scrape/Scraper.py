@@ -5,8 +5,9 @@ from bs4 import BeautifulSoup
 # IMPORTANT: 
 # Ranges for min_income and max_income goes as:
 #           min_income <= x < max_income, given income x
-# AKA: on taxable income from {min_income} UP TO {max_income}
-# - Applies to federal, state, and capital gains
+# AKA: on taxable income from {min_income} UP TO but not including {max_income}
+# - Applies to federal, and capital gains
+# State tax = min_income < x <= max_income, given income x
 class Scraper:
     '''
         RETURNS:
@@ -146,7 +147,7 @@ class Scraper:
                 married_range.append([find_capital_gains(split_married[2])+0.01, -1])
 
         ul_container = soup.find_all('div', class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
-        ul_tags = ul_container[1].find_all('ul')
+        ul_tags = ul_container[2].find_all('ul')
         scrape_helper(ul_tags[0], 0)
         scrape_helper(ul_tags[1], 15)
 
@@ -237,6 +238,6 @@ test = Scraper()
 # print(test.scrape_state_income('NY'))
 # print(test.scrape_state_income('CT'))
 # print(test.scrape_state_income('NJ'))
-# print(test.scrape_capital_gains())
+print(test.scrape_capital_gains())
 # print(test.scrape_standard_deductions())
 # print(test.scrape_rmd_tables())
