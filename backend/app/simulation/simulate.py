@@ -182,6 +182,8 @@ class Tax: # store tax rates and rmds
         return tax
 
     def calculate_state_tax(self, income, is_married):
+        if not self.state_tax:
+            return 0
         brackets = self.state_tax.married_bracket if is_married else self.state_tax.single_bracket
 
         # min_income < income <= max_income
@@ -450,7 +452,7 @@ def fin_write(fin_log,msg):
 
 def inv_write(inv_writer,year,investments):
     if inv_writer:
-        row = [year] + [investment.value for investment in investments]
+        row = [year] + [round(investment.value,2) for investment in investments]
         inv_writer.writerow(row)
 
 # one simulation in a set of simulations
@@ -485,12 +487,20 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         cur_ew = 0  # Early withdrawals from retirement accounts
 
         # FOR Step 6: Calculate prev years tax before tax bracket is updated
-        prev_federal_income = prev_income - 0.15*prev_ss
-        prev_federal_income_tax = tax_data.calculate_federal_tax(prev_federal_income, simulation.is_married)
-        prev_state_income_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
-        prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
-        prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
-        prev_ew_tax = tax_data.early_withdrawal * prev_ew
+        if year != START_YEAR:
+            prev_federal_income = prev_income - 0.15*prev_ss
+            prev_federal_income_tax = tax_data.calculate_federal_tax(prev_federal_income, simulation.is_married)
+            prev_state_income_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
+            prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
+            prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
+            prev_ew_tax = tax_data.early_withdrawal * prev_ew
+        else:
+            prev_federal_income = 0
+            prev_federal_income_tax = 0
+            prev_state_income_tax = 0
+            prev_federal_cg_tax = 0
+            prev_state_cg_tax = 0
+            prev_ew_tax = 0
 
         # Step 1: Inflation
         inflation_rate = 1 + simulation.inflation.generate() / 100
@@ -696,6 +706,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     exp *= expense.user_split
 
                 if not expense.is_discretionary:
+                    fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
                     sum_non_disc_exp += exp
             else:
                 # adjust inflation if needed
@@ -703,6 +714,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     expense.amt *= inflation_rate
 
         sum_prev_year_tax = prev_federal_income_tax+prev_state_income_tax+prev_federal_cg_tax+prev_state_cg_tax+prev_ew_tax
+        fin_write(fin_log,fin_format(year,"tax",prev_federal_income_tax,f"federal income tax"))
+        fin_write(fin_log,fin_format(year,"tax",prev_state_income_tax,f"state income tax"))
+        fin_write(fin_log,fin_format(year,"tax",prev_federal_cg_tax,f"federal capital gains"))
+        fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
+        fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
         # 6d
         total_payment = sum_prev_year_tax + sum_non_disc_exp # how much money is needed to pay off
         # 6e
@@ -728,14 +744,17 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             
             # 6fiv
             if user_age < 59 and investment.tax_status != "non-retirement":
-                curr_ew += withdraw 
+                cur_ew += withdraw 
 
             investment.value -= withdraw
             total_withdrawal -= withdraw
         
-        fin_write(fin_log,fin_format(year,"total expense",total_payment,"total expense including tax"))
-        fin_write(fin_log,fin_format(year,"total expense",simulation.cash.value,"remaining cash investment"))
-                
+        # could not pay all taxes and expenses, must end simulation
+        if total_withdrawal > 0:
+            print("No more money")
+            return res
+        
+        fin_write(fin_log,fin_format(year,"expense",total_payment,"payment for taxes and non-discretioary expenses"))
 
         # Step 7: Discretionary Expenses
         total_assets = total_inv_value(simulation.investments)
@@ -750,9 +769,9 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             if simulation.is_married and not spouse_alive:
                 expense_amt *= disc_event.user_split
             
-
             # get maximum amount that can be paid for current discretionary expense
             amt = min(expense_amt, total_assets - simulation.fin_goal)
+            original_amt = amt # keep track for logging
 
             # take money from cash investment first
             cash_amt = min(simulation.cash.value,amt)
@@ -763,12 +782,28 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             # sell investments to pay expenses
             while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
                 investment = simulation.expense_withdraw[withdraw_index]
+                if investment.value <= 0:
+                    withdraw_index += 1
+                    continue
+                # get the amount to withdraw from investment
                 w = min(amt, investment.value)
+
+                # determine tax
+                if investment.tax_status == "non-retirement":
+                    fraction = w / investment.value
+                    cur_cg += max(0,fraction * (investment.value - investment.purchase))
+                elif investment.tax_status == "pre-tax":
+                    cur_income += w
+                
+                # pay early withdrawal tax
+                if user_age < 59 and investment.tax_status != "non-retirement":
+                    cur_ew += w
+
+                # perform withdrawal
                 amt -= w
                 investment.value -= w
                 total_assets -= w
-                if investment.value == 0:
-                    withdraw_index += 1
+            fin_write(fin_log,fin_format(year,"expense",original_amt-amt,disc_event.name))
 
         # Step 8: Invest
         # find the active investment strategy
@@ -816,6 +851,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 investment.value += invest_amt
                 investment.purchase += invest_amt  
                 simulation.cash.value -= invest_amt
+                fin_write(fin_log,fin_format(year,"invest",invest_amt,investment.name))
 
         # Step 9: Rebalance
         for reb in simulation.rebalance:
@@ -847,7 +883,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                         elif investment.tax_status == "pre-tax":
                             cur_income += amt
                         # pay early withdrawal tax
-                        if user_age < 59:
+                        if user_age < 59 and investment.tax_status != "non-retirement":
                             cur_ew += amt
                         investment.value -= amt
                         fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
