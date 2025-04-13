@@ -260,8 +260,8 @@ class Simulation:
 
 # data for a particular year in a simulation
 class YearlyResults:
-    def __init__(self):
-        self.year = 0
+    def __init__(self,year):
+        self.year = year
         self.success = False
         self.investments = [] # list of tuples (investment identifier, value)
         self.total_investments = 0
@@ -299,7 +299,7 @@ async def simulate_n(scenario,n,user):
         log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
         results.append(log_result)
         for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(simulation_state,tax_data,))
+            result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
             results.append(result)
         # get all simulation results
         print("Getting results...")
@@ -398,13 +398,20 @@ def aggregate(results):
 
     return agg_results
 
+def fin_write(fin_log,msg):
+    if fin_log:
+        fin_log.write(msg)
+
+def inv_write(inv_writer,year,investments):
+    if inv_writer:
+        row = [year] + [investment.value for investment in investments]
+        inv_writer.writerow(row)
 
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(simulation: Simulation,tax_data: Tax):
+def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
     res = [] # yearly data
-
     # resolve event series durations and start times (in that order)
     simulation.resolve_event_time()
 
@@ -413,11 +420,82 @@ def simulate(simulation: Simulation,tax_data: Tax):
     if simulation.is_married:
         simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
 
+    # tax values from previous year
+    prev_income = 0 # income
+    prev_ss = 0 # social security
+    prev_ew = 0 # early withdrawals
+    prev_cg = 0 # capital gains
+
+    tax_brackets = {}  # Will store inflation-adjusted tax brackets by year
+    retirement_limits = {}  # Will store inflation-adjusted retirement contribution limits by year
+    
     # main loop
     for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
-        pass
+        year_result = YearlyResults(year)
+        user_age = year - simulation.user_birth
+        spouse_age = year-simulation.spouse_birth if simulation.is_married else None
+        user_alive = year <= simulation.user_birth + simulation.user_life
+        spouse_alive = simulation.is_married and year <= simulation.spouse_birth + simulation.spouse_life
+
+        cur_income = 0
+        cur_ss = 0  # Social Security benefits
+        cur_cg = 0  # Capital gains
+        cur_ew = 0  # Early withdrawals from retirement accounts
+
+        # Step 1: Inflation
+        inflation_rate = simulation.inflation.generate()/100
+        
+        if year == START_YEAR:
+            tax_brackets[year] = {
+                "federal": tax_data.federal_tax.brackets.copy(),
+                "state": tax_data.state_tax.brackets.copy() if tax_data.state_tax else None,
+                "standard_deduction": tax_data.federal_tax.standard_deduction
+            }
+            retirement_limits[year] = simulation.limit_posttax
+        else:
+            # Update from previous year based on inflation
+            tax_brackets[year] = {
+                "federal": [(bracket[0] * (1 + inflation_rate), bracket[1]) for bracket in tax_brackets[year-1]["federal"]],
+                "state": [(bracket[0] * (1 + inflation_rate), bracket[1]) for bracket in tax_brackets[year-1]["state"]] if tax_brackets[year-1]["state"] else None,
+                "standard_deduction": tax_brackets[year-1]["standard_deduction"] * (1 + inflation_rate)
+            }
+            retirement_limits[year] = retirement_limits[year-1] * (1 + inflation_rate)
+        # Step 2: Income
+        for income in simulation.income:
+            if year >= income.start and year < income.start + income.duration:
+                if year == income.start:
+                    amount = income.amt
+                else:
+                    if income.exp_change_percent:
+                        amount = prev_amount * (1+income.exp_change.generate()/100)
+                    else:
+                        amount = prev_amount + income.exp_change.generate()
+                prev_amount = amount
+
+                if income.inflation_adjust: #adjust for inflation if needed
+                    amount *= (1 + inflation_rate)
+        # Step 3: RMD
 
 
+        # Step 4: Investments
+
+
+        # Step 5: Roth
+
+
+        # Step 6: Expenses and Taxes
+
+
+        # Step 7: Discretionary Expenses
+
+
+        # Step 8: Invest
+
+
+        # Step 9: Rebalance
+
+
+        # Step 10: Results
 
     return res
 
@@ -431,106 +509,13 @@ def simulate_log(simulation,tax_data,user):
     
     # create two log files
     cur_time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-    res = [] # yearly data
+    
     with open(f"{LOG_DIRECTORY}/{user}_{cur_time}.log","w") as fin_log, \
          open(f"{LOG_DIRECTORY}/{user}_{cur_time}.csv","w") as inv_log:
         inv_writer = csv.writer(inv_log)
         title_row = ["year"] + [f"{investment.name} - {investment.tax_status}" for investment in simulation.investments]
         inv_writer.writerow(title_row) # title row
 
-
         # from here on, same as simulate except with logging
-
-        # resolve event series durations and start times (in that order)
-        simulation.resolve_event_time()
-
-        # resolve life expectancy to determine main loop range
-        simulation.user_life = math.floor(0.5+simulation.user_life.generate())
-        if simulation.is_married:
-            simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
-
-        # tax values from previous year
-        prev_income = 0 # income
-        prev_ss = 0 # social security
-        prev_ew = 0 # early withdrawals
-        prev_cg = 0 # capital gains
-
-
-        tax_brackets = {}  # Will store inflation-adjusted tax brackets by year
-        retirement_limits = {}  # Will store inflation-adjusted retirement contribution limits by year
-        
-        # main loop
-        for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
-            year_result = YearlyResults()
-            user_age = year - simulation.user_birth
-            spouse_age = year-simulation.spouse_birth if simulation.is_married else None
-            user_alive = year <= simulation.user_birth + simulation.user_life
-            spouse_alive = simulation.is_married and year <= simulation.spouse_birth + simulation.spouse_life
-
-            cur_year_income = 0
-            cur_year_ss = 0  # Social Security benefits
-            cur_year_gains = 0  # Capital gains
-            cur_year_early_withdrawals = 0  # Early withdrawals from retirement accounts
-
-            # Step 1: Inflation
-            inflation_rate = simulation.inflation.generate()
-            
-            if year == START_YEAR:
-                tax_brackets[year] = {
-                    "federal": tax_data.federal_tax.brackets.copy(),
-                    "state": tax_data.state_tax.brackets.copy() if tax_data.state_tax else None,
-                    "standard_deduction": tax_data.federal_tax.standard_deduction
-                }
-                retirement_limits[year] = simulation.limit_posttax
-            else:
-                # Update from previous year based on inflation
-                tax_brackets[year] = {
-                    "federal": [(bracket[0] * (1 + inflation_rate/100), bracket[1]) for bracket in tax_brackets[year-1]["federal"]],
-                    "state": [(bracket[0] * (1 + inflation_rate/100), bracket[1]) for bracket in tax_brackets[year-1]["state"]] if tax_brackets[year-1]["state"] else None,
-                    "standard_deduction": tax_brackets[year-1]["standard_deduction"] * (1 + inflation_rate/100)
-                }
-                retirement_limits[year] = retirement_limits[year-1] * (1 + inflation_rate/100)
-            # Step 2: Income
-            for income in simulation.income:
-                if year >= income.start and year < income.start + income.duration:
-                    if year == income.start:
-                        amount = income.amt
-                    else:
-                        if income.exp_change_percent:
-                            amount = prev_amount * (1+income.exp_change.generate()/100)
-                        else:
-                            amount = prev_amount + income.exp_change.generate()
-                    prev_amount = amount
-
-                    if income.inflation_adjust: #adjust for inflation if needed
-                            amount *= (1 + inflation_rate/100)
-            # Step 3: RMD
-
-
-            # Step 4: Investments
-
-
-            # Step 5: Roth
-
-
-            # Step 6: Expenses and Taxes
-
-
-            # Step 7: Discretionary Expenses
-
-
-            # Step 8: Invest
-
-
-            # Step 9: Rebalance
-
-
-            # Step 10: Results
-            pass
-
+        res = simulate(simulation,tax_data,fin_log,inv_writer)
     return res
-
-# testing
-# if __name__ == "__main__":
-#     vary = Vary({"type":"uniform","mean":4,"stdev":5,"value":17,"lower":19,"upper":21})
-#     print(vary.generate())
