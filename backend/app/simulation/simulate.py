@@ -373,9 +373,22 @@ def simulate_log(simulation,tax_data,user):
 
         # main loop
         for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
+            year_result = YearlyResults()
+            user_age = year - simulation.user_birth
+            spouse_age = year-simulation.spouse_birth if simulation.is_married else None
+            user_alive = year <= simulation.user_birth + simulation.user_life
+            spouse_alive = simulation.is_married and year <= simulation.spouse_birth + simulation.spouse_life
+
+            cur_year_income = 0
+            cur_year_ss = 0  # Social Security benefits
+            cur_year_gains = 0  # Capital gains
+            cur_year_early_withdrawals = 0  # Early withdrawals from retirement accounts
+
             # Step 1: Inflation
+            inflation_rate = simulation.inflation.generate()
 
-
+            if year == START_YEAR:
+                
             # Step 2: Income
 
 
