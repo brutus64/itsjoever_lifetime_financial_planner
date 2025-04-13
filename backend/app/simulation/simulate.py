@@ -134,7 +134,7 @@ class Invest(EventSeries):
                 final = asset["final"]
                 self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
     
 # rebalance event series
 class Rebalance(EventSeries):
@@ -149,7 +149,7 @@ class Rebalance(EventSeries):
                 final = asset["final"]
                 self.assets.append([investment,initial,final])
         else:
-            self.assets = [[asset["invest_id"]["id"],asset["initial"],asset["final"]] for asset in event_series["details"]["assets"]]
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
 
 class Tax: # store tax rates and rmds
     def __init__(self,state):
@@ -210,7 +210,6 @@ class Tax: # store tax rates and rmds
 class Simulation:
     def __init__(self,scenario):
         self.investments = [Investment(investment) for investment in scenario.get("investment")]
-        self.new_investments = [] # for new investments created during the simulation (dont forget to add these to regular investments at the end)
         # create a reference to the cash investment
         for investment in self.investments:
             if investment.name == "cash":
@@ -535,7 +534,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     else:
                         income.amt += income.exp_change.generate()
 
-                    # adjust inflation if needed
+                    # adjust for inflation
                     if income.inflation_adjust and year != START_YEAR:
                         income.amt *= inflation_rate
                 
@@ -553,6 +552,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # update ss
                 if income.social_security:
                     cur_ss += inc
+            else:
+                # even if it is not active, still update inflation
+                if income.inflation_adjust and year != START_YEAR:
+                    income.amt *= inflation_rate
                 
         # Step 3: RMD
         if user_age >= 74:
@@ -593,6 +596,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     target.tax_status = "non-retirement"
                     target.value = 0
                     target.purchase = 0
+                    simulation.investments.append(target)
                 
                 # transfer amounts
                 withdraw_amt = min(rmd,investment.value)
@@ -653,6 +657,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     target.tax_status = "after-tax"
                     target.value = 0
                     target.purchase = 0
+                    simulation.investments.append(target)
                 
                 # transfer amounts
                 transfer_amt = min(roth_conversion,investment.value)
@@ -731,26 +736,120 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # Step 7: Discretionary Expenses
         total_assets = total_inv_value(simulation.investments)
         withdraw_index = 0
+        # pay as much discretionary expenses as possible
         for disc_event in simulation.spending_strat:
             if total_assets <= simulation.fin_goal:
                 break
-            amt = min(disc_event.amt, total_assets - simulation.fin_goal)
+
+            # omit spouse percentage from expense amount
+            expense_amt = disc_event.amt
+            if simulation.is_married and not spouse_alive:
+                expense_amt *= disc_event.user_split
+            
+
+            # get maximum amount that can be paid for current discretionary expense
+            amt = min(expense_amt, total_assets - simulation.fin_goal)
+
+            # take money from cash investment first
+            cash_amt = min(simulation.cash.value,amt)
+            simulation.cash.value -= cash_amt
+            amt -= cash_amt
+            total_assets -= cash_amt
+
+            # sell investments to pay expenses
             while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
                 investment = simulation.expense_withdraw[withdraw_index]
                 w = min(amt, investment.value)
                 amt -= w
                 investment.value -= w
                 total_assets -= w
-                if investment.value ==0:
-                    withdraw_index+=1
+                if investment.value == 0:
+                    withdraw_index += 1
 
         # Step 8: Invest
-
+        for invest_strategy in simulation.invest_strat:
+            execess_cash = simulation.cash.value - invest_strategy.max_cash
+            if execess_cash > 0:
+                total_years = invest_strategy.duration
+                years_elapsed = year - invest_strategy.start
+                progress = years_elapsed / total_years if total_years > 0 else 1
+                after_tax_total = 0
+                for asset_info in invest_strategy.assets:
+                    investment, initial_pct, final_pct = asset_info
+                    current_pct = initial_pct + progress * (final_pct - initial_pct)
+                    if investment.tax_status == "after-tax":
+                        after_tax_total += execess_cash * (current_pct / 100)
+                scale_down = 1
+                scale_up = 1
+                if simulation.limit_posttax < after_tax_total:
+                    scale_down = simulation.limit_posttax / after_tax_total
+                    leftover = after_tax_total - simulation.limit_posttax
+                    scale_up = 1 + leftover / (execess_cash - after_tax_total) if (execess_cash - after_tax_total) > 0 else 1
+                for asset_info in invest_strategy.assets:
+                    investment, initial_pct, final_pct = asset_info
+                    current_pct = initial_pct + progress * (final_pct - initial_pct)
+                    
+                    amt = execess_cash * (current_pct / 100)
+                    
+                    if investment.tax_status == "after-tax":
+                        amt *= scale_down
+                    else:
+                        amt *= scale_up
+                    
+                    # Update investment
+                    investment.value += amt
+                    investment.purchase += amt  
+                    simulation.cash.value -= amt
 
         # Step 9: Rebalance
+        for reb in simulation.rebalance:
+            # check if rebalance event is active
+            if year >= reb.start and year < reb.start + reb.duration:
+                # find the total value of the investments to rebalance
+                total_value = 0
+                for investment,_,_ in reb.assets:
+                    total_value += investment.value
+                # performing rebalancing
+                for investment,start,end in reb.assets:
+                    # calculate glide percentage and target value
+                    year_diff = year - reb.start # how many years passed since start of event series
+                    yearly_change = (end-start) / (reb.duration-1) if reb.duration != 1 else 0
+                    percent = start + year_diff*yearly_change
+                    target = percent * total_value
+
+                    if target >= investment.value: # buy
+                        amt = target - investment.value
+                        investment.value += amt
+                        investment.purchase += amt
+                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"buy {investment.name}"))
+                    else: # sell
+                        amt = investment.value - target
+                        # pay capital gains if non-retirement, regular tax if pre-tax
+                        if investment.tax_status == "non-retirement":
+                            fraction = amt / investment.value
+                            cur_cg += max(0,fraction * (investment.value - investment.purchase))
+                        elif investment.tax_status == "pre-tax":
+                            cur_income += amt
+                        # pay early withdrawal tax
+                        if user_age < 59:
+                            cur_ew += amt
+                        investment.value -= amt
+                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
+
+        # Step 10: Results and Set-up for next iteration
+        prev_income = cur_income
+        prev_ss = cur_ss
+        prev_cg = cur_cg
+        prev_ew = cur_ew
+        
+        # write to csv log file the value of all investments
+        inv_write(inv_writer,year,simulation.investments)
+
+        # append data
+        res.append(year_result)
 
 
-        # Step 10: Results
+    # the csv log file title row must be updated to contain newly-created investments
 
     return res
 
