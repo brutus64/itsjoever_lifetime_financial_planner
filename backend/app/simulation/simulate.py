@@ -630,7 +630,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
 
 
-
+        # remember to update expense before using!
             
 
 
@@ -640,18 +640,35 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # Step 7: Discretionary Expenses
         total_assets = total_inv_value(simulation.investments)
         withdraw_index = 0
+        # pay as much discretionary expenses as possible
         for disc_event in simulation.spending_strat:
             if total_assets <= simulation.fin_goal:
                 break
-            amt = min(disc_event.amt, total_assets - simulation.fin_goal)
+
+            # omit spouse percentage from expense amount
+            expense_amt = disc_event.amt
+            if simulation.is_married and not spouse_alive:
+                expense_amt *= disc_event.user_split
+            
+
+            # get maximum amount that can be paid for current discretionary expense
+            amt = min(expense_amt, total_assets - simulation.fin_goal)
+
+            # take money from cash investment first
+            cash_amt = min(simulation.cash.value,amt)
+            simulation.cash.value -= cash_amt
+            amt -= cash_amt
+            total_assets -= cash_amt
+
+            # sell investments to pay expenses
             while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
                 investment = simulation.expense_withdraw[withdraw_index]
                 w = min(amt, investment.value)
                 amt -= w
                 investment.value -= w
                 total_assets -= w
-                if investment.value ==0:
-                    withdraw_index+=1
+                if investment.value == 0:
+                    withdraw_index += 1
 
         # Step 8: Invest
 
@@ -679,11 +696,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                         fin_write(fin_log,fin_format(year,"rebalance",amt,f"buy {investment.name}"))
                     else: # sell
                         amt = investment.value - target
-                        # pay capital gains if not pre-tax, else regular income tax
-                        if investment.tax_status != "pre-tax":
+                        # pay capital gains if non-retirement, regular tax if pre-tax
+                        if investment.tax_status == "non-retirement":
                             fraction = amt / investment.value
                             cur_cg += max(0,fraction * (investment.value - investment.purchase))
-                        else:
+                        elif investment.tax_status == "pre-tax":
                             cur_income += amt
                         # pay early withdrawal tax
                         if user_age < 59:
