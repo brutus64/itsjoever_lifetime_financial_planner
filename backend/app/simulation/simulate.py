@@ -671,39 +671,51 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     withdraw_index += 1
 
         # Step 8: Invest
-        for invest_strategy in simulation.invest_strat:
-            execess_cash = simulation.cash.value - invest_strategy.max_cash
-            if execess_cash > 0:
-                total_years = invest_strategy.duration
-                years_elapsed = year - invest_strategy.start
-                progress = years_elapsed / total_years if total_years > 0 else 1
-                after_tax_total = 0
-                for asset_info in invest_strategy.assets:
-                    investment, initial_pct, final_pct = asset_info
-                    current_pct = initial_pct + progress * (final_pct - initial_pct)
-                    if investment.tax_status == "after-tax":
-                        after_tax_total += execess_cash * (current_pct / 100)
-                scale_down = 1
-                scale_up = 1
-                if simulation.limit_posttax < after_tax_total:
-                    scale_down = simulation.limit_posttax / after_tax_total
-                    leftover = after_tax_total - simulation.limit_posttax
-                    scale_up = 1 + leftover / (execess_cash - after_tax_total) if (execess_cash - after_tax_total) > 0 else 1
-                for asset_info in invest_strategy.assets:
-                    investment, initial_pct, final_pct = asset_info
-                    current_pct = initial_pct + progress * (final_pct - initial_pct)
+        # find the active investment strategy
+        active_invest = None
+        for invest in simulation.invest_strat:
+            # check if invest event is active
+            if year >= invest.start and year < invest.start + invest.duration:
+                active_invest = invest
+                break
+
+        excess_cash = simulation.cash.value - active_invest.max_cash if active_invest else 0
+        if excess_cash > 0:
+            # calculate total of after-tax amounts
+            after_tax_total = 0
+            years_elapsed = year - active_invest.start
+            for investment,start,end in active_invest.assets:
+                if investment.tax_status == "after-tax":
+                    # calculate glide percentage and invest value
+                    yearly_change = (end-start) / (active_invest.duration-1) if active_invest.duration != 1 else 0
+                    percent = start + years_elapsed*yearly_change
+
+                    # calculate expected investment amount
+                    after_tax_total += excess_cash * (percent)
+            # determine scale factor according to limit_posttax
+            scale_up = 1
+            scale_down = 1
+            if simulation.limit_posttax < after_tax_total:
+                scale_down = simulation.limit_posttax / after_tax_total
+                leftover = after_tax_total - simulation.limit_posttax
+                scale_up = (1 + leftover / (excess_cash - after_tax_total)) if (excess_cash - after_tax_total) > 0 else 1
+            
+            # perform investments
+            for investment,start,end in active_invest.assets:
+                # calculate glide percentage
+                yearly_change = (end-start) / (active_invest.duration-1) if active_invest.duration != 1 else 0
+                percent = start + years_elapsed*yearly_change
+                # calculate invest amount
+                invest_amt = excess_cash * percent
+                if investment.tax_status == "after-tax":
+                    invest_amt *= scale_down
+                else:
+                    invest_amt *= scale_up
                     
-                    amt = execess_cash * (current_pct / 100)
-                    
-                    if investment.tax_status == "after-tax":
-                        amt *= scale_down
-                    else:
-                        amt *= scale_up
-                    
-                    # Update investment
-                    investment.value += amt
-                    investment.purchase += amt  
-                    simulation.cash.value -= amt
+                # Update investment
+                investment.value += invest_amt
+                investment.purchase += invest_amt  
+                simulation.cash.value -= invest_amt
 
         # Step 9: Rebalance
         for reb in simulation.rebalance:
