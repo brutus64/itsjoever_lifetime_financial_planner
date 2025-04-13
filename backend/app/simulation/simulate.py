@@ -8,6 +8,7 @@ import os
 import sys
 import math
 import csv
+import copy
 from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, StandardDeduct
 from collections import defaultdict
 # from app.models.simulation import Simulation
@@ -298,7 +299,7 @@ async def simulate_n(scenario,n,user):
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
     # testing:
-    # simulate_log(simulation_state,tax_data,user)
+    simulate_log(simulation_state,tax_data,user)
 
     # spawn processes
     # results = []
@@ -405,6 +406,9 @@ def aggregate(results):
 
     return agg_results
 
+def fin_format(year,trans_type,amt,details):
+    return f"{year}\t{trans_type}\t{round(amt,2)}\t{details}\n"
+
 def fin_write(fin_log,msg):
     if fin_log:
         fin_log.write(msg)
@@ -489,7 +493,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                     # adjust inflation if needed
                     if income.inflation_adjust and year != START_YEAR:
-                        income.amt *= (1 + inflation_rate)
+                        income.amt *= inflation_rate
                 
                 inc = income.amt
                 # omit spouse percentage
@@ -498,6 +502,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                 # update cash investment
                 simulation.cash.value += inc
+                fin_write(fin_log,fin_format(year,"income",inc,income.name))
                 
                 # update income
                 cur_income += inc
@@ -524,7 +529,34 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             cur_income += rmd
 
             # we need a way of pre-making transfer-in-kind investments for investments in rmd and roth
+            # note: pre-tax is not affected by capital-gains
 
+            # pay the rmd
+            for investment in simulation.rmd_strat:
+                if investment.value <= 0:
+                    continue
+
+                # find the target investment, creating one if needed
+                target = None
+                for candidate in simulation.investments:
+                    if candidate.name == investment.name and candidate.tax_status == "non-retirement":
+                        target = candidate
+                        break
+                if not target:
+                    target = copy.copy(investment) # only shallow-copy is necessary
+                    target.tax_status = "after-tax"
+                    target.value = 0
+                    target.purchase = 0
+                
+                # transfer amounts
+                withdraw_amt = min(rmd,investment.value)
+                target.value += withdraw_amt
+                investment.value -= withdraw_amt
+                rmd -= withdraw_amt
+                fin_write(fin_log,fin_format(year,"RMD",withdraw_amt,investment.name))
+                if rmd == 0:
+                    break
+            
 
 
         # Step 4: Investments
