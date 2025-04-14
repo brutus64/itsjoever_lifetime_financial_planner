@@ -12,6 +12,9 @@ import pstats
 import io
 import time
 import logging
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 @asynccontextmanager #expects yield statement
 async def lifespan(app: FastAPI):
@@ -43,8 +46,8 @@ app = FastAPI(lifespan=lifespan)
 #     return response
 
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    f"http://{os.getenv('FRONTEND_HOSTNAME')}:{os.getenv('FRONTEND_PORT')}",
+    f"http://{os.getenv('FRONTEND_ADDR')}:{os.getenv('FRONTEND_PORT')}"
 ]
 
 app.add_middleware(
@@ -90,4 +93,4 @@ app.include_router(scenario.router, prefix='/api/scenarios')
 app.include_router(import_export.router, prefix='/api/scenarios')
 
 if __name__ == '__main__':
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, log_level="info", reload=True)
+    uvicorn.run("app.main:app", host=os.getenv("SERVER_ADDR"), port=os.getenv("SERVER_PORT"), log_level="info", reload=True)

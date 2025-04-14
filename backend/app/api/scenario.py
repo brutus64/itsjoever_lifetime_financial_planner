@@ -102,7 +102,6 @@ async def fetch_scenario(scenario_id: str):
         )
         if not scenario:
             raise HTTPException(status_code=404, detail="Scenario not found")
-        print("FOUND THE SCENARIO",scenario)
 
         # strategies are not in order
         scenario_unfetched = await Scenario.find_one(

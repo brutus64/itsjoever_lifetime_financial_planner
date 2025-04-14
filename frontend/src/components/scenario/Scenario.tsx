@@ -37,12 +37,7 @@ const Scenario = () => {
             console.log(user)
             const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:user});
             console.log(res)
-            if (res.data.message == "ok") {
-                
                 setOpen(false)
-            }
-            else
-                console.log("Error simulating")
         }
         catch(err) {
             console.error("Could not simulate scenario: ",err)

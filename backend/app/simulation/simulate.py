@@ -374,7 +374,7 @@ def aggregate(results):
     # find percentiles for every category in every year
     for category in categories:
         for year,values in yearly_arrays[category].items():
-            percentiles[category][year] = percentile(values,desired_percents) # need to convert to list?
+            percentiles[category][year] = percentile(values,desired_percents).tolist() # need to convert to list?
     agg_results["percentiles"] = percentiles
         
     # Chart 4.3: Breakdowns
