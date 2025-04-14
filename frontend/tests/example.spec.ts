@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 test('fill out maininfo & data persists', async ({ page }) => {
   await page.goto('http://localhost:5173');
   await page.getByText('Guest Account').click();
+  await page.waitForTimeout(2000); // wait for 2 seconds
   await page.getByText('New Scenario').click();
   const MainInfo = [
     'My Scenario',
@@ -79,6 +80,7 @@ test('create investment type & investment', async ({ page }) => {
 
   await page.goto('http://localhost:5173');
   await page.getByText('Guest Account').click()
+  await page.waitForTimeout(2000); // wait for 2 seconds
   await page.getByText('New Scenario').click();
   await page.getByText('Next').click();
 
@@ -153,6 +155,7 @@ test('create income event series', async ({ page }) => {
   }
   await page.goto('http://localhost:5173');
   await page.getByText('Guest Account').click();
+  await page.waitForTimeout(2000); // wait for 2 seconds
   await page.getByText('New Scenario').click();
   await page.getByText('Next').click();
   await page.getByText('Next').click();
