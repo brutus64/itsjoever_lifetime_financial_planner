@@ -461,7 +461,7 @@ const GenericEventSeriesPopup = ({eventSeriesType, investments, eventSeries, is_
                     <div className='flex gap-4' style={{opacity: (is_married ? 1.0 : 0.2)}}>
                         <h2 className="font-medium">Percentage Associated With User</h2>
                         <input className="text-md px-1 border-2 border-gray-200 rounded-md w-15" 
-                            disabled={is_married}
+                            disabled={!is_married}
                             name="user_split"
                             value={genericEventData.user_split}
                             onChange={handleChange}

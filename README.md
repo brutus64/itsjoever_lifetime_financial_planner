@@ -17,6 +17,12 @@ FEDERAL_TAX_URL=https://www.irs.gov/filing/federal-income-tax-rates-and-brackets
 CAPITAL_GAINS_TAX_URL=https://www.irs.gov/taxtopics/tc409
 STANDARD_DEDUCTION_URL=https://www.irs.gov/publications/p17
 RMD_TABLE_URL=https://www.irs.gov/publications/p590b
+SERVER_ADDR=127.0.0.1
+SERVER_HOSTNAME=localhost
+SERVER_PORT=8000
+FRONTEND_ADDR=127.0.0.1
+FRONTEND_HOSTNAME=localhost
+FRONTEND_PORT=5173
 ```
 
 
