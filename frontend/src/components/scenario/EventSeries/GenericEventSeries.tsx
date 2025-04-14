@@ -86,7 +86,6 @@ const GenericEventSeries = ({eventSeriesType, eventSeries, investments, createEv
     }
 
     const validateForm = () => {const important_fields = [genericEventData.name, genericEventData.initial_amt, genericEventData.user_split]
-
         if (important_fields.some((field) => field === "")) {
             setError("Please fill out all fields");
             return false;
