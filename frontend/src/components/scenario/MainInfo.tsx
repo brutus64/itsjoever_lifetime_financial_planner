@@ -263,7 +263,7 @@ const MainInfo = ({scenario_id}:any) => {
                     {stateError && (
                         <div className="mt-2 p-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 text-sm">
                             <div className="flex items-center">
-                                Warning: Tax data for this state is missing. State taxes will be ignored in calculations.
+                                Warning: Tax data for this state is missing. State taxes will be ignored in calculations. Please import state taxes at profile.
                             </div>
                         </div>
                     )}
