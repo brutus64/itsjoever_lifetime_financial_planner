@@ -494,6 +494,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
             prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
             prev_ew_tax = tax_data.early_withdrawal * prev_ew
+            year_result.taxes.append(("federal income",prev_federal_income_tax))
+            year_result.taxes.append(("state income",prev_state_income_tax))
+            year_result.taxes.append(("federal capital gains",prev_federal_cg_tax))
+            year_result.taxes.append(("state capital gains",prev_state_cg_tax))
+            year_result.taxes.append(("early withdrawal",prev_ew_tax))
         else:
             prev_federal_income = 0
             prev_federal_income_tax = 0
@@ -533,6 +538,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             simulation.limit_posttax *= inflation_rate
         
         # Step 2: Income
+        total_income = 0
         for income in simulation.income:
             # check to see if it is active
             if year >= income.start and year < income.start + income.duration:
@@ -556,6 +562,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # update cash investment
                 simulation.cash.value += inc
                 fin_write(fin_log,fin_format(year,"income",inc,income.name))
+
+                # record income
+                year_result.income.append((income.name,inc))
+                total_income += inc
                 
                 # update income
                 cur_income += inc
@@ -566,7 +576,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # even if it is not active, still update inflation
                 if income.inflation_adjust and year != START_YEAR:
                     income.amt *= inflation_rate
-                
+        year_result.total_income = total_income
+
         # Step 3: RMD
         if user_age >= 74:
             # get distribution period
@@ -684,7 +695,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
         # Step 6: Expenses and Taxes
         # Update Expenses
-        sum_non_disc_exp = 0
+        total_non_disc = 0
+        total_disc = 0
         for expense in simulation.expenses:
             # check to see if it is active
             if year >= expense.start and year < expense.start + expense.duration:
@@ -707,7 +719,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                 if not expense.is_discretionary:
                     fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
-                    sum_non_disc_exp += exp
+                    year_result.expenses.append((expense.name,exp))
+                    total_non_disc += exp
+                else:
+                    # cannot record discretionary yet because not guarenteed to be paid
+                    total_disc += exp
             else:
                 # adjust inflation if needed
                 if expense.inflation_adjust and year != START_YEAR:
@@ -720,7 +736,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
         # 6d
-        total_payment = sum_prev_year_tax + sum_non_disc_exp # how much money is needed to pay off
+        total_payment = sum_prev_year_tax + total_non_disc # how much money is needed to pay off
+        
         # 6e
         cash_investment_withdrawal = min(simulation.cash.value ,total_payment)
         # APPLY CAPITAL GAINS ON CASH INVESTMENT WITHDRAWAL?
@@ -760,6 +777,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         total_assets = total_inv_value(simulation.investments)
         withdraw_index = 0
         # pay as much discretionary expenses as possible
+        total_disc_paid = 0
         for disc_event in simulation.spending_strat:
             if total_assets <= simulation.fin_goal:
                 break
@@ -803,7 +821,14 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 amt -= w
                 investment.value -= w
                 total_assets -= w
-            fin_write(fin_log,fin_format(year,"expense",original_amt-amt,disc_event.name))
+            disc_paid = original_amt - amt
+            fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
+            year_result.expenses.append((disc_event.name,disc_paid))
+            total_disc_paid += disc_paid
+        
+        # total expenses = discretionary expenses paid + non-discretionary + taxes
+        year_result.total_expenses = total_disc_paid + total_payment
+        year_result.discretionary_percent = total_disc_paid / total_disc if total_disc != 0 else 0
 
         # Step 8: Invest
         # find the active investment strategy
@@ -897,10 +922,22 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # write to csv log file the value of all investments
         inv_write(inv_writer,year,simulation.investments)
 
+        
+
+        # record 
+        total_investments = 0
+        for investment in simulation.investments:
+            total_investments += investment.value
+            year_result.investments.append((f"{investment.name} {investment.tax_status}",investment.value))
+        year_result.total_investments = total_investments
+            
+        year_result.success = total_investments >= simulation.fin_goal
+        year_result.early_withdrawal_tax = prev_ew_tax
+
         # append data
         res.append(year_result)
 
-
+ 
     # the csv log file title row must be updated to contain newly-created investments
 
     return res
