@@ -309,9 +309,9 @@ class YearlyResults:
 async def simulate_n(scenario,n,user):
     # create simulation objects to keep track of simulation state
     # get tax data from the database
-    simulation_state = Simulation(scenario)
-    tax_data = Tax(simulation_state.state)
-    await tax_data.fetch_tax()
+    # simulation_state = Simulation(scenario)
+    # tax_data = Tax(simulation_state.state)
+    # await tax_data.fetch_tax()
 
     # spawn processes
     results = []
@@ -324,6 +324,17 @@ async def simulate_n(scenario,n,user):
         # get all simulation results
         print("Getting results...")
         results = [result.get() for result in results]
+    
+    # Testing with no multiprocessing
+    # simulation_state = Simulation(scenario)
+    # tax_data = Tax(simulation_state.state)
+    # await tax_data.fetch_tax()
+    # results.append(simulate_log(simulation_state,tax_data,user))
+    # for _ in range(n-1):
+    #     simulation_state = Simulation(scenario)
+    #     tax_data = Tax(simulation_state.state)
+    #     await tax_data.fetch_tax()
+    #     results.append(simulate(simulation_state,tax_data,None,None))
     
     # aggregate results for displaying on graphs
     aggregated = aggregate(results)

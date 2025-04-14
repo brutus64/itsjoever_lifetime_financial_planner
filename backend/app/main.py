@@ -15,6 +15,7 @@ import logging
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from pyinstrument import Profiler
 
 @asynccontextmanager #expects yield statement
 async def lifespan(app: FastAPI):
@@ -69,6 +70,18 @@ app.add_middleware(
     path="/"
 )
 
+PROFILING = False
+
+if PROFILING:
+    @app.middleware("http")
+    async def profile_request(request: Request, call_next):
+        profiler = Profiler()
+        profiler.start()
+        response = await call_next(request)
+        profiler.stop()
+        print(profiler.output_text())
+        return response
+
 # @app.middleware('http')
 # async def auth_check(request: Request, call_next):
 #     public_path = [
@@ -93,4 +106,4 @@ app.include_router(scenario.router, prefix='/api/scenarios')
 app.include_router(import_export.router, prefix='/api/scenarios')
 
 if __name__ == '__main__':
-    uvicorn.run("app.main:app", host=os.getenv("SERVER_ADDR"), port=os.getenv("SERVER_PORT"), log_level="info", reload=True)
+    uvicorn.run("app.main:app", host=os.getenv("SERVER_ADDR"), port=int(os.getenv("SERVER_PORT")), log_level="info", reload=True)
