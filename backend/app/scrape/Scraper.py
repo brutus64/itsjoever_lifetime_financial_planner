@@ -1,6 +1,9 @@
 import requests
 import yaml
 from bs4 import BeautifulSoup
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # IMPORTANT: 
 # Ranges for min_income and max_income goes as:
@@ -18,7 +21,7 @@ class Scraper:
         Note: A value of -1.0 is used to represent "And above" for the last bracket's maxIncome 
     '''
     def scrape_federal_income(self):
-        url = 'https://www.irs.gov/filing/federal-income-tax-rates-and-brackets'
+        url = os.getenv("FEDERAL_TAX_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -103,7 +106,7 @@ class Scraper:
         Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
     '''
     def scrape_capital_gains(self):
-        url = 'https://www.irs.gov/taxtopics/tc409'
+        url = os.getenv("CAPITAL_GAINS_TAX_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -146,7 +149,7 @@ class Scraper:
                 married_range.append([find_capital_gains(split_married[2])+0.01, -1])
 
         ul_container = soup.find_all('div', class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
-        ul_tags = ul_container[1].find_all('ul')
+        ul_tags = ul_container[2].find_all('ul') # should index 2 for the proper tags
         scrape_helper(ul_tags[0], 0)
         scrape_helper(ul_tags[1], 15)
 
@@ -176,7 +179,7 @@ class Scraper:
             }
     '''
     def scrape_standard_deductions(self):
-        url = 'https://www.irs.gov/publications/p17'
+        url = os.getenv("STANDARD_DEDUCTION_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -207,7 +210,7 @@ class Scraper:
         Note: The very last age, 120, represents ages 120+
     '''
     def scrape_rmd_tables(self):
-        url = 'https://www.irs.gov/publications/p590b' # search for "Appendix B. Uniform Lifetime Table"
+        url = os.getenv("RMD_TABLE_URL") # search for "Appendix B. Uniform Lifetime Table"
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
