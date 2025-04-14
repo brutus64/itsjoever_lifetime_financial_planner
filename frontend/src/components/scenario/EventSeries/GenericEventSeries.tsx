@@ -8,7 +8,7 @@ const eventSeriesModalStyling = {
     "width":"700px",
     "height":"600px"
 };
-// 
+ 
 const defaultGenericEventForm = {
     // INCOME/EXPENSE/INVEST/REBALANCE
     id: "",
