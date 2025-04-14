@@ -173,35 +173,39 @@ class Tax: # store tax rates and rmds
         # min_income <= income < max_income
         # pay tax as percentage of income in tax brackets
         for bracket in brackets:
-            if(income >= bracket.min_income and bracket.max_income == -1 or
-               income >= bracket.min_income):
-                tax += (income - bracket.min_income) * bracket.rate
+            # calculates full tax bracket
+            if(bracket.max_income < income and bracket.max_income != brackets[-1].max_income):
+                tax += (bracket.max_income - bracket.min_income) * (bracket.rate/100)
+            # calculates partial tax bracket
+            elif(bracket.min_income <= income and (income < bracket.max_income or bracket.max_income == brackets[-1].max_income)):
+                tax += (income - bracket.min_income) * (bracket.rate/100)
             else:
                 break
-
+        
         return tax
 
     def calculate_state_tax(self, income, is_married):
-        if not self.state_tax:
+        if not self.state_tax or income == 0:
             return 0
         brackets = self.state_tax.married_bracket if is_married else self.state_tax.single_bracket
 
+        print(f'income is {income}')
         # min_income < income <= max_income
         for bracket in brackets:
-            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == -1):
+            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == brackets[-1].max_income):
                 base = bracket.base if self.state_tax.base_add else -bracket.base
-                tax = (income - bracket.min_income) * bracket.rate + base
-                break
-
-        return tax
-
+                tax = (income - bracket.min_income) * (bracket.rate/100) + base
+                return tax
+                
     def calculate_capital_gains_tax(self, income, capital_gains, is_married):
+        if capital_gains == 0:
+            return 0
         brackets = self.capital_gains.married_bracket if is_married else self.capital_gains.single_bracket
 
         # min_income <= income < max_income
         for bracket in brackets:
-            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == -1):
-                percent = (income - bracket.min_income) * bracket.rate
+            if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == brackets[-1].max_income):
+                percent = (income - bracket.min_income) * (bracket.rate/100)
                 break
 
         tax = percent * capital_gains
@@ -754,7 +758,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             # 6fi
             if investment.tax_status != "pre-tax":
                 fraction = withdraw/investment.value
-                cur_cg += fraction * (investment.value - investment.purchase_price)
+                cur_cg += fraction * (investment.value - investment.purchase)
             else: # 6fiii
                 cur_income += withdraw
                 pass
@@ -951,7 +955,7 @@ def simulate_log(simulation,tax_data,user):
         os.makedirs(LOG_DIRECTORY)
     
     # create two log files
-    cur_time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+    cur_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     with open(f"{LOG_DIRECTORY}/{user}_{cur_time}.log","w") as fin_log, \
          open(f"{LOG_DIRECTORY}/{user}_{cur_time}.csv","w") as inv_log:

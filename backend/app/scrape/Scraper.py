@@ -16,7 +16,7 @@ class Scraper:
                 married: [{min_income: Float, max_income: Float, rate: Float}]
             } 
 
-        Note: A value of -1.0 is used to represent "And above" for the last bracket's maxIncome 
+        Note: A value of 0 is used to represent "And above" for the last bracket's maxIncome 
     '''
     def scrape_federal_income(self):
         url = 'https://www.irs.gov/filing/federal-income-tax-rates-and-brackets'
@@ -35,7 +35,7 @@ class Scraper:
                 if len(cells) > 1:
                     tax_rate = float(cells[0].text.strip()[:-1])
                     tax_bracket_start = float(cells[1].text.strip().replace('$', '').replace(',', ''))
-                    tax_bracket_end = -1.0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', ''))+1 
+                    tax_bracket_end = 0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', ''))+1 
                     info.append({
                         'min_income': tax_bracket_start, 
                         'max_income': tax_bracket_end, 
@@ -101,7 +101,7 @@ class Scraper:
                 'married': [{min_income: Float, max_income: Float, rate: Float}]
             } 
 
-        Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
+        Note: A value of 0 is used to represent "And above" for the last bracket's  maxIncome 
     '''
     def scrape_capital_gains(self):
         url = 'https://www.irs.gov/taxtopics/tc409'
@@ -143,8 +143,8 @@ class Scraper:
                 single_range.append([find_capital_gains(split_single[1])+0.01, find_capital_gains(split_single[2])+0.01])
                 married_range.append([find_capital_gains(split_married[1])+0.01, find_capital_gains(split_married[2])+0.01])
 
-                single_range.append([find_capital_gains(split_single[2])+0.01, -1])
-                married_range.append([find_capital_gains(split_married[2])+0.01, -1])
+                single_range.append([find_capital_gains(split_single[2])+0.01, 0])
+                married_range.append([find_capital_gains(split_married[2])+0.01, 0])
 
         ul_container = soup.find_all('div', class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
         ul_tags = ul_container[2].find_all('ul')
