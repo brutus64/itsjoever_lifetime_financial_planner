@@ -32,8 +32,8 @@ const Scenario = () => {
         console.log(`Simulating ${numSimulations} times!`)
         try {
             const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:"bob"});
+            console.log(res)
             if (res.data.message == "ok") {
-                // navigate to some results page that will display charts
                 
                 setOpen(false)
             }

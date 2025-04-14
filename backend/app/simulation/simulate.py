@@ -1,31 +1,18 @@
 from multiprocessing import Pool
-from threading import Semaphore
 from numpy.random import normal, uniform
 from numpy import percentile
 from datetime import datetime
 from statistics import mean, median
+from collections import defaultdict
 import os
 import sys
 import math
 import csv
 import copy
 from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, StandardDeduct
-from collections import defaultdict
-# from app.models.simulation import Simulation
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
 START_YEAR = 2025
-
-# I dont know how to make process pool global without
-# running into shutdown issues
-
-# use a centralized Simulator to ensure only one simulation is simulated
-# at a time
-class Simulator: # is this necessary?
-    pass
-
-# using objects will make referencing easier and cleaner
-# otherwise, we would have to use .get() and .set() or brackets
 
 # object that may vary between types
 class Vary:
@@ -50,12 +37,11 @@ class Vary:
 
 # flatten investment and investment type
 # note that there may be new investments created during the simulation
-# that would not be in the scenario object
 class Investment:
     def __init__(self,investment):
-        self.id = investment["id"] # just in case
+        self.id = investment["id"]
         self.value = investment["value"]
-        self.purchase = investment["value"] # this is the amount of money put into the investment
+        self.purchase = investment["value"] # amount of money put into the investment
         self.tax_status = investment["tax_status"]
         self.name = investment["invest_type"]["name"]
         self.exp_ret = Vary(investment["invest_type"]["exp_annual_return"])
@@ -95,7 +81,7 @@ class EventSeries:
     def __init__(self,event_series):
         self.id = event_series["id"]
         self.name = event_series["name"] # for graphing and logging
-        self.start = event_series["start"] #resolved later
+        self.start = event_series["start"] # resolved later
         self.duration = Vary(event_series["duration"]) # round to nearest integer, must be positive
         
 # income event series
@@ -163,9 +149,6 @@ class Tax: # store tax rates and rmds
         self.standard_deductions = await StandardDeduct.find_one()
         self.rmd = await RMDTable.find_one()
 
-    def calculate_rmd(self,age):
-        pass
-
     def calculate_federal_tax(self, income, is_married):
         brackets = self.federal_tax.married_bracket if is_married else self.federal_tax.single_bracket
 
@@ -209,7 +192,6 @@ class Tax: # store tax rates and rmds
 
         tax = percent * capital_gains
         return max(0, tax) # capital gains tax can't be negative
-
 
 # store simulation state from scenario
 class Simulation:
@@ -323,25 +305,13 @@ class YearlyResults:
         self.discretionary_percent = 0 # discretionary expenses paid / total discretionary
 
 
-
 # set of n simulations
 async def simulate_n(scenario,n,user):
-    # get tax data for scenario's state, federal tax, and rmd table
-    
-    # two processes do not use the same address space, so it is
-    # actually fine to create the simulation objects in the
-    # simulate_n function, then pass them in to simulate()
-    # using a big dictionary is too annoying
-    # create simulation objects based on scenario objects that will
-    # change over time
-
+    # create simulation objects to keep track of simulation state
+    # get tax data from the database
     simulation_state = Simulation(scenario)
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
-    # testing:
-    # res = simulate_log(simulation_state,tax_data,user)
-    # print(f"{sys.getsizeof(aggregate([res]))} bytes")
-
 
     # spawn processes
     results = []
@@ -354,20 +324,13 @@ async def simulate_n(scenario,n,user):
         # get all simulation results
         print("Getting results...")
         results = [result.get() for result in results]
-    # print(results)
-    # aggregate results by category, then year
-    # calculate success probability in each year for chart 4.1
-    # the "totals", early-withdrawal, and percent-total-discretion must store
-    # all values across the n simulations for chart 4.2
-    # for individual investment, expense (including taxes), and income, only 
-    # store the mean and medians for chart 4.3
+    
+    # aggregate results for displaying on graphs
     aggregated = aggregate(results)
 
-    # store aggregated results in db to be viewed later
-    # return id of simulation set
-    return ""
+    return aggregated
 
-# nesting hell
+# aggregate data across all n simulations
 def aggregate(results):
     agg_results = {}
 
@@ -448,13 +411,16 @@ def aggregate(results):
 
     return agg_results
 
+# format string for displaying lines in log file
 def fin_format(year,trans_type,amt,details):
     return f"{year}\t{trans_type}\t{round(amt,2)}\t{details}\n"
 
+# write to log file, if fin_log is not None
 def fin_write(fin_log,msg):
     if fin_log:
         fin_log.write(msg)
 
+# write line to csv file, if inv_writer is not None
 def inv_write(inv_writer,year,investments):
     if inv_writer:
         row = [year] + [round(investment.value,2) for investment in investments]
@@ -481,17 +447,22 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
     
     # main loop
     for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
+        # create object to store results
         year_result = YearlyResults(year)
+
+        # determine ages
         user_age = year - simulation.user_birth
         spouse_age = year-simulation.spouse_birth if simulation.is_married else None
         spouse_alive = simulation.is_married and year < simulation.spouse_birth + simulation.spouse_life
 
+        # tax variables
         cur_income = 0
         cur_ss = 0  # Social Security benefits
         cur_cg = 0  # Capital gains
         cur_ew = 0  # Early withdrawals from retirement accounts
 
         # FOR Step 6: Calculate prev years tax before tax bracket is updated
+        # do not calculate tax for the first year
         if year != START_YEAR:
             prev_federal_income = prev_income - 0.15*prev_ss
             prev_federal_income_tax = tax_data.calculate_federal_tax(prev_federal_income, simulation.is_married)
@@ -543,9 +514,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             simulation.limit_posttax *= inflation_rate
         
         # Step 2: Income
-        total_income = 0
         for income in simulation.income:
-            # check to see if it is active
+            # check to see if income event series is active
             if year >= income.start and year < income.start + income.duration:
                 # do not do the following actions on the first year
                 if year != income.start:
@@ -570,7 +540,6 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                 # record income
                 year_result.income.append((income.name,round(inc,2)))
-                total_income += inc
                 
                 # update income
                 cur_income += inc
@@ -578,10 +547,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if income.social_security:
                     cur_ss += inc
             else:
-                # even if it is not active, still update inflation
+                # even if income is not active, still update inflation
                 if income.inflation_adjust and year != START_YEAR:
                     income.amt *= inflation_rate
-        year_result.total_income = round(total_income,2)
+        year_result.total_income = round(cur_income,2)
 
         # Step 3: RMD
         if user_age >= 74:
@@ -598,11 +567,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if investment.tax_status == "pre-tax" and investment.value > 0:
                     pre_value += investment.value
             
-            rmd = pre_value / dist_period
+            if dist_period != -1:
+                rmd = pre_value / dist_period
+            else:
+                rmd = 0
             cur_income += rmd
-
-            # we need a way of pre-making transfer-in-kind investments for investments in rmd and roth
-            # note: pre-tax is not affected by capital-gains
 
             # pay the rmd
             for investment in simulation.rmd_strat:
@@ -611,7 +580,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if investment.value <= 0:
                     continue
 
-                # find the target investment, creating one if needed
+                # find the corresponding non-retirement investment, creating one if needed
                 target = None
                 for candidate in simulation.investments:
                     if candidate.name == investment.name and candidate.tax_status == "non-retirement":
@@ -626,29 +595,28 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 
                 # transfer amounts
                 withdraw_amt = min(rmd,investment.value)
+                f = withdraw_amt / investment.value
                 target.value += withdraw_amt
                 investment.value -= withdraw_amt
                 rmd -= withdraw_amt
-                if investment.purchase > investment.value:
-                    # transfer the purchase amount
-                    diff = investment.purchase - investment.value
-                    target.purchase += diff
-                    investment.purchase -= diff
+
+                # update purchase
+                purchase_amt = f * investment.purchase
+                investment.purchase -= purchase_amt
+                target.purchase += withdraw_amt
+                
+                # write to log
                 fin_write(fin_log,fin_format(year,"RMD",withdraw_amt,investment.name))
-                if rmd == 0:
-                    break
 
         # Step 4: Investments
         for investment in simulation.investments:
-            # no logging required
             # update() returns the taxable income from interest and dividends
-            taxable_income = investment.update()
-            cur_income += taxable_income
+            cur_income += investment.update()
 
         # Step 5: Roth
         # determine if roth optimizer is active for current year
         if simulation.roth_enable and year >= simulation.roth_start and year < simulation.roth_end:
-            # determine which brackets and deductions
+            # determine brackets and deductions
             if spouse_alive:
                 cur_deduction = tax_data.standard_deductions.married_deduct
                 brackets = tax_data.federal_tax.married_bracket
@@ -663,8 +631,12 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if bracket.max_income >= cur_federal_income:
                     upper_limit = bracket.max_income
                     break
-            roth_conversion = upper_limit - (cur_federal_income - min(cur_deduction,cur_federal_income))
-            cur_income += roth_conversion
+            if upper_limit == 0: #user is in the highest bracket, do not perform conversions?
+                roth_conversion = 0
+            else:
+                roth_conversion = upper_limit - (cur_federal_income - min(cur_deduction,cur_federal_income))
+                cur_income += roth_conversion
+
             # transfer pre-tax to after-tax based on strategy
             for investment in simulation.roth_strat:
                 if roth_conversion == 0:
@@ -687,19 +659,24 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 
                 # transfer amounts
                 transfer_amt = min(roth_conversion,investment.value)
+                f = transfer_amt / investment.value
                 target.value += transfer_amt
                 investment.value -= transfer_amt
                 roth_conversion -= transfer_amt
-                if investment.purchase > investment.value:
-                    # transfer the purchase amount
-                    diff = investment.purchase - investment.value
-                    target.purchase += diff
-                    investment.purchase -= diff
+
+                # update purchase
+                # note that after-tax retirement accounts are not subject to capital gains anyway
+                # just for completeness
+                purchase_amt = f * investment.purchase
+                investment.purchase -= purchase_amt
+                target.purchase += transfer_amt
                 
+                # write to log
                 fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
 
         # Step 6: Expenses and Taxes
-        # Update Expenses
+        # Update all expense event series based on annual change
+        # keep track of totals
         total_non_disc = 0
         total_disc = 0
         for expense in simulation.expenses:
@@ -721,7 +698,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # omit spouse percentage
                 if simulation.is_married and not spouse_alive:
                     exp *= expense.user_split
-
+                
                 if not expense.is_discretionary:
                     fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
                     year_result.expenses.append((expense.name,round(exp,2)))
@@ -734,56 +711,66 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if expense.inflation_adjust and year != START_YEAR:
                     expense.amt *= inflation_rate
 
+        # sum up previous year taxes and log them
         sum_prev_year_tax = prev_federal_income_tax+prev_state_income_tax+prev_federal_cg_tax+prev_state_cg_tax+prev_ew_tax
         fin_write(fin_log,fin_format(year,"tax",prev_federal_income_tax,f"federal income tax"))
         fin_write(fin_log,fin_format(year,"tax",prev_state_income_tax,f"state income tax"))
         fin_write(fin_log,fin_format(year,"tax",prev_federal_cg_tax,f"federal capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
-        # 6d
-        total_payment = sum_prev_year_tax + total_non_disc # how much money is needed to pay off
+
+        # calculate total payment based on current non-discretionary and previous year taxes
+        total_payment = sum_prev_year_tax + total_non_disc
         
-        # 6e
+        # withdraw from cash investment first
         cash_investment_withdrawal = min(simulation.cash.value ,total_payment)
-        # APPLY CAPITAL GAINS ON CASH INVESTMENT WITHDRAWAL?
-        total_withdrawal = total_payment - cash_investment_withdrawal # amount needed to be withdrawn from investments
+        total_withdrawal = total_payment - cash_investment_withdrawal
         simulation.cash.value -= cash_investment_withdrawal # update cash investment
         
+        # perform expense withdrawals
         for investment in simulation.expense_withdraw:
             if total_withdrawal == 0:
                 break
             if investment.value == 0:
                 continue
-
+            
+            # determine maximum amount to withdraw from investment
             withdraw = min(investment.value, total_withdrawal)
-            # 6fi
-            if investment.tax_status != "pre-tax":
+
+            # determine if withdrawal is taxed
+            if investment.tax_status == "non-retirement":
                 fraction = withdraw/investment.value
                 cur_cg += fraction * (investment.value - investment.purchase)
-            else: # 6fiii
+                investment.purchase *= (1-fraction)
+            elif investment.tax_status == "pre-tax":
                 cur_income += withdraw
-                pass
             
-            # 6fiv
             if user_age < 59 and investment.tax_status != "non-retirement":
                 cur_ew += withdraw 
 
+            # update investment value and withdraw amounts
             investment.value -= withdraw
             total_withdrawal -= withdraw
         
         # could not pay all taxes and expenses, must end simulation
         if total_withdrawal > 0:
-            print(f"No more money")
+            # log all investment values
+            inv_write(inv_writer,year,simulation.investments)
             return res
-        
-        fin_write(fin_log,fin_format(year,"expense",total_payment,"payment for taxes and non-discretioary expenses"))
 
         # Step 7: Discretionary Expenses
-        total_assets = total_inv_value(simulation.investments)
+        # determine the total value of all investments
+        total_assets = 0
+        for inv in simulation.investments:
+            total_assets += inv.value
+
+        # keep track of the current investment to withdraw from
         withdraw_index = 0
+
         # pay as much discretionary expenses as possible
         total_disc_paid = 0
         for disc_event in simulation.spending_strat:
+            # pay more expenses if above financial goal
             if total_assets <= simulation.fin_goal:
                 break
 
@@ -808,13 +795,15 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 if investment.value <= 0:
                     withdraw_index += 1
                     continue
+
                 # get the amount to withdraw from investment
                 w = min(amt, investment.value)
 
                 # determine tax
                 if investment.tax_status == "non-retirement":
                     fraction = w / investment.value
-                    cur_cg += max(0,fraction * (investment.value - investment.purchase))
+                    cur_cg += fraction * (investment.value - investment.purchase)
+                    investment.purchase *= (1-fraction)
                 elif investment.tax_status == "pre-tax":
                     cur_income += w
                 
@@ -826,6 +815,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 amt -= w
                 investment.value -= w
                 total_assets -= w
+            # calculate the amount actually paid
             disc_paid = original_amt - amt
             fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
             year_result.expenses.append((disc_event.name,round(disc_paid,2)))
@@ -856,7 +846,8 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     percent = start + years_elapsed*yearly_change
 
                     # calculate expected investment amount
-                    after_tax_total += excess_cash * (percent)
+                    after_tax_total += excess_cash * percent
+            
             # determine scale factor according to limit_posttax
             scale_up = 1
             scale_down = 1
@@ -877,7 +868,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 else:
                     invest_amt *= scale_up
                     
-                # Update investment
+                # Update investment and cash investment values
                 investment.value += invest_amt
                 investment.purchase += invest_amt  
                 simulation.cash.value -= invest_amt
@@ -910,6 +901,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                         if investment.tax_status == "non-retirement":
                             fraction = amt / investment.value
                             cur_cg += max(0,fraction * (investment.value - investment.purchase))
+                            investment.purchase *= (1-fraction)
                         elif investment.tax_status == "pre-tax":
                             cur_income += amt
                         # pay early withdrawal tax
@@ -923,33 +915,29 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         prev_ss = cur_ss
         prev_cg = cur_cg
         prev_ew = cur_ew
+
+        # record early withdrawal tax
+        year_result.early_withdrawal_tax = round(prev_ew_tax,2)
         
         # write to csv log file the value of all investments
         inv_write(inv_writer,year,simulation.investments)
 
-        
-
-        # record 
+        # record individual investment values and total investments
         total_investments = 0
         for investment in simulation.investments:
             total_investments += round(investment.value,2)
             year_result.investments.append((f"{investment.name} {investment.tax_status}",round(investment.value,2)))
         year_result.total_investments = round(total_investments,2)
-            
+
+        # determine if financial goal was met
         year_result.success = total_investments >= simulation.fin_goal
-        year_result.early_withdrawal_tax = round(prev_ew_tax,2)
 
         # append data
         res.append(year_result)
 
- 
-    # the csv log file title row must be updated to contain newly-created investments
-
     return res
 
-# will be the exact same as simulate(), but with logging
-# this will make the other simulations more efficient
-# as it avoids using if-statements everywhere
+# runs a simulation that will log results
 def simulate_log(simulation,tax_data,user):
     # create log directory if it doesn't already exist
     if not os.path.exists(LOG_DIRECTORY):
@@ -960,22 +948,10 @@ def simulate_log(simulation,tax_data,user):
     
     with open(f"{LOG_DIRECTORY}/{user}_{cur_time}.log","w") as fin_log, \
          open(f"{LOG_DIRECTORY}/{user}_{cur_time}.csv","w") as inv_log:
+        # write the title row of the .csv file
         inv_writer = csv.writer(inv_log)
         title_row = ["year"] + [f"{investment.name} - {investment.tax_status}" for investment in simulation.investments]
-        inv_writer.writerow(title_row) # title row
+        inv_writer.writerow(title_row)
 
-        # from here on, same as simulate except with logging
         res = simulate(simulation,tax_data,fin_log,inv_writer)
     return res
-
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Helper Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Get the total value for list of investments
-def total_inv_value(investments):
-    total = 0
-    for inv in investments:
-        total += inv.value
-
-    return total
