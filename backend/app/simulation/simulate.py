@@ -185,11 +185,10 @@ class Tax: # store tax rates and rmds
         return tax
 
     def calculate_state_tax(self, income, is_married):
-        if not self.state_tax or income == 0:
+        if not self.state_tax or income <= 0:
             return 0
         brackets = self.state_tax.married_bracket if is_married else self.state_tax.single_bracket
 
-        print(f'income is {income}')
         # min_income < income <= max_income
         for bracket in brackets:
             if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == brackets[-1].max_income):
@@ -205,7 +204,7 @@ class Tax: # store tax rates and rmds
         # min_income <= income < max_income
         for bracket in brackets:
             if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == brackets[-1].max_income):
-                percent = (income - bracket.min_income) * (bracket.rate/100)
+                percent = (bracket.rate/100)
                 break
 
         tax = percent * capital_gains
@@ -340,19 +339,21 @@ async def simulate_n(scenario,n,user):
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
     # testing:
-    simulate_log(simulation_state,tax_data,user)
+    # res = simulate_log(simulation_state,tax_data,user)
+    # print(f"{sys.getsizeof(aggregate([res]))} bytes")
+
 
     # spawn processes
-    # results = []
-    # with Pool() as pool:
-    #     log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
-    #     results.append(log_result)
-    #     for _ in range(n-1):
-    #         result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
-    #         results.append(result)
-    #     # get all simulation results
-    #     print("Getting results...")
-    #     results = [result.get() for result in results]
+    results = []
+    with Pool() as pool:
+        log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
+        results.append(log_result)
+        for _ in range(n-1):
+            result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
+            results.append(result)
+        # get all simulation results
+        print("Getting results...")
+        results = [result.get() for result in results]
     # print(results)
     # aggregate results by category, then year
     # calculate success probability in each year for chart 4.1
@@ -360,7 +361,7 @@ async def simulate_n(scenario,n,user):
     # all values across the n simulations for chart 4.2
     # for individual investment, expense (including taxes), and income, only 
     # store the mean and medians for chart 4.3
-    # aggregated = aggregate(results)
+    aggregated = aggregate(results)
 
     # store aggregated results in db to be viewed later
     # return id of simulation set
@@ -390,7 +391,7 @@ def aggregate(results):
     # category --> year --> percentiles
     percentiles = {}
     yearly_arrays = {}
-    categories = ["total_investments","total_income","total_expenses","early_withdrawal","percent_discretionary"]
+    categories = ["total_investments","total_income","total_expenses","early_withdrawal_tax","discretionary_percent"]
     desired_percents = list(range(0,101,10)) # every 10-th percentile
 
     for category in categories:
@@ -404,8 +405,8 @@ def aggregate(results):
             yearly_arrays["total_investments"][year].append(yr.total_investments)
             yearly_arrays["total_income"][year].append(yr.total_income)
             yearly_arrays["total_expenses"][year].append(yr.total_expenses)
-            yearly_arrays["early_withdrawal"][year].append(yr.early_withdrawal)
-            yearly_arrays["percent_discretionary"][year].append(yr.percent_discretionary)
+            yearly_arrays["early_withdrawal_tax"][year].append(yr.early_withdrawal_tax)
+            yearly_arrays["discretionary_percent"][year].append(yr.discretionary_percent)
     
     # find percentiles for every category in every year
     for category in categories:
@@ -498,11 +499,11 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
             prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
             prev_ew_tax = tax_data.early_withdrawal * prev_ew
-            year_result.taxes.append(("federal income",prev_federal_income_tax))
-            year_result.taxes.append(("state income",prev_state_income_tax))
-            year_result.taxes.append(("federal capital gains",prev_federal_cg_tax))
-            year_result.taxes.append(("state capital gains",prev_state_cg_tax))
-            year_result.taxes.append(("early withdrawal",prev_ew_tax))
+            year_result.taxes.append(("federal income",round(prev_federal_income_tax,2)))
+            year_result.taxes.append(("state income",round(prev_state_income_tax,2)))
+            year_result.taxes.append(("federal capital gains",round(prev_federal_cg_tax,2)))
+            year_result.taxes.append(("state capital gains",round(prev_state_cg_tax,2)))
+            year_result.taxes.append(("early_withdrawal_tax",round(prev_ew_tax,2)))
         else:
             prev_federal_income = 0
             prev_federal_income_tax = 0
@@ -568,7 +569,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 fin_write(fin_log,fin_format(year,"income",inc,income.name))
 
                 # record income
-                year_result.income.append((income.name,inc))
+                year_result.income.append((income.name,round(inc,2)))
                 total_income += inc
                 
                 # update income
@@ -580,7 +581,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 # even if it is not active, still update inflation
                 if income.inflation_adjust and year != START_YEAR:
                     income.amt *= inflation_rate
-        year_result.total_income = total_income
+        year_result.total_income = round(total_income,2)
 
         # Step 3: RMD
         if user_age >= 74:
@@ -723,7 +724,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
                 if not expense.is_discretionary:
                     fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
-                    year_result.expenses.append((expense.name,exp))
+                    year_result.expenses.append((expense.name,round(exp,2)))
                     total_non_disc += exp
                 else:
                     # cannot record discretionary yet because not guarenteed to be paid
@@ -772,7 +773,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         
         # could not pay all taxes and expenses, must end simulation
         if total_withdrawal > 0:
-            print("No more money")
+            print(f"No more money")
             return res
         
         fin_write(fin_log,fin_format(year,"expense",total_payment,"payment for taxes and non-discretioary expenses"))
@@ -827,12 +828,12 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 total_assets -= w
             disc_paid = original_amt - amt
             fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
-            year_result.expenses.append((disc_event.name,disc_paid))
+            year_result.expenses.append((disc_event.name,round(disc_paid,2)))
             total_disc_paid += disc_paid
         
         # total expenses = discretionary expenses paid + non-discretionary + taxes
         year_result.total_expenses = total_disc_paid + total_payment
-        year_result.discretionary_percent = total_disc_paid / total_disc if total_disc != 0 else 0
+        year_result.discretionary_percent = round(total_disc_paid / total_disc,4) if total_disc != 0 else 0
 
         # Step 8: Invest
         # find the active investment strategy
@@ -931,12 +932,12 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # record 
         total_investments = 0
         for investment in simulation.investments:
-            total_investments += investment.value
-            year_result.investments.append((f"{investment.name} {investment.tax_status}",investment.value))
-        year_result.total_investments = total_investments
+            total_investments += round(investment.value,2)
+            year_result.investments.append((f"{investment.name} {investment.tax_status}",round(investment.value,2)))
+        year_result.total_investments = round(total_investments,2)
             
         year_result.success = total_investments >= simulation.fin_goal
-        year_result.early_withdrawal_tax = prev_ew_tax
+        year_result.early_withdrawal_tax = round(prev_ew_tax,2)
 
         # append data
         res.append(year_result)

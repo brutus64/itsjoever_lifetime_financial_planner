@@ -289,7 +289,7 @@ async def update_invest(scenario_id: str, investment: dict, investment_id: str):
 
         # if the new investment data is pre-tax -> must error if used in event series
         # if the new investment data is not pre-tax -> must remove from rmd and roth
-        if investment["tax_status"] == "pre-tax":
+        if investment["tax_status"] == "pre-tax" and existing_investment.tax_status != "pre-tax":
             for es in scenario.event_series:
                 if es.type == "invest" or es.type == "rebalance":
                     for asset in es.details.assets:
