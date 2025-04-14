@@ -16,6 +16,8 @@ const defaultInvestmentForm = {
     tax_status: "non-retirement" // is this needed?
 }
 
+
+
 const Investment = ({investmentTypes,investments,createInvestment,updateInvestment,deleteInvestment}) => {
     // form state, NOT investment list state
     const [ open, setOpen ] = useState(false);

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
+import { useAuth } from '../Navigation/AuthContext';
 import axios from "axios";
 import Popup from "reactjs-popup";
 
@@ -8,6 +9,7 @@ const Scenario = () => {
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState();
     const [ open, setOpen ] = useState(false)
+    const { isGuest, isLoggedIn, userInfo } = useAuth();
 
     //fetch the scenario data from backend
     useEffect(() => {
@@ -31,9 +33,11 @@ const Scenario = () => {
     const handleSimulate = async (numSimulations) => {
         console.log(`Simulating ${numSimulations} times!`)
         try {
-            const res = await axios.post(`http://localhost:8000/api/simulate`,{scenario:scenario,num_sim:numSimulations});
-            if (res.data.success) {
-                // navigate to some results page that will poll backend
+            const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
+            console.log(user)
+            const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:user});
+            console.log(res)
+            if (res.data.message == "ok") {
                 
                 setOpen(false)
             }
@@ -43,6 +47,11 @@ const Scenario = () => {
         catch(err) {
             console.error("Could not simulate scenario: ",err)
         }
+    }
+
+    // just want the name
+    const resolve_event_series = (id) => {
+        return scenario.event_series.find(es => es.id === id).name
     }
 
     const handlePercent = ({type,is_percent,value,mean,stdev,lower,upper}) => {
@@ -78,8 +87,8 @@ const Scenario = () => {
             case "fixed": return value
             case "normal": return `Normal(mean=${mean},stddev=${stdev})`
             case "uniform": return `Uniform(lower=${lower ? lower : lower_bound},upper=${upper ? upper : upper_bound})`
-            case "start_with": return "With " + event_series
-            default: return "After " + event_series
+            case "start_with": return "With event series " + resolve_event_series(event_series)
+            default: return "After event series " + resolve_event_series(event_series)
         }
     }
 
@@ -132,6 +141,23 @@ const Scenario = () => {
         return true;
     }
 
+    const canEdit = () => {
+        // check if user is owner of scenario via email
+        if (scenario.user.email === userInfo.email) {
+            return true;
+        }
+
+        // check if user has read/write access to scenario
+        if (scenario.wr_only_share.length === 0) {
+            return false;
+        }
+
+        const hasWriteAccess = scenario.wr_only_share.some(user => user.email === userInfo.email);
+        console.log(hasWriteAccess);
+
+        return hasWriteAccess;
+    }
+
     if (!scenario)
         return <div>Loading...</div>
 
@@ -143,7 +169,7 @@ const Scenario = () => {
                     <h2 className="text-xl font-medium ">By {scenario.user.name}</h2>
                 </div>
                 <div className="flex gap-3 whitespace-pre-wrap">
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
+                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit} disabled={!canEdit()}>Edit</button>
                     <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={() => setOpen(true)} disabled={!canSimulate()}>Simulate</button>
                 </div>
                 
@@ -327,19 +353,20 @@ const SimulatePopup = ({open,setOpen,handleSimulate}) => {
     };
 
     const validate = () => {
-        if (typeof numSimulations !== 'number' || isNaN(numSimulations)) {
+        const num = parseInt(numSimulations);
+        if (typeof num !== 'number' || isNaN(num)) {
             setError("Please enter a number");
             return;
         }
-        if (numSimulations <= 0) {
+        if (num <= 0) {
             setError("Number must be non-negative")
             return;
         }
-        if (numSimulations > MAX_SIMULATIONS) {
+        if (num > MAX_SIMULATIONS) {
             setError("Max simulations: " + MAX_SIMULATIONS)
             return;
         }
-        handleSimulate(numSimulations);
+        handleSimulate(num);
     }
 
     return (

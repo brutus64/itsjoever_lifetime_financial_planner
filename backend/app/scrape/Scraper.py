@@ -1,12 +1,16 @@
 import requests
 import yaml
 from bs4 import BeautifulSoup
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # IMPORTANT: 
 # Ranges for min_income and max_income goes as:
 #           min_income <= x < max_income, given income x
-# AKA: on taxable income from {min_income} UP TO {max_income}
-# - Applies to federal, state, and capital gains
+# AKA: on taxable income from {min_income} UP TO but not including {max_income}
+# - Applies to federal, and capital gains
+# State tax = min_income < x <= max_income, given income x
 class Scraper:
     '''
         RETURNS:
@@ -15,10 +19,10 @@ class Scraper:
                 married: [{min_income: Float, max_income: Float, rate: Float}]
             } 
 
-        Note: A value of -1.0 is used to represent "And above" for the last bracket's maxIncome 
+        Note: A value of 0 is used to represent "And above" for the last bracket's maxIncome 
     '''
     def scrape_federal_income(self):
-        url = 'https://www.irs.gov/filing/federal-income-tax-rates-and-brackets'
+        url = os.getenv("FEDERAL_TAX_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -34,7 +38,7 @@ class Scraper:
                 if len(cells) > 1:
                     tax_rate = float(cells[0].text.strip()[:-1])
                     tax_bracket_start = float(cells[1].text.strip().replace('$', '').replace(',', ''))
-                    tax_bracket_end = -1.0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', ''))+1 
+                    tax_bracket_end = 0 if cells[2].text.strip() == 'And up' else float(cells[2].text.strip().replace('$', '').replace(',', ''))+1 
                     info.append({
                         'min_income': tax_bracket_start, 
                         'max_income': tax_bracket_end, 
@@ -100,10 +104,10 @@ class Scraper:
                 'married': [{min_income: Float, max_income: Float, rate: Float}]
             } 
 
-        Note: A value of -1.0 is used to represent "And above" for the last bracket's  maxIncome 
+        Note: A value of 0 is used to represent "And above" for the last bracket's  maxIncome 
     '''
     def scrape_capital_gains(self):
-        url = 'https://www.irs.gov/taxtopics/tc409'
+        url = os.getenv("CAPITAL_GAINS_TAX_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -142,11 +146,11 @@ class Scraper:
                 single_range.append([find_capital_gains(split_single[1])+0.01, find_capital_gains(split_single[2])+0.01])
                 married_range.append([find_capital_gains(split_married[1])+0.01, find_capital_gains(split_married[2])+0.01])
 
-                single_range.append([find_capital_gains(split_single[2])+0.01, -1])
-                married_range.append([find_capital_gains(split_married[2])+0.01, -1])
+                single_range.append([find_capital_gains(split_single[2])+0.01, 0])
+                married_range.append([find_capital_gains(split_married[2])+0.01, 0])
 
         ul_container = soup.find_all('div', class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
-        ul_tags = ul_container[1].find_all('ul')
+        ul_tags = ul_container[2].find_all('ul') # should index 2 for the proper tags
         scrape_helper(ul_tags[0], 0)
         scrape_helper(ul_tags[1], 15)
 
@@ -176,7 +180,7 @@ class Scraper:
             }
     '''
     def scrape_standard_deductions(self):
-        url = 'https://www.irs.gov/publications/p17'
+        url = os.getenv("STANDARD_DEDUCTION_URL")
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')
@@ -207,7 +211,7 @@ class Scraper:
         Note: The very last age, 120, represents ages 120+
     '''
     def scrape_rmd_tables(self):
-        url = 'https://www.irs.gov/publications/p590b' # search for "Appendix B. Uniform Lifetime Table"
+        url = os.getenv("RMD_TABLE_URL") # search for "Appendix B. Uniform Lifetime Table"
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, 'lxml')

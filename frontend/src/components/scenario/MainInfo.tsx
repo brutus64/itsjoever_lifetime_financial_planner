@@ -1,9 +1,47 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { useAuth } from "../Navigation/AuthContext";
 
 const MainInfo = ({scenario_id}:any) => {
+    const { userInfo } = useAuth();
     const [ mainData, setMainData ] = useState(null)
     const [ dirty, setDirty ] = useState(false)
+    const [stateError, setStateError] = useState(false);
+    const [availStateTaxes, setAvailStateTaxes] = useState([]);
+    
+    const fetchStateTaxes = async () => {
+        try { 
+            if (!userInfo?.email) {
+                return;
+            } 
+
+            const res = await axios.get(`http://localhost:8000/api/state_tax/get_all`, {
+                params: { user_email: userInfo.email }
+            });
+            
+            if (res.data && res.data.state_tax) {
+                const states = res.data.state_tax.map(state => state.state)
+                setAvailStateTaxes(states)
+                console.log("available state taxes:", res.data.state_tax, states)
+            }
+
+            if (mainData?.state) {
+                checkStateTaxExists(mainData.state);
+            }
+        } catch (err) {
+            console.log("Error fetching state taxes:", err);
+        }
+    }
+
+    const checkStateTaxExists = (state) => {
+        if(!state || state === ''){
+            setStateError(false)
+            return;
+        }
+
+        const exists = availStateTaxes.includes(state);
+        setStateError(!exists);
+    }
 
     const fetchMain = async () => {
         console.log("Fetching main info")
@@ -71,6 +109,18 @@ const MainInfo = ({scenario_id}:any) => {
             // maybe warn user if data hasn't been saved?
         }
     },[])
+    
+    useEffect(() => {
+        if (userInfo?.email) {
+            fetchStateTaxes();
+        }
+    }, [userInfo]);
+
+    useEffect(() => {
+        if (mainData?.state && availStateTaxes.length > 0) {
+            checkStateTaxExists(mainData.state);
+        }
+    }, [mainData?.state, availStateTaxes]);
 
     const handleChange = (e) => { // Not for radio  
         let { name, value } = e.target;
@@ -79,12 +129,18 @@ const MainInfo = ({scenario_id}:any) => {
         if (float_names.has(name)) {
             value = parseFloat(value);
         }
+
+        if(name === 'state' && value !== mainData.state) {
+            checkStateTaxExists(value);
+        }
+
         setMainData({
             ...mainData,
             [name]:value,
         })
         setDirty(true);
     }
+
     const handleMarried = (e) => {
         setMainData({
             ...mainData,
@@ -204,6 +260,13 @@ const MainInfo = ({scenario_id}:any) => {
                             </option>
                         ))}
                     </select>
+                    {stateError && (
+                        <div className="mt-2 p-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 text-sm">
+                            <div className="flex items-center">
+                                Warning: Tax data for this state is missing. State taxes will be ignored in calculations. Please import state taxes at profile.
+                            </div>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="bg-white shadow-md rounded-lg p-6 flex flex-col gap-3 w-55">

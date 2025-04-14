@@ -42,8 +42,10 @@ async def scraped_db_check():
     
     states = ['NY','CT','NJ']
     complete = []
+    existing_states = [tax.state for tax in state_res if tax.user_id == "all"]
+
     for state in states:
-        if state not in state_res:
+        if state not in existing_states:
             ret = scraper.scrape_state_income(state)
             base_add = ret['base_add']
             single_deduct = ret['single']['standard_deductions']

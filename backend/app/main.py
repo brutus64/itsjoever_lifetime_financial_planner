@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 # from starlette.middleware.sessions import SessionMiddleware
-from app.api import user, scrape_yaml, scenario, import_export
+from app.api import user, scrape_yaml, scenario, import_export, simulation
 from app.db.db import init_db
 from contextlib import asynccontextmanager
 import cProfile
@@ -58,7 +58,12 @@ app.add_middleware(
 #max age defaults to 2 weeks
 app.add_middleware(
     SessionMiddleware,
-    secret_key="haha_random_key123821"
+    secret_key="haha_random_key123821",
+    session_cookie="session",
+    max_age=86400,
+    same_site="none",
+    https_only=False,
+    path="/"
 )
 
 # @app.middleware('http')
@@ -80,6 +85,7 @@ app.add_middleware(
 #fastapi middleware is checked in reverse
 
 app.include_router(user.router, prefix='/api')
+app.include_router(simulation.router, prefix='/api/simulation')
 app.include_router(scenario.router, prefix='/api/scenarios')
 app.include_router(import_export.router, prefix='/api/scenarios')
 

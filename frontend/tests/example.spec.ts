@@ -43,6 +43,9 @@ test('fill out maininfo & data persists', async ({ page }) => {
   await expect(inputs[0]).toHaveValue(MainInfo[5]);  // Your life expectancy
   await expect(inputs[1]).toHaveValue(MainInfo[6]);  // Spouse life expectancy
   await expect(inputs[2]).toHaveValue(MainInfo[7]);   // Inflation assumption
+
+  await page.click('.flex.items-center.w-50.gap-5.p-4.hover\\:bg-gray-300.cursor-pointer');
+  await page.click('.flex.items-center.gap-2.p-2.hover\\:bg-red-300.cursor-pointer');
 });
 
 // Create Investment Type & Investment, and check that they appear on screen
@@ -115,6 +118,9 @@ test('create investment type & investment', async ({ page }) => {
   const descriptionText = await investment.locator('p').textContent();
   await expect(investTypeText).toBe(InvestmentInfo.invest_type);
   await expect(descriptionText).toBe(InvestmentInfo.tax_status + ' - $' + InvestmentInfo.value);  
+
+  await page.click('.flex.items-center.w-50.gap-5.p-4.hover\\:bg-gray-300.cursor-pointer');
+  await page.click('.flex.items-center.gap-2.p-2.hover\\:bg-red-300.cursor-pointer');
 });
 
 
@@ -146,7 +152,7 @@ test('create income event series', async ({ page }) => {
     social_security: true,
   }
   await page.goto('http://localhost:5173');
-  await page.getByText('Guest Account').click()
+  await page.getByText('Guest Account').click();
   await page.getByText('New Scenario').click();
   await page.getByText('Next').click();
   await page.getByText('Next').click();
@@ -182,4 +188,7 @@ test('create income event series', async ({ page }) => {
   await expect(income_event_item_container.locator('p').nth(0)).toHaveText('$'+IncomeEventInfo.initial_amt);
   await expect(income_event_item_container.locator('h2')).toHaveText(IncomeEventInfo.name);
   await expect(income_event_item_container.locator('p').nth(1)).toHaveText(IncomeEventInfo.description);
+
+  await page.click('.flex.items-center.w-50.gap-5.p-4.hover\\:bg-gray-300.cursor-pointer');
+  await page.click('.flex.items-center.gap-2.p-2.hover\\:bg-red-300.cursor-pointer');
 });

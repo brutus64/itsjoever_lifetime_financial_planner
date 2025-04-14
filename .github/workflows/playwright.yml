@@ -43,6 +43,10 @@ jobs:
         python3 -m app.main &     # Start in background
       env:
         MONGODB_URL: ${{ secrets.MONGODB_URL }}
+        FEDERAL_TAX_URL: https://www.irs.gov/filing/federal-income-tax-rates-and-brackets
+        CAPITAL_GAINS_TAX_URL: https://www.irs.gov/taxtopics/tc409
+        STANDARD_DEDUCTION_URL: https://www.irs.gov/publications/p17
+        RMD_TABLE_URL: https://www.irs.gov/publications/p590b
 
     - name: Run Playwright tests
       run: |
