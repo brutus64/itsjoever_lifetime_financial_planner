@@ -167,6 +167,7 @@ async def get_shared_scenarios(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error in getting shared scenarios: {e}")
 
+#import should strictly follow from the format given in sample_tax.yaml
 @router.post("/state_tax/import/{user_email}")
 async def state_tax_yaml_parse(user_email: str, state: str = Form(...), file: UploadFile = File(...)):
     try:

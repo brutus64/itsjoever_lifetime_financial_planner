@@ -13,6 +13,7 @@ from bson import DBRef
 
 router = APIRouter()
 
+#import should strictly follow from the format the professor gave in the YAML file
 @router.post("/import")
 async def import_scenario(file: UploadFile = File(...), user_email: str = Form(None)):
     try:
