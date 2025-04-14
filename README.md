@@ -11,7 +11,13 @@ npm run dev
 # To run backend:
 
 create .env file in backend folder with the following as the data: 
+```
 MONGODB_URL=mongodb+srv://dannywang723:lfp123haha@lfp.oyz0k.mongodb.net/?retryWrites=true&w=majority&appName=lfp
+FEDERAL_TAX_URL=https://www.irs.gov/filing/federal-income-tax-rates-and-brackets
+CAPITAL_GAINS_TAX_URL=https://www.irs.gov/taxtopics/tc409
+STANDARD_DEDUCTION_URL=https://www.irs.gov/publications/p17
+RMD_TABLE_URL=https://www.irs.gov/publications/p590b
+```
 
 
 Create virtual environment inside backend folder:

@@ -1,7 +1,7 @@
 import { useAuth } from "./AuthContext";
 
 export default function DebugUser() {
-  const { isLoggedIn, userInfo } = useAuth();
+  const { isGuest, isLoggedIn, userInfo } = useAuth();
 
   return (
     <div className="p-4 bg-gray-100 border mt-4 rounded">

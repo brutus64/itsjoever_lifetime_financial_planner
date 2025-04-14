@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
+import { useAuth } from '../Navigation/AuthContext';
 import axios from "axios";
 import Popup from "reactjs-popup";
 
@@ -8,6 +9,7 @@ const Scenario = () => {
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState();
     const [ open, setOpen ] = useState(false)
+    const { isGuest, isLoggedIn, userInfo } = useAuth();
 
     //fetch the scenario data from backend
     useEffect(() => {
@@ -137,6 +139,23 @@ const Scenario = () => {
         return true;
     }
 
+    const canEdit = () => {
+        // check if user is owner of scenario via email
+        if (scenario.user.email === userInfo.email) {
+            return true;
+        }
+
+        // check if user has read/write access to scenario
+        if (scenario.wr_only_share.length === 0) {
+            return false;
+        }
+
+        const hasWriteAccess = scenario.wr_only_share.some(user => user.email === userInfo.email);
+        console.log(hasWriteAccess);
+
+        return hasWriteAccess;
+    }
+
     if (!scenario)
         return <div>Loading...</div>
 
@@ -148,7 +167,7 @@ const Scenario = () => {
                     <h2 className="text-xl font-medium ">By {scenario.user.name}</h2>
                 </div>
                 <div className="flex gap-3 whitespace-pre-wrap">
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit}>Edit</button>
+                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit} disabled={!canEdit()}>Edit</button>
                     <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={() => setOpen(true)} disabled={!canSimulate()}>Simulate</button>
                 </div>
                 

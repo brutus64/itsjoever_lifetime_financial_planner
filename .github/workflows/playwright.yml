@@ -18,13 +18,32 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
     
-    - name: Install dependencies
+    - name: Install frontend dependencies
       run: |
         cd frontend
         npm ci
         npx playwright install --with-deps
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
     
+    - name: Start backend server
+      run: |
+        cd backend
+        python3 -m app.main &     # Start in background
+      env:
+        MONGODB_URL: ${{ secrets.MONGODB_URL }}
+
     - name: Run Playwright tests
       run: |
         cd frontend

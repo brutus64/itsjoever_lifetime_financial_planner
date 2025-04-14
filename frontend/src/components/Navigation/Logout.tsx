@@ -18,6 +18,7 @@ const Logout: React.FC = () => {
               // Step 2: Remove the access token from cookies
               Cookies.remove("access_token");
               setIsLoggedin(false);
+              window.location.href = "http://localhost:5173/";  // Redirect after logout
             })
             .catch((error) => {
               console.error("Error revoking access token", error);

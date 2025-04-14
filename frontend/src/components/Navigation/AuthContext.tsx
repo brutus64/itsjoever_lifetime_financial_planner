@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from "uuid";
 import Cookies from "js-cookie";
 
 interface UserInfo {
@@ -8,21 +9,39 @@ interface UserInfo {
   }
   
   interface AuthContextType {
+    isGuest: boolean;
     isLoggedIn: boolean;
     userInfo: UserInfo | null;
     loginWithGoogle: () => void;
+    loginWithGuest: () => void;
   }
   
   const AuthContext = createContext<AuthContextType>({
+    isGuest: false,
     isLoggedIn: false,
     userInfo: null,
     loginWithGoogle: () => {},
+    loginWithGuest: () => {},
   });
   
   export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const [isGuest, setIsGuest] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const calledOnce = useRef(false);
+
+    const loginWithGuest = async () => {
+      const uniqueId = uuidv4();
+      const guestData = {
+        email: `guest-${uniqueId}@guest.com`,
+        name: `guest-${uniqueId}`
+      };
+
+      setUserInfo(guestData);
+      await createUser(guestData);
+      setIsLoggedIn(true);
+      setIsGuest(true);
+    }
   
     const loginWithGoogle = () => {
       const accessToken = Cookies.get("access_token");
@@ -68,6 +87,7 @@ interface UserInfo {
           .then(async (data) => {
             setUserInfo(data);
             setIsLoggedIn(true);
+            setIsGuest(false);
             console.log(data);
             // await fetch("http://localhost:8000/api/login", {
             //   method: "POST",
@@ -135,7 +155,7 @@ interface UserInfo {
     };
   
     return (
-      <AuthContext.Provider value={{ isLoggedIn, userInfo, loginWithGoogle }}>
+      <AuthContext.Provider value={{ isGuest, isLoggedIn, userInfo, loginWithGoogle, loginWithGuest}}>
         {children}
       </AuthContext.Provider>
     );

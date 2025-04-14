@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // Fill out MainInfo component and verify that data persists through clicks to "Next" and "Prev"
 test('fill out maininfo & data persists', async ({ page }) => {
-  await page.goto('http://localhost:5173/scenario');
-  await page.getByText('New Scenario').click()
-  await page.waitForURL("http://localhost:5173/scenario/new")
+  await page.goto('http://localhost:5173');
+  await page.getByText('Guest Account').click();
+  await page.getByText('New Scenario').click();
   const MainInfo = [
     'My Scenario',
     'NY',
@@ -29,6 +29,7 @@ test('fill out maininfo & data persists', async ({ page }) => {
   await inputs[1].fill(MainInfo[6]);  // Spouse life expectancy
   await inputs[2].fill(MainInfo[7]);   // Inflation assumption
 
+  await page.getByText('Save').click()
   await page.getByText('Next').click()
   await page.getByText('Prev').click()
 
@@ -73,9 +74,9 @@ test('create investment type & investment', async ({ page }) => {
     tax_status: "non-retirement" // is this needed?
   }
 
-  await page.goto('http://localhost:5173/scenario');
+  await page.goto('http://localhost:5173');
+  await page.getByText('Guest Account').click()
   await page.getByText('New Scenario').click();
-  await page.waitForURL("http://localhost:5173/scenario/new");
   await page.getByText('Next').click();
 
   await page.getByText('+ Add an Investment Type', {exact: true}).click();
@@ -89,14 +90,26 @@ test('create investment type & investment', async ({ page }) => {
   await page.locator("input[name='value']").fill(InvestmentInfo.value);
   await page.getByText('Add', {exact: true}).click();
 
-  const div_containers = page.locator('div.bg-white.shadow-md.rounded-lg.p-6.flex.flex-col.gap-3.w-120.h-30.hover\\:bg-sky-100.cursor-pointer');
-  let investment_type = div_containers.nth(0);
-  let investment = div_containers.nth(1);
+  const div_containers = page.locator('div.bg-white.shadow-md.rounded-lg.p-6.flex.justify-between.gap-3.w-120.h-30.hover\\:bg-sky-100.cursor-pointer');
+  let cash_investment = div_containers.nth(0);
+  let investment_type = div_containers.nth(1);
+  let retirement_type = div_containers.nth(2);
+  let investment = div_containers.nth(3);
+  
+  const cashNameText = await cash_investment.locator('h2').textContent();
+  const cashDescriptionText = await cash_investment.locator('p').textContent();
+  await expect(cashNameText).toBe("cash");
+  await  expect(cashDescriptionText).toBe("default cash investment");
 
   const typeNameText = await investment_type.locator('h2').textContent();
   const typeDescriptionText = await investment_type.locator('p').textContent();
   await expect(typeNameText).toBe(InvestmentTypeInfo.name);
   await  expect(typeDescriptionText).toBe(InvestmentTypeInfo.description);
+
+  const retirementNameText = await retirement_type.locator('h2').textContent();
+  const retirementDescriptionText = await retirement_type.locator('p').textContent();
+  await expect(retirementNameText).toBe("cash");
+  await  expect(retirementDescriptionText).toBe("non-retirement - $0");
   
   const investTypeText = await investment.locator('h2').textContent();
   const descriptionText = await investment.locator('p').textContent();
@@ -132,9 +145,9 @@ test('create income event series', async ({ page }) => {
     // INCOME
     social_security: true,
   }
-  await page.goto('http://localhost:5173/scenario');
+  await page.goto('http://localhost:5173');
+  await page.getByText('Guest Account').click()
   await page.getByText('New Scenario').click();
-  await page.waitForURL("http://localhost:5173/scenario/new");
   await page.getByText('Next').click();
   await page.getByText('Next').click();
 
@@ -164,7 +177,7 @@ test('create income event series', async ({ page }) => {
 
   
   await page.getByText('Add', {exact: true}).click();
-  const income_event_item_container = page.locator('div.bg-white.shadow-md.rounded-lg.p-4.flex.flex-col.w-full.hover\\:bg-sky-100.cursor-pointer');
+  const income_event_item_container = page.locator('div.bg-white.shadow-md.rounded-lg.p-4.flex.w-full.hover\\:bg-sky-100');
 
   await expect(income_event_item_container.locator('p').nth(0)).toHaveText('$'+IncomeEventInfo.initial_amt);
   await expect(income_event_item_container.locator('h2')).toHaveText(IncomeEventInfo.name);

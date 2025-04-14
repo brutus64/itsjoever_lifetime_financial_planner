@@ -1,5 +1,6 @@
 import React from 'react';
 import Login from './Navigation/Login'
+import { useAuth } from './Navigation/AuthContext';
 
 // basic react component for the landing page
 const LandingPage: React.FC = () => {    
@@ -28,10 +29,13 @@ const LandingPage: React.FC = () => {
   
 
 const Header: React.FC = () => {
+    const { isGuest, isLoggedIn, userInfo, loginWithGoogle, loginWithGuest } = useAuth();
+
     return (
         <header className="flex justify-between items-center px-8 py-4 bg-[#211A1D] text-white rounded-full mx-18 overflow-hidden">
             <h1 className="text-xl font-bold whitespace-nowrap mr-4">Lifetime Financial Planner</h1>
             <button 
+                onClick={loginWithGuest}
                 className="w-40 h-12 px-6 py-2 text-white bg-blue-500 hover:bg-blue-700 font-semibold rounded-full cursor-pointer transition-colors">
                 Guest Account
             </button>

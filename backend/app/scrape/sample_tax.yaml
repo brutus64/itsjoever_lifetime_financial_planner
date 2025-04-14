@@ -1,0 +1,57 @@
+single:
+  - min_income: 0.0
+    max_income: 8500.0
+    rate: 4.0
+  - min_income: 8500.0
+    max_income: 11700.0
+    rate: 4.5
+  - min_income: 11700.0
+    max_income: 13900.0
+    rate:  5.25
+  - min_income: 13900.0
+    max_income: 80650.0
+    rate: 5.5
+  - min_income: 80650.0
+    max_income: 215400.0
+    rate: 6.0
+  - min_income: 215400.0
+    max_income: 1077550.0
+    rate: 6.85
+  - min_income: 1077550.0
+    max_income: 5000000.0
+    rate: 9.65
+  - min_income: 5000000.0
+    max_income: 25000000.0
+    rate: 10.3
+  - min_income: 25000000.0
+    max_income: -1.0
+    rate: 10.9
+
+married:
+  - min_income: 0.0
+    max_income: 17150.0
+    rate: 4.0
+  - min_income: 17150.0
+    max_income: 23600.0
+    rate: 4.5
+  - min_income: 23600.0
+    max_income:  27900.0
+    rate: 5.25
+  - min_income: 27900.0
+    max_income: 161550.0
+    rate: 5.5
+  - min_income: 161550.0
+    max_income: 323200.0
+    rate: 6.0
+  - min_income: 323200.0
+    max_income: 2155350.0
+    rate: 6.85
+  - min_income: 2155350.0
+    max_income: 5000000.0
+    rate: 9.65
+  - min_income: 5000000.0
+    max_income: 25000000.0
+    rate: 10.3
+  - min_income: 25000000.0
+    max_income: -1.0
+    rate: 10.9

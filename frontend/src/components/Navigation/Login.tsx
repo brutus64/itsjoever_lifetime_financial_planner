@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext"; 
 export default function Login() {
   const navigate = useNavigate();
-  const { isLoggedIn, userInfo, loginWithGoogle } = useAuth();
+  const { isGuest, isLoggedIn, userInfo, loginWithGoogle, loginWithGuest } = useAuth();
 
   useEffect(() => {
     if (isLoggedIn) {
