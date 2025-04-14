@@ -289,13 +289,14 @@ async def update_invest(scenario_id: str, investment: dict, investment_id: str):
 
         # if the new investment data is pre-tax -> must error if used in event series
         # if the new investment data is not pre-tax -> must remove from rmd and roth
-        if investment["tax_status"] == "pre-tax" and existing_investment.tax_status != "pre-tax":
-            for es in scenario.event_series:
-                if es.type == "invest" or es.type == "rebalance":
-                    for asset in es.details.assets:
-                        if asset.invest_id.ref.id == invest_obj_id:
-                            print("Investment is being used in event series")
-                            raise HTTPException(status_code=400, detail="PUT investment investment in use")
+        if investment["tax_status"] == "pre-tax":
+            if existing_investment.tax_status != "pre-tax":
+                for es in scenario.event_series:
+                    if es.type == "invest" or es.type == "rebalance":
+                        for asset in es.details.assets:
+                            if asset.invest_id.ref.id == invest_obj_id:
+                                print("Investment is being used in event series")
+                                raise HTTPException(status_code=400, detail="PUT investment investment in use")
         else:
             dbref = DBRef(collection="investments", id=invest_obj_id)
             await Scenario.find_one(Scenario.id == scenario_obj_id).update(

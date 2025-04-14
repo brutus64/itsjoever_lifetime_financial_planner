@@ -33,7 +33,9 @@ const Scenario = () => {
     const handleSimulate = async (numSimulations) => {
         console.log(`Simulating ${numSimulations} times!`)
         try {
-            const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:"bob"});
+            const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
+            console.log(user)
+            const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:user});
             console.log(res)
             if (res.data.message == "ok") {
                 
