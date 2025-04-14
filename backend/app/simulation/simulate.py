@@ -180,16 +180,16 @@ class Tax: # store tax rates and rmds
                 return tax
                 
     def calculate_capital_gains_tax(self, income, capital_gains, is_married):
-        if capital_gains == 0:
+        if capital_gains <= 0 or income <= 0:
             return 0
         brackets = self.capital_gains.married_bracket if is_married else self.capital_gains.single_bracket
 
         # min_income <= income < max_income
+        percent = None
         for bracket in brackets:
             if bracket.min_income < income and (income <= bracket.max_income or bracket.max_income == brackets[-1].max_income):
                 percent = (bracket.rate/100)
                 break
-
         tax = percent * capital_gains
         return max(0, tax) # capital gains tax can't be negative
 
