@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request, Body
+from fastapi import APIRouter, HTTPException, Request, Body, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 import app.db.db_utils as db
 from app.models.user import User
 from app.models.scenario import Scenario
+from app.models.tax import *
 from beanie import PydanticObjectId, Link
 import uuid
 from bson import DBRef
+import yaml
 
 router = APIRouter()
 
@@ -165,40 +167,100 @@ async def get_shared_scenarios(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error in getting shared scenarios: {e}")
 
-'''
-@router.get("/all/{scenario_id}")
-async def fetch_scenario(scenario_id: str):
+@router.post("/state_tax/import/{user_email}")
+async def state_tax_yaml_parse(user_email: str, state: str = Form(...), file: UploadFile = File(...)):
     try:
-        scenario_id = PydanticObjectId(scenario_id)
-        
-        scenario = await Scenario.find_one(
-            Scenario.id == scenario_id,
-            fetch_links=True,
+        user = await User.find_one(User.email == user_email)
+        if not user:
+            raise HTTPException(status_code=400, detail="Import state tax route doesn't have a valid user.")
+        if not file.filename.endswith(('.yaml', '.yml')):
+            raise HTTPException(status_code=400, detail="Import state tax only accepts YAML files.")
+        print("PASSED")
+        content = await file.read()
+        data = yaml.safe_load(content)
+        single, married = [], []
+        base_add = False
+        # print("START READ", content)
+        for arr in data.get('single'):
+            print(arr)
+            base = arr.get("base",0)
+            if base != 0:
+                base_add = True
+            bracket = StateBracket(
+                min_income=arr['min_income'],
+                max_income=arr['max_income'],
+                base=base,
+                rate=arr['rate']
+            )
+            single.append(bracket)
+        for arr in data.get('married'):
+            base = arr.get("base", 0)
+            if base != 0:
+                base_add = True
+            bracket = StateBracket(
+                min_income=arr['min_income'],
+                max_income=arr['max_income'],
+                base=base,
+                rate=arr['rate']
+            )
+            married.append(bracket)
+        print("SINGLE", single)
+        print("MARRIED", married)
+        #failed here
+        print(state)
+        state_bracket = StateTax(
+            user_id=str(user.id),
+            state=state,
+            year_from=2025,
+            base_add=base_add,
+            single_bracket=single,
+            married_bracket=married
         )
-        if not scenario:
-            raise HTTPException(status_code=404, detail="Scenario not found")
-        print("FOUND THE SCENARIO",scenario)
-
-        # strategies are not in order
-        scenario_unfetched = await Scenario.find_one(
-            Scenario.id == scenario_id 
-        )
-        correct_rmd = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.rmd_strat)}
-        correct_roth = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.roth_conversion_strat)}
-        correct_spend = {es.ref.id:i for i,es in enumerate(scenario_unfetched.spending_strat)}
-        correct_withdraw = {inv.ref.id:i for i,inv in enumerate(scenario_unfetched.expense_withdraw)}
-        scenario.rmd_strat.sort(key=lambda inv:correct_rmd[inv.id])
-        scenario.roth_conversion_strat.sort(key=lambda inv:correct_roth[inv.id])
-        scenario.spending_strat.sort(key=lambda es:correct_spend[es.id])
-        scenario.expense_withdraw.sort(key=lambda inv:correct_withdraw[inv.id])
-
-        return {"scenario": scenario.model_dump(exclude={
-                    "user": {"scenarios"}},mode="json")}
-    except ValueError: #occurs if pydantic conversion fails
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        await state_bracket.save()
+        print("SAVED")
+        all_state_taxes = await StateTax.find_many({}).to_list()
+        own_state_taxes = []
+        for state_tax in all_state_taxes:
+            if  state_tax.user_id in ['all', str(user.id)]:
+                own_state_taxes.append(state_tax)
+        return { 
+            "success": True,
+            "state_taxes": own_state_taxes
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Import state tax failed: {e}")
     
-'''
-
-@router.post("/{user_id}/state_tax")
-async def yaml_parse():    
-    return
+@router.get("/state_tax/exists/{user_id}")
+async def state_tax_exist(user_id: str, state: str):
+    try:
+        all_state_taxes = await StateTax.find_many({})
+        for state_tax in all_state_taxes:
+            if state_tax.state == state and state_tax.user_id in ['all',user_id]:
+                return {"exists": True}
+        return {"exists": False}        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"State tax grab has an error, {e}")
+    
+@router.get("/state_tax/get_all")
+async def all_state_tax(user_email: str):
+    try:
+        print(user_email)
+        taxes = []
+        try:
+            all_state_taxes = await StateTax.find_many({}).to_list()
+            print(f"Retrieved state taxes: {all_state_taxes}")
+        except Exception as db_error:
+            print(f"Error retrieving state taxes: {db_error}")
+            raise HTTPException(status_code=500, detail=f"Database error: {db_error}")
+        
+        user = await User.find_one(User.email == user_email)
+        if not user:
+            raise HTTPException(status_code=400, detail="Import state tax route doesn't have a valid user.")
+        for state_tax in all_state_taxes:
+            if  state_tax.user_id in ['all',str(user.id)]:
+                taxes.append(state_tax)
+        print("STATE TAXES RETURNED RAAAH", taxes)
+        print(len(taxes))
+        return {"state_tax": taxes}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error getting all state taxes, {e}")
