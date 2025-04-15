@@ -101,7 +101,6 @@ const MainInfo = ({scenario_id}:any) => {
         }
     }
 
-
     // retrieve main information data
     useEffect(() => {
         fetchMain();
