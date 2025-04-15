@@ -36,3 +36,13 @@ jobs:
         PYTHONPATH=. pytest --cov=app tests/
       env:
         MONGODB_URL: ${{ secrets.MONGODB_URL }}
+        CAPITAL_GAINS_TAX_URL: ${{ secrets.CAPITAL_GAINS_TAX_URL }}
+        FEDERAL_TAX_URL: ${{ secrets.FEDERAL_TAX_URL }}
+        FRONTEND_ADDR: ${{ secrets.FRONTEND_ADDR }}
+        FRONTEND_HOSTNAME: ${{ secrets.FRONTEND_HOSTNAME }}
+        FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+        RMD_TABLE_URL: ${{ secrets.RMD_TABLE_URL }}
+        SERVER_ADDR: ${{ secrets.SERVER_ADDR }}
+        SERVER_HOSTNAME: ${{ secrets.SERVER_HOSTNAME }}
+        SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        STANDARD_DEDUCTION_URL: ${{ secrets.STANDARD_DEDUCTION_URL }}
