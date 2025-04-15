@@ -34,10 +34,10 @@ const Scenario = () => {
         console.log(`Simulating ${numSimulations} times!`)
         try {
             const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
-            console.log(user)
+            console.log("Loading...")
             const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:user});
             console.log(res)
-                setOpen(false)
+            setOpen(false)
         }
         catch(err) {
             console.error("Could not simulate scenario: ",err)

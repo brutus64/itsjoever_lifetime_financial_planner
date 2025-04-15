@@ -309,9 +309,9 @@ class YearlyResults:
 async def simulate_n(scenario,n,user):
     # create simulation objects to keep track of simulation state
     # get tax data from the database
-    # simulation_state = Simulation(scenario)
-    # tax_data = Tax(simulation_state.state)
-    # await tax_data.fetch_tax()
+    simulation_state = Simulation(scenario)
+    tax_data = Tax(simulation_state.state)
+    await tax_data.fetch_tax()
 
     # spawn processes
     results = []
@@ -781,6 +781,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # pay as much discretionary expenses as possible
         total_disc_paid = 0
         for disc_event in simulation.spending_strat:
+            # check to see if it is active
+            if year < disc_event.start or year >= disc_event.start + disc_event.duration:
+                continue
+
             # pay more expenses if above financial goal
             if total_assets <= simulation.fin_goal:
                 break
