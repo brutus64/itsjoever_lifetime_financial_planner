@@ -3,15 +3,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-# from starlette.middleware.sessions import SessionMiddleware
 from app.api import user, scrape_yaml, scenario, import_export, simulation
 from app.db.db import init_db
 from contextlib import asynccontextmanager
-import cProfile
-import pstats
-import io
-import time
-import logging
 import os
 from dotenv import load_dotenv
 load_dotenv()
