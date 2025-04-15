@@ -34,7 +34,6 @@ const EventSeries = ({scenario_id}:any) => {
             return
         }
         const scenario = res.data.scenario;
-        // console.log(scenario)
         // event series are not allowed to use cash investment
         setInvestments(scenario.investment.filter(inv => inv.invest_type.name !== "cash"))
     }
