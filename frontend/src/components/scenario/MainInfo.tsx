@@ -314,18 +314,18 @@ const MainInfo = ({scenario_id}:any) => {
                     <div className="flex flex-col gap-3">
                         <h2 className="font-medium">Life Expectancy (in years):</h2>
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="fixed" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy.type === "fixed"}/>
+                            <input className="ml-1" type="radio" value="fixed" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy ? mainData.spouse_life_expectancy.type === "fixed" : false}/>
                             <div className="">Fixed:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={mainData.spouse_life_expectancy.value} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="value" value={mainData.spouse_life_expectancy ? mainData.spouse_life_expectancy.value : 0} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                         </div>
                         
                         <div className="flex gap-2 align-middle">
-                            <input className="ml-1" type="radio" value="normal" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy.type === "normal"}/>
+                            <input className="ml-1" type="radio" value="normal" onChange={handleSpouseRadio} disabled={!mainData.is_married} checked={mainData.spouse_life_expectancy ? mainData.spouse_life_expectancy.type === "normal" : false}/>
                             <div className="">Normal: &nbsp; Mean</div>
 
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={mainData.spouse_life_expectancy.mean} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="mean" value={mainData.spouse_life_expectancy ? mainData.spouse_life_expectancy.mean : 0} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                             <div className="">Std dev:</div>
-                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={mainData.spouse_life_expectancy.stdev} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
+                            <input className="text-md px-1 border-2 border-gray-200 rounded-md w-14" type="number" min="1" name="stdev" value={mainData.spouse_life_expectancy ? mainData.spouse_life_expectancy.stdev : 0} onChange={handleSpouseExp} disabled={!mainData.is_married}/> 
                         </div>
                     </div>
                 </div>
