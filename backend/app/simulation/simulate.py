@@ -13,6 +13,11 @@ from app.models.tax import StateTax, FederalTax, CapitalGains, RMDTable, Standar
 
 LOG_DIRECTORY = f"{sys.path[0]}/logs"
 START_YEAR = 2025
+SOCIAL_SECURITY_RATE = 0.15
+RMD_START_AGE = 74
+EARLY_WITHDRAW_AGE = 59
+EARLY_WITHDRAW_TAX = 0.1
+DECIMAL_PLACES = 2
 
 # object that may vary between types
 class Vary:
@@ -36,7 +41,6 @@ class Vary:
             return uniform(self.lower,self.upper)
 
 # flatten investment and investment type
-# note that there may be new investments created during the simulation
 class Investment:
     def __init__(self,investment):
         self.id = investment["id"]
@@ -54,27 +58,27 @@ class Investment:
     # update investment value, return taxable income
     def update(self):
         start_val = self.value
-        # 4a: calculate generated income
+        # calculate generated income
         inc = self.exp_inc.generate()
         if self.exp_inc_percent:
-            inc = self.value * (inc*0.01)
+            inc = self.value * (inc/100)
 
-        # 4d: calculate change in value
+        # calculate change in value
         ret_val = self.exp_ret.generate()
         if self.exp_ret_percent:
-            self.value *= (1+ret_val*0.01)
+            self.value *= (1+ret_val/100)
         else:
             self.value += ret_val
 
-        # 4c: add income back to investment
+        # add income back to investment
         self.value += inc
         self.purchase += inc
 
-        # 4e: calculate expenses
+        # calculate expenses
         avg = (self.value + start_val) / 2
-        self.value -= avg * self.expense_ratio*0.01
+        self.value -= avg * self.expense_ratio/100
         
-        # 4b: determine taxability
+        # determine taxability
         return inc if self.taxability and self.tax_status == "non-retirement" else 0
     
 class EventSeries:
@@ -94,6 +98,32 @@ class Income(EventSeries):
         self.inflation_adjust = event_series["details"]["inflation_adjust"]
         self.user_split = event_series["details"]["user_split"]
         self.social_security = event_series["details"]["social_security"]
+
+    def update(self,year,inflation_rate,omit_spouse):
+        # check if active
+        if year >= self.start and year < self.start + self.duration:
+            # do not adjust in first year
+            if year != self.start:
+                # calculate annual change
+                if self.exp_change_percent:
+                    self.amt *= (1+self.exp_change.generate()/100)
+                else:
+                    self.amt += self.exp_change.generate()
+                # adjust for inflation
+                if self.inflation_adjust and year != START_YEAR: 
+                    self.amt *= inflation_rate
+            
+            inc = self.amt
+            if omit_spouse:
+                inc *= self.user_split
+            inc_ss = inc if self.social_security else 0
+        else:
+            # if event inactive, still update inflation
+            if self.inflation_adjust and year != START_YEAR:
+                self.amt *= inflation_rate
+            inc = inc_ss = -1
+
+        return inc, inc_ss
         
 # expense event seriess
 class Expense(EventSeries):
@@ -105,28 +135,38 @@ class Expense(EventSeries):
         self.inflation_adjust = event_series["details"]["inflation_adjust"]
         self.user_split = event_series["details"]["user_split"]
         self.is_discretionary = event_series["details"]["is_discretionary"]
+
+    def update(self,year,inflation_rate,omit_spouse):
+        # check if active
+        if year >= self.start and year < self.start + self.duration:
+            # do not adjust in first year
+            if year != self.start:
+                # calculate annual change
+                if self.exp_change_percent:
+                    self.amt *= (1+self.exp_change.generate()/100)
+                else:
+                    self.amt += self.exp_change.generate()
+
+            # adjust inflation if needed
+            if self.inflation_adjust and year != START_YEAR:
+                self.amt *= inflation_rate
+
+            exp = self.amt
+            if omit_spouse:
+                exp *= self.user_split
+            return exp
+        else:
+            # if event inactive, still update inflation
+            if self.inflation_adjust and year != START_YEAR:
+                self.amt *= inflation_rate
+            return -1
         
 # invest event series
 class Invest(EventSeries):
     def __init__(self,event_series):
         super().__init__(event_series)
         self.max_cash = event_series["details"]["max_cash"]
-        # assets will be stored in a size-3 array: [investment object, start, end] (for fixed, start = end)
-        if event_series["details"]["is_glide"]:
-            self.assets = [] 
-            for asset in event_series["details"]["assets"]:
-                investment = asset["invest_id"]["id"]
-                initial = asset["initial"]
-                final = asset["final"]
-                self.assets.append([investment,initial,final])
-        else:
-            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
-    
-# rebalance event series
-class Rebalance(EventSeries):
-    def __init__(self,event_series):
-        super().__init__(event_series)
-        # assets will be stored in a size-3 array: [investment object, start, end] (for fixed, start = end)
+        # list of size-3 array: [investment object, start, end] (for fixed, start = end)
         if event_series["details"]["is_glide"]:
             self.assets = [] 
             for asset in event_series["details"]["assets"]:
@@ -137,10 +177,105 @@ class Rebalance(EventSeries):
         else:
             self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
 
+    def run_invest(self,cash,year,limit,fin_log):
+        total_invested = 0
+        excess_cash = cash - self.max_cash
+        if excess_cash > 0:
+            # calculate total of after-tax amounts
+            after_tax_total = 0
+            years_elapsed = year - self.start
+            for investment,start,end in self.assets:
+                if investment.tax_status == "after-tax":
+                    # calculate glide percentage and invest value
+                    yearly_change = (end-start) / (self.duration-1) if self.duration != 1 else 0
+                    percent = start + years_elapsed*yearly_change
+
+                    # calculate expected investment amount
+                    after_tax_total += excess_cash * percent
+            
+            # determine scale factor according to limit_posttax
+            scale_up = 1
+            scale_down = 1
+            if limit < after_tax_total:
+                scale_down = limit / after_tax_total
+                leftover = after_tax_total - limit
+                scale_up = (1 + leftover / (excess_cash - after_tax_total)) if (excess_cash - after_tax_total) > 0 else 1
+            
+            # perform investments
+            for investment,start,end in self.assets:
+                # calculate glide percentage
+                yearly_change = (end-start) / (self.duration-1) if self.duration != 1 else 0
+                percent = start + years_elapsed*yearly_change
+                # calculate invest amount
+                invest_amt = excess_cash * percent
+                if investment.tax_status == "after-tax":
+                    invest_amt *= scale_down
+                else:
+                    invest_amt *= scale_up
+                    
+                # Update investment and cash investment values
+                investment.value += invest_amt
+                investment.purchase += invest_amt  
+                total_invested += invest_amt
+                fin_write(fin_log,fin_format(year,"invest",invest_amt,investment.name))
+        return total_invested
+    
+# rebalance event series
+class Rebalance(EventSeries):
+    def __init__(self,event_series):
+        super().__init__(event_series)
+        # list of size-3 array: [investment object, start, end] (for fixed, start = end)
+        if event_series["details"]["is_glide"]:
+            self.assets = [] 
+            for asset in event_series["details"]["assets"]:
+                investment = asset["invest_id"]["id"]
+                initial = asset["initial"]
+                final = asset["final"]
+                self.assets.append([investment,initial,final])
+        else:
+            self.assets = [[asset["invest_id"]["id"],asset["percentage"],asset["percentage"]] for asset in event_series["details"]["assets"]]
+
+    def run_rebalance(self,year,fin_log,age):
+        cg = income = ew = 0
+        # check if active
+        if year >= self.start and year < self.start + self.duration:
+            # find the total value of the investments to rebalance
+            total_value = 0
+            for investment,_,_ in self.assets:
+                total_value += investment.value
+            # performing rebalancing
+            for investment,start,end in self.assets:
+                # calculate glide percentage and target value
+                year_diff = year - self.start # how many years passed since start of event series
+                yearly_change = (end-start) / (self.duration-1) if self.duration != 1 else 0
+                percent = start + year_diff*yearly_change
+                target = percent * total_value
+
+                if target >= investment.value: # buy
+                    amt = target - investment.value
+                    investment.value += amt
+                    investment.purchase += amt
+                    fin_write(fin_log,fin_format(year,"rebalance",amt,f"buy {investment.name}"))
+                else: # sell
+                    amt = investment.value - target
+                    # pay capital gains if non-retirement, regular tax if pre-tax
+                    if investment.tax_status == "non-retirement":
+                        fraction = amt / investment.value
+                        cg += max(0,fraction * (investment.value - investment.purchase))
+                        investment.purchase *= (1-fraction)
+                    elif investment.tax_status == "pre-tax":
+                        income += amt
+                    # pay early withdrawal tax
+                    if age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
+                        ew += amt
+                    investment.value -= amt
+                    fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
+        return cg,income,ew
+
 class Tax: # store tax rates and rmds
     def __init__(self,state):
         self.state = state
-        self.early_withdrawal = 0.1
+        self.early_withdrawal = EARLY_WITHDRAW_TAX
     
     async def fetch_tax(self):
         self.federal_tax = await FederalTax.find_one()
@@ -149,7 +284,35 @@ class Tax: # store tax rates and rmds
         self.standard_deductions = await StandardDeduct.find_one()
         self.rmd = await RMDTable.find_one()
 
+    def adjust_tax(self,inflation_rate):
+        # Update all brackets
+        for bracket in self.federal_tax.single_bracket:
+            bracket.min_income *= inflation_rate
+            bracket.max_income *= inflation_rate
+        for bracket in self.federal_tax.married_bracket:
+            bracket.min_income *= inflation_rate
+            bracket.max_income *= inflation_rate
+        if self.state_tax:
+            self.state_tax.single_deduct *= inflation_rate
+            self.state_tax.married_deduct *= inflation_rate
+            for bracket in self.state_tax.single_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+            for bracket in self.state_tax.married_bracket:
+                bracket.min_income *= inflation_rate
+                bracket.max_income *= inflation_rate
+        for bracket in self.capital_gains.single_bracket:
+            bracket.min_income *= inflation_rate
+            bracket.max_income *= inflation_rate
+        for bracket in self.capital_gains.married_bracket:
+            bracket.min_income *= inflation_rate
+            bracket.max_income *= inflation_rate
+        self.standard_deductions.single_deduct *= inflation_rate
+        self.standard_deductions.married_deduct *= inflation_rate
+
     def calculate_federal_tax(self, income, is_married):
+        if not self.federal_tax or income <= 0:
+            return 0
         brackets = self.federal_tax.married_bracket if is_married else self.federal_tax.single_bracket
 
         tax = 0
@@ -193,7 +356,7 @@ class Tax: # store tax rates and rmds
         tax = percent * capital_gains
         return max(0, tax) # capital gains tax can't be negative
 
-# store simulation state from scenario
+# store simulation state
 class Simulation:
     def __init__(self,scenario):
         self.investments = [Investment(investment) for investment in scenario.get("investment")]
@@ -266,7 +429,6 @@ class Simulation:
         for es in self.event_series:
             es.duration = max(1,math.floor(es.duration.generate() + 0.5))
         # resolve ids
-        # starts_with and ends_with are both ids
         id_to_es = {es.id:es for es in self.event_series}
         visited = set() # visited during dfs, but may not be resolved
         resolved = set()
@@ -275,7 +437,7 @@ class Simulation:
                 return es.start 
             if es.id in visited: # Cycle detected, set to default
                 resolved.add(es.id)
-                return 2025 
+                return START_YEAR
             visited.add(es.id)
             if es.start["type"] == "start_with": 
                 es.start = dfs(id_to_es[es.start["event_series"]])
@@ -307,8 +469,7 @@ class YearlyResults:
 
 # set of n simulations
 async def simulate_n(scenario,n,user):
-    # create simulation objects to keep track of simulation state
-    # get tax data from the database
+    # create simulation object and get tax from db
     simulation_state = Simulation(scenario)
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
@@ -325,20 +486,8 @@ async def simulate_n(scenario,n,user):
         print("Getting results...")
         results = [result.get() for result in results]
     
-    # Testing with no multiprocessing
-    # simulation_state = Simulation(scenario)
-    # tax_data = Tax(simulation_state.state)
-    # await tax_data.fetch_tax()
-    # results.append(simulate_log(simulation_state,tax_data,user))
-    # for _ in range(n-1):
-    #     simulation_state = Simulation(scenario)
-    #     tax_data = Tax(simulation_state.state)
-    #     await tax_data.fetch_tax()
-    #     results.append(simulate(simulation_state,tax_data,None,None))
-    
     # aggregate results for displaying on graphs
     aggregated = aggregate(results)
-
     return aggregated
 
 # aggregate data across all n simulations
@@ -424,7 +573,7 @@ def aggregate(results):
 
 # format string for displaying lines in log file
 def fin_format(year,trans_type,amt,details):
-    return f"{year}\t{trans_type}\t{round(amt,2)}\t{details}\n"
+    return f"{year}\t{trans_type}\t{round(amt,DECIMAL_PLACES)}\t{details}\n"
 
 # write to log file, if fin_log is not None
 def fin_write(fin_log,msg):
@@ -432,15 +581,15 @@ def fin_write(fin_log,msg):
         fin_log.write(msg)
 
 # write line to csv file, if inv_writer is not None
-def inv_write(inv_writer,year,investments):
+def inv_write(inv_writer, year, investments):
     if inv_writer:
-        row = [year] + [round(investment.value,2) for investment in investments]
+        row = [year] + [round(investment.value,DECIMAL_PLACES) for investment in investments]
         inv_writer.writerow(row)
 
 # one simulation in a set of simulations
 # each simulation would have to make a copy of each investment
 # returns a list of YearlyResults objects
-def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
+def simulate(simulation, tax_data, fin_log, inv_writer):
     res = [] # yearly data
     # resolve event series durations and start times (in that order)
     simulation.resolve_event_time()
@@ -463,7 +612,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
         # determine ages
         user_age = year - simulation.user_birth
-        spouse_age = year-simulation.spouse_birth if simulation.is_married else None
+        spouse_age = year - simulation.spouse_birth if simulation.is_married else None
         spouse_alive = simulation.is_married and year < simulation.spouse_birth + simulation.spouse_life
 
         # tax variables
@@ -472,99 +621,43 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         cur_cg = 0  # Capital gains
         cur_ew = 0  # Early withdrawals from retirement accounts
 
-        # FOR Step 6: Calculate prev years tax before tax bracket is updated
-        # do not calculate tax for the first year
+        # Pre Step 6: Calculate prev years tax before tax bracket is updated
+        # for the first year, no tax is paid
+        prev_fed_inc = prev_income - SOCIAL_SECURITY_RATE*prev_ss
+        prev_fed_inc_tax = tax_data.calculate_federal_tax(prev_fed_inc, simulation.is_married)
+        prev_state_inc_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
+        prev_fed_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
+        prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
+        prev_ew_tax = tax_data.early_withdrawal * prev_ew
         if year != START_YEAR:
-            prev_federal_income = prev_income - 0.15*prev_ss
-            prev_federal_income_tax = tax_data.calculate_federal_tax(prev_federal_income, simulation.is_married)
-            prev_state_income_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
-            prev_federal_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
-            prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
-            prev_ew_tax = tax_data.early_withdrawal * prev_ew
-            year_result.taxes.append(("federal income",round(prev_federal_income_tax,2)))
-            year_result.taxes.append(("state income",round(prev_state_income_tax,2)))
-            year_result.taxes.append(("federal capital gains",round(prev_federal_cg_tax,2)))
-            year_result.taxes.append(("state capital gains",round(prev_state_cg_tax,2)))
-            year_result.taxes.append(("early_withdrawal_tax",round(prev_ew_tax,2)))
-        else:
-            prev_federal_income = 0
-            prev_federal_income_tax = 0
-            prev_state_income_tax = 0
-            prev_federal_cg_tax = 0
-            prev_state_cg_tax = 0
-            prev_ew_tax = 0
+            year_result.taxes.append(("federal income",round(prev_fed_inc_tax,DECIMAL_PLACES)))
+            year_result.taxes.append(("state income",round(prev_state_inc_tax,DECIMAL_PLACES)))
+            year_result.taxes.append(("federal capital gains",round(prev_fed_cg_tax,DECIMAL_PLACES)))
+            year_result.taxes.append(("state capital gains",round(prev_state_cg_tax,DECIMAL_PLACES)))
+            year_result.taxes.append(("early_withdrawal_tax",round(prev_ew_tax,DECIMAL_PLACES)))
 
         # Step 1: Inflation
         inflation_rate = 1 + simulation.inflation.generate() / 100
-        
         if year != START_YEAR:
-            # Update all brackets
-            for bracket in tax_data.federal_tax.single_bracket:
-                bracket.min_income *= inflation_rate
-                bracket.max_income *= inflation_rate
-            for bracket in tax_data.federal_tax.married_bracket:
-                bracket.min_income *= inflation_rate
-                bracket.max_income *= inflation_rate
-            if tax_data.state_tax:
-                tax_data.state_tax.single_deduct *= inflation_rate
-                tax_data.state_tax.married_deduct *= inflation_rate
-                for bracket in tax_data.state_tax.single_bracket:
-                    bracket.min_income *= inflation_rate
-                    bracket.max_income *= inflation_rate
-                for bracket in tax_data.state_tax.married_bracket:
-                    bracket.min_income *= inflation_rate
-                    bracket.max_income *= inflation_rate
-            for bracket in tax_data.capital_gains.single_bracket:
-                bracket.min_income *= inflation_rate
-                bracket.max_income *= inflation_rate
-            for bracket in tax_data.capital_gains.married_bracket:
-                bracket.min_income *= inflation_rate
-                bracket.max_income *= inflation_rate
-            tax_data.standard_deductions.single_deduct *= inflation_rate
-            tax_data.standard_deductions.married_deduct *= inflation_rate
+            tax_data.adjust_tax(inflation_rate) # updates brackets
             simulation.limit_posttax *= inflation_rate
         
         # Step 2: Income
         for income in simulation.income:
-            # check to see if income event series is active
-            if year >= income.start and year < income.start + income.duration:
-                # do not do the following actions on the first year
-                if year != income.start:
-                    # calculate annual change
-                    if income.exp_change_percent:
-                        income.amt *= (1+income.exp_change.generate()/100)
-                    else:
-                        income.amt += income.exp_change.generate()
-
-                    # adjust for inflation
-                    if income.inflation_adjust and year != START_YEAR:
-                        income.amt *= inflation_rate
-                
-                inc = income.amt
-                # omit spouse percentage
-                if simulation.is_married and not spouse_alive:
-                    inc *= income.user_split
-
-                # update cash investment
+            inc, inc_ss = income.update(year,inflation_rate,simulation.is_married and not spouse_alive)
+            if inc != -1 and inc_ss != -1: # returns -1,-1 if inactive
+                # update yearly income and cash investmnet
+                cur_income += inc
+                cur_ss += inc_ss
                 simulation.cash.value += inc
-                fin_write(fin_log,fin_format(year,"income",inc,income.name))
 
                 # record income
-                year_result.income.append((income.name,round(inc,2)))
-                
-                # update income
-                cur_income += inc
-                # update ss
-                if income.social_security:
-                    cur_ss += inc
-            else:
-                # even if income is not active, still update inflation
-                if income.inflation_adjust and year != START_YEAR:
-                    income.amt *= inflation_rate
-        year_result.total_income = round(cur_income,2)
+                fin_write(fin_log,fin_format(year,"income",inc,income.name))
+                year_result.income.append((income.name,round(inc,DECIMAL_PLACES)))
+        year_result.total_income = round(cur_income,DECIMAL_PLACES)
 
         # Step 3: RMD
-        if user_age >= 74:
+        if user_age >= RMD_START_AGE:
             # get distribution period
             dist_period = -1
             for entry in tax_data.rmd.table:
@@ -621,11 +714,10 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
         # Step 4: Investments
         for investment in simulation.investments:
-            # update() returns the taxable income from interest and dividends
-            cur_income += investment.update()
+            cur_income += investment.update() # rreturns taxable income
 
         # Step 5: Roth
-        # determine if roth optimizer is active for current year
+        # determine if roth optimizer is active
         if simulation.roth_enable and year >= simulation.roth_start and year < simulation.roth_end:
             # determine brackets and deductions
             if spouse_alive:
@@ -634,7 +726,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             else:
                 cur_deduction = tax_data.standard_deductions.single_deduct
                 brackets = tax_data.federal_tax.single_bracket
-            cur_federal_income = cur_income - 0.15*cur_ss
+            cur_federal_income = cur_income - SOCIAL_SECURITY_RATE*cur_ss
 
             # find the upper-limit of the user's tax brackets
             upper_limit = 0
@@ -675,9 +767,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                 investment.value -= transfer_amt
                 roth_conversion -= transfer_amt
 
-                # update purchase
-                # note that after-tax retirement accounts are not subject to capital gains anyway
-                # just for completeness
+                # update purchase (for completeness)
                 purchase_amt = f * investment.purchase
                 investment.purchase -= purchase_amt
                 target.purchase += transfer_amt
@@ -687,46 +777,23 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
 
         # Step 6: Expenses and Taxes
         # Update all expense event series based on annual change
-        # keep track of totals
         total_non_disc = 0
         total_disc = 0
         for expense in simulation.expenses:
-            # check to see if it is active
-            if year >= expense.start and year < expense.start + expense.duration:
-                # do not do the following actions on the first year
-                if year != expense.start:
-                    # calculate annual change
-                    if expense.exp_change_percent:
-                        expense.amt *= (1+expense.exp_change.generate()/100)
-                    else:
-                        expense.amt += expense.exp_change.generate()
-
-                # adjust inflation if needed
-                if expense.inflation_adjust and year != START_YEAR:
-                    expense.amt *= inflation_rate
-
-                exp = expense.amt
-                # omit spouse percentage
-                if simulation.is_married and not spouse_alive:
-                    exp *= expense.user_split
-                
-                if not expense.is_discretionary:
-                    fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
-                    year_result.expenses.append((expense.name,round(exp,2)))
-                    total_non_disc += exp
-                else:
-                    # cannot record discretionary yet because not guarenteed to be paid
-                    total_disc += exp
-            else:
-                # adjust inflation if needed
-                if expense.inflation_adjust and year != START_YEAR:
-                    expense.amt *= inflation_rate
+            exp = expense.update(year,inflation_rate,simulation.is_married and not spouse_alive)
+            if expense.is_discretionary:
+                # cannot record discretionary yet because not guarenteed to be paid
+                total_disc += exp
+            elif exp != -1: # returned -1 if inactive
+                fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
+                year_result.expenses.append((expense.name,round(exp,DECIMAL_PLACES)))
+                total_non_disc += exp
 
         # sum up previous year taxes and log them
-        sum_prev_year_tax = prev_federal_income_tax+prev_state_income_tax+prev_federal_cg_tax+prev_state_cg_tax+prev_ew_tax
-        fin_write(fin_log,fin_format(year,"tax",prev_federal_income_tax,f"federal income tax"))
-        fin_write(fin_log,fin_format(year,"tax",prev_state_income_tax,f"state income tax"))
-        fin_write(fin_log,fin_format(year,"tax",prev_federal_cg_tax,f"federal capital gains"))
+        sum_prev_year_tax = prev_fed_inc_tax+prev_state_inc_tax+prev_fed_cg_tax+prev_state_cg_tax+prev_ew_tax
+        fin_write(fin_log,fin_format(year,"tax",prev_fed_inc_tax,f"federal income tax"))
+        fin_write(fin_log,fin_format(year,"tax",prev_state_inc_tax,f"state income tax"))
+        fin_write(fin_log,fin_format(year,"tax",prev_fed_cg_tax,f"federal capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
 
@@ -756,7 +823,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             elif investment.tax_status == "pre-tax":
                 cur_income += withdraw
             
-            if user_age < 59 and investment.tax_status != "non-retirement":
+            if user_age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
                 cur_ew += withdraw 
 
             # update investment value and withdraw amounts
@@ -765,8 +832,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         
         # could not pay all taxes and expenses, must end simulation
         if total_withdrawal > 0:
-            # log all investment values
-            inv_write(inv_writer,year,simulation.investments)
+            inv_write(inv_writer,year,simulation.investments) # log all investment values
             return res
 
         # Step 7: Discretionary Expenses
@@ -775,17 +841,15 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         for inv in simulation.investments:
             total_assets += inv.value
 
-        # keep track of the current investment to withdraw from
-        withdraw_index = 0
-
         # pay as much discretionary expenses as possible
         total_disc_paid = 0
+        withdraw_index = 0 # current investment to withdraw from
         for disc_event in simulation.spending_strat:
-            # check to see if it is active
+            # check if active
             if year < disc_event.start or year >= disc_event.start + disc_event.duration:
                 continue
 
-            # pay more expenses if above financial goal
+            # check if financial goal violated
             if total_assets <= simulation.fin_goal:
                 break
 
@@ -823,7 +887,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
                     cur_income += w
                 
                 # pay early withdrawal tax
-                if user_age < 59 and investment.tax_status != "non-retirement":
+                if user_age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
                     cur_ew += w
 
                 # perform withdrawal
@@ -833,97 +897,26 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
             # calculate the amount actually paid
             disc_paid = original_amt - amt
             fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
-            year_result.expenses.append((disc_event.name,round(disc_paid,2)))
+            year_result.expenses.append((disc_event.name,round(disc_paid,DECIMAL_PLACES)))
             total_disc_paid += disc_paid
         
         # total expenses = discretionary expenses paid + non-discretionary + taxes
         year_result.total_expenses = total_disc_paid + total_payment
-        year_result.discretionary_percent = round(total_disc_paid / total_disc,4) if total_disc != 0 else 0
+        year_result.discretionary_percent = round(total_disc_paid / total_disc,DECIMAL_PLACES) if total_disc != 0 else 0
 
         # Step 8: Invest
-        # find the active investment strategy
-        active_invest = None
         for invest in simulation.invest_strat:
-            # check if invest event is active
             if year >= invest.start and year < invest.start + invest.duration:
-                active_invest = invest
+                cash_spent = invest.run_invest(simulation.cash.value,year,simulation.limit_posttax,fin_log)
+                simulation.cash.value -= cash_spent
                 break
-
-        excess_cash = simulation.cash.value - active_invest.max_cash if active_invest else 0
-        if excess_cash > 0:
-            # calculate total of after-tax amounts
-            after_tax_total = 0
-            years_elapsed = year - active_invest.start
-            for investment,start,end in active_invest.assets:
-                if investment.tax_status == "after-tax":
-                    # calculate glide percentage and invest value
-                    yearly_change = (end-start) / (active_invest.duration-1) if active_invest.duration != 1 else 0
-                    percent = start + years_elapsed*yearly_change
-
-                    # calculate expected investment amount
-                    after_tax_total += excess_cash * percent
-            
-            # determine scale factor according to limit_posttax
-            scale_up = 1
-            scale_down = 1
-            if simulation.limit_posttax < after_tax_total:
-                scale_down = simulation.limit_posttax / after_tax_total
-                leftover = after_tax_total - simulation.limit_posttax
-                scale_up = (1 + leftover / (excess_cash - after_tax_total)) if (excess_cash - after_tax_total) > 0 else 1
-            
-            # perform investments
-            for investment,start,end in active_invest.assets:
-                # calculate glide percentage
-                yearly_change = (end-start) / (active_invest.duration-1) if active_invest.duration != 1 else 0
-                percent = start + years_elapsed*yearly_change
-                # calculate invest amount
-                invest_amt = excess_cash * percent
-                if investment.tax_status == "after-tax":
-                    invest_amt *= scale_down
-                else:
-                    invest_amt *= scale_up
-                    
-                # Update investment and cash investment values
-                investment.value += invest_amt
-                investment.purchase += invest_amt  
-                simulation.cash.value -= invest_amt
-                fin_write(fin_log,fin_format(year,"invest",invest_amt,investment.name))
 
         # Step 9: Rebalance
         for reb in simulation.rebalance:
-            # check if rebalance event is active
-            if year >= reb.start and year < reb.start + reb.duration:
-                # find the total value of the investments to rebalance
-                total_value = 0
-                for investment,_,_ in reb.assets:
-                    total_value += investment.value
-                # performing rebalancing
-                for investment,start,end in reb.assets:
-                    # calculate glide percentage and target value
-                    year_diff = year - reb.start # how many years passed since start of event series
-                    yearly_change = (end-start) / (reb.duration-1) if reb.duration != 1 else 0
-                    percent = start + year_diff*yearly_change
-                    target = percent * total_value
-
-                    if target >= investment.value: # buy
-                        amt = target - investment.value
-                        investment.value += amt
-                        investment.purchase += amt
-                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"buy {investment.name}"))
-                    else: # sell
-                        amt = investment.value - target
-                        # pay capital gains if non-retirement, regular tax if pre-tax
-                        if investment.tax_status == "non-retirement":
-                            fraction = amt / investment.value
-                            cur_cg += max(0,fraction * (investment.value - investment.purchase))
-                            investment.purchase *= (1-fraction)
-                        elif investment.tax_status == "pre-tax":
-                            cur_income += amt
-                        # pay early withdrawal tax
-                        if user_age < 59 and investment.tax_status != "non-retirement":
-                            cur_ew += amt
-                        investment.value -= amt
-                        fin_write(fin_log,fin_format(year,"rebalance",amt,f"sell {investment.name}"))
+            cg,income,ew = reb.run_rebalance(year,fin_log,user_age)
+            cur_cg += cg
+            cur_income += income
+            cur_ew += ew
 
         # Step 10: Results and Set-up for next iteration
         prev_income = cur_income
@@ -932,7 +925,7 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         prev_ew = cur_ew
 
         # record early withdrawal tax
-        year_result.early_withdrawal_tax = round(prev_ew_tax,2)
+        year_result.early_withdrawal_tax = round(prev_ew_tax,DECIMAL_PLACES)
         
         # write to csv log file the value of all investments
         inv_write(inv_writer,year,simulation.investments)
@@ -940,9 +933,9 @@ def simulate(simulation: Simulation,tax_data: Tax, fin_log, inv_writer):
         # record individual investment values and total investments
         total_investments = 0
         for investment in simulation.investments:
-            total_investments += round(investment.value,2)
-            year_result.investments.append((f"{investment.name} {investment.tax_status}",round(investment.value,2)))
-        year_result.total_investments = round(total_investments,2)
+            total_investments += investment.value
+            year_result.investments.append((f"{investment.name} {investment.tax_status}",round(investment.value,DECIMAL_PLACES)))
+        year_result.total_investments = round(total_investments,DECIMAL_PLACES)
 
         # determine if financial goal was met
         year_result.success = total_investments >= simulation.fin_goal
