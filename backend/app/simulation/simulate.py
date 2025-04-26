@@ -451,6 +451,124 @@ class Simulation:
         for es in self.event_series:
             dfs(es)
 
+    def perform_rmd(self,age,rmd_table,fin_log,year):
+        income = 0
+        if age >= RMD_START_AGE:
+            # get distribution period
+            dist_period = -1
+            for entry in rmd_table:
+                if entry.age == age:
+                    dist_period = entry.distribution_period
+                    break
+            
+            # sum values of pre-tax investments
+            pre_value = 0
+            for investment in self.investments:
+                if investment.tax_status == "pre-tax" and investment.value > 0:
+                    pre_value += investment.value
+            
+            if dist_period != -1:
+                rmd = pre_value / dist_period
+            else:
+                rmd = 0
+
+            # pay the rmd
+            for investment in self.rmd_strat:
+                if rmd <= 0:
+                    break
+                if investment.value <= 0:
+                    continue
+
+                # find the corresponding non-retirement investment, creating one if needed
+                target = None
+                for candidate in self.investments:
+                    if candidate.name == investment.name and candidate.tax_status == "non-retirement":
+                        target = candidate
+                        break
+                if not target:
+                    target = copy.copy(investment) # only shallow-copy is necessary
+                    target.tax_status = "non-retirement"
+                    target.value = 0
+                    target.purchase = 0
+                    self.investments.append(target)
+                
+                # transfer amounts
+                withdraw_amt = min(rmd,investment.value)
+                f = withdraw_amt / investment.value
+                target.value += withdraw_amt
+                investment.value -= withdraw_amt
+                rmd -= withdraw_amt
+                income += withdraw_amt
+
+                # update purchase
+                purchase_amt = f * investment.purchase
+                investment.purchase -= purchase_amt
+                target.purchase += withdraw_amt
+                
+                # write to log
+                fin_write(fin_log,fin_format(year,"RMD",withdraw_amt,investment.name))
+        return income
+    
+    def perform_roth(self,year,spouse_alive,fed_income,tax_data,fin_log):
+        income = 0
+        # determine if roth optimizer is active
+        if self.roth_enable and year >= self.roth_start and year < self.roth_end:
+            # determine brackets and deductions
+            if spouse_alive:
+                cur_deduction = tax_data.standard_deductions.married_deduct
+                brackets = tax_data.federal_tax.married_bracket
+            else:
+                cur_deduction = tax_data.standard_deductions.single_deduct
+                brackets = tax_data.federal_tax.single_bracket
+
+            # find the upper-limit of the user's tax brackets
+            upper_limit = 0
+            for bracket in brackets:
+                if bracket.max_income >= fed_income:
+                    upper_limit = bracket.max_income
+                    break
+            if upper_limit == 0: # user is in the highest bracket, do not perform conversions?
+                roth_conversion = 0
+            else:
+                roth_conversion = upper_limit - (fed_income - min(cur_deduction,fed_income))
+
+            # transfer pre-tax to after-tax based on strategy
+            for investment in self.roth_strat:
+                if roth_conversion <= 0:
+                    break
+                if investment.value <= 0:
+                    continue
+
+                # find the target investment, creating one if needed
+                target = None
+                for candidate in self.investments:
+                    if candidate.name == investment.name and candidate.tax_status == "after-tax":
+                        target = candidate
+                        break
+                if not target:
+                    target = copy.copy(investment) # only shallow-copy is necessary
+                    target.tax_status = "after-tax"
+                    target.value = 0
+                    target.purchase = 0
+                    self.investments.append(target)
+                
+                # transfer amounts
+                transfer_amt = min(roth_conversion,investment.value)
+                f = transfer_amt / investment.value
+                target.value += transfer_amt
+                investment.value -= transfer_amt
+                roth_conversion -= transfer_amt
+                income += transfer_amt
+
+                # update purchase (for completeness)
+                purchase_amt = f * investment.purchase
+                investment.purchase -= purchase_amt
+                target.purchase += transfer_amt
+                
+                # write to log
+                fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
+        return income
+
 # data for a particular year in a simulation
 class YearlyResults:
     def __init__(self,year):
@@ -644,7 +762,7 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         
         # Step 2: Income
         for income in simulation.income:
-            inc, inc_ss = income.update(year,inflation_rate,simulation.is_married and not spouse_alive)
+            inc, inc_ss = income.update(year,inflation_rate,not spouse_alive)
             if inc != -1 and inc_ss != -1: # returns -1,-1 if inactive
                 # update yearly income and cash investmnet
                 cur_income += inc
@@ -657,130 +775,22 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         year_result.total_income = round(cur_income,DECIMAL_PLACES)
 
         # Step 3: RMD
-        if user_age >= RMD_START_AGE:
-            # get distribution period
-            dist_period = -1
-            for entry in tax_data.rmd.table:
-                if entry.age == user_age:
-                    dist_period = entry.distribution_period
-                    break
-            
-            # sum values of pre-tax investments
-            pre_value = 0
-            for investment in simulation.investments:
-                if investment.tax_status == "pre-tax" and investment.value > 0:
-                    pre_value += investment.value
-            
-            if dist_period != -1:
-                rmd = pre_value / dist_period
-            else:
-                rmd = 0
-            cur_income += rmd
-
-            # pay the rmd
-            for investment in simulation.rmd_strat:
-                if rmd == 0:
-                    break
-                if investment.value <= 0:
-                    continue
-
-                # find the corresponding non-retirement investment, creating one if needed
-                target = None
-                for candidate in simulation.investments:
-                    if candidate.name == investment.name and candidate.tax_status == "non-retirement":
-                        target = candidate
-                        break
-                if not target:
-                    target = copy.copy(investment) # only shallow-copy is necessary
-                    target.tax_status = "non-retirement"
-                    target.value = 0
-                    target.purchase = 0
-                    simulation.investments.append(target)
-                
-                # transfer amounts
-                withdraw_amt = min(rmd,investment.value)
-                f = withdraw_amt / investment.value
-                target.value += withdraw_amt
-                investment.value -= withdraw_amt
-                rmd -= withdraw_amt
-
-                # update purchase
-                purchase_amt = f * investment.purchase
-                investment.purchase -= purchase_amt
-                target.purchase += withdraw_amt
-                
-                # write to log
-                fin_write(fin_log,fin_format(year,"RMD",withdraw_amt,investment.name))
+        cur_income += simulation.perform_rmd(user_age,tax_data.rmd.table,fin_log,year)
 
         # Step 4: Investments
         for investment in simulation.investments:
-            cur_income += investment.update() # rreturns taxable income
+            cur_income += investment.update() # returns taxable income
 
         # Step 5: Roth
-        # determine if roth optimizer is active
-        if simulation.roth_enable and year >= simulation.roth_start and year < simulation.roth_end:
-            # determine brackets and deductions
-            if spouse_alive:
-                cur_deduction = tax_data.standard_deductions.married_deduct
-                brackets = tax_data.federal_tax.married_bracket
-            else:
-                cur_deduction = tax_data.standard_deductions.single_deduct
-                brackets = tax_data.federal_tax.single_bracket
-            cur_federal_income = cur_income - SOCIAL_SECURITY_RATE*cur_ss
-
-            # find the upper-limit of the user's tax brackets
-            upper_limit = 0
-            for bracket in brackets:
-                if bracket.max_income >= cur_federal_income:
-                    upper_limit = bracket.max_income
-                    break
-            if upper_limit == 0: #user is in the highest bracket, do not perform conversions?
-                roth_conversion = 0
-            else:
-                roth_conversion = upper_limit - (cur_federal_income - min(cur_deduction,cur_federal_income))
-                cur_income += roth_conversion
-
-            # transfer pre-tax to after-tax based on strategy
-            for investment in simulation.roth_strat:
-                if roth_conversion == 0:
-                    break
-                if investment.value <= 0:
-                    continue
-
-                # find the target investment, creating one if needed
-                target = None
-                for candidate in simulation.investments:
-                    if candidate.name == investment.name and candidate.tax_status == "after-tax":
-                        target = candidate
-                        break
-                if not target:
-                    target = copy.copy(investment) # only shallow-copy is necessary
-                    target.tax_status = "after-tax"
-                    target.value = 0
-                    target.purchase = 0
-                    simulation.investments.append(target)
-                
-                # transfer amounts
-                transfer_amt = min(roth_conversion,investment.value)
-                f = transfer_amt / investment.value
-                target.value += transfer_amt
-                investment.value -= transfer_amt
-                roth_conversion -= transfer_amt
-
-                # update purchase (for completeness)
-                purchase_amt = f * investment.purchase
-                investment.purchase -= purchase_amt
-                target.purchase += transfer_amt
-                
-                # write to log
-                fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
+        cur_federal_income = cur_income - SOCIAL_SECURITY_RATE*cur_ss
+        cur_income += simulation.perform_roth(year,spouse_alive,cur_federal_income,tax_data,fin_log)
 
         # Step 6: Expenses and Taxes
         # Update all expense event series based on annual change
         total_non_disc = 0
         total_disc = 0
         for expense in simulation.expenses:
-            exp = expense.update(year,inflation_rate,simulation.is_married and not spouse_alive)
+            exp = expense.update(year,inflation_rate,not spouse_alive)
             if expense.is_discretionary:
                 # cannot record discretionary yet because not guarenteed to be paid
                 total_disc += exp
@@ -855,7 +865,7 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
 
             # omit spouse percentage from expense amount
             expense_amt = disc_event.amt
-            if simulation.is_married and not spouse_alive:
+            if not spouse_alive:
                 expense_amt *= disc_event.user_split
             
             # get maximum amount that can be paid for current discretionary expense

@@ -64,7 +64,7 @@ app.add_middleware(
     path="/"
 )
 
-PROFILING = True
+PROFILING = False
 
 if PROFILING:
     @app.middleware("http")
