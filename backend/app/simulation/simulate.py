@@ -568,6 +568,92 @@ class Simulation:
                 # write to log
                 fin_write(fin_log,fin_format(year,"Roth",transfer_amt,investment.name))
         return income
+    
+    # withdraw amt from investments based on an withdrawal strategy
+    def perform_withdrawals(self,amt,age):
+        cg = income = ew = 0
+
+        # withdraw from cash investment first
+        cash_investment_withdrawal = min(self.cash.value,amt)
+        amt -= cash_investment_withdrawal
+        self.cash.value -= cash_investment_withdrawal
+        
+        # withdraw as much as possible
+        for investment in self.expense_withdraw:
+            if amt <= 0:
+                break
+            if investment.value <= 0:
+                continue
+            
+            # determine maximum amount to withdraw from investment
+            withdraw = min(investment.value,amt)
+
+            # determine if withdrawal is taxed
+            if investment.tax_status == "non-retirement":
+                fraction = withdraw/investment.value
+                cg += fraction * (investment.value - investment.purchase)
+                investment.purchase *= (1-fraction)
+            elif investment.tax_status == "pre-tax":
+                income += withdraw
+            
+            if age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
+                ew += withdraw 
+
+            # update investment value and withdraw amounts
+            investment.value -= withdraw
+            amt -= withdraw
+
+        return amt,cg,income,ew
+    
+    def perform_spending(self,age,year,spouse_alive,fin_log,year_result):
+        # determine the total value of all investments
+        total_assets = 0
+        for inv in self.investments:
+            total_assets += inv.value
+
+        # pay as much discretionary expenses as possible
+        total_cg = total_inc = total_ew = 0
+        total_disc_paid = 0
+        for disc_event in self.spending_strat:
+            # check if active
+            if year < disc_event.start or year >= disc_event.start + disc_event.duration:
+                continue
+
+            # check if financial goal violated
+            if total_assets <= self.fin_goal:
+                break
+
+            # omit spouse percentage from expense amount
+            expense_amt = disc_event.amt
+            if not spouse_alive:
+                expense_amt *= disc_event.user_split/100
+            
+            # get maximum amount that can be paid for current discretionary expense
+            amt = min(expense_amt, total_assets - self.fin_goal)
+
+            # sell investments to pay expenses
+            amt_left,cg,inc,ew = self.perform_withdrawals(amt,age)
+
+            # update amounts
+            disc_paid = amt - amt_left
+            total_assets -= disc_paid
+            total_disc_paid += disc_paid
+
+            total_cg += cg
+            total_inc += inc
+            total_ew += ew
+
+            # log payment
+            fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
+            year_result.expenses.append((disc_event.name,round(disc_paid,DECIMAL_PLACES)))
+
+            # take money from cash investment first
+            cash_amt = min(self.cash.value,amt)
+            self.cash.value -= cash_amt
+            amt -= cash_amt
+            total_assets -= cash_amt
+        
+        return total_disc_paid,total_cg,total_inc,total_ew
 
 # data for a particular year in a simulation
 class YearlyResults:
@@ -807,108 +893,22 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
         fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
 
-        # calculate total payment based on current non-discretionary and previous year taxes
+        # calculate total payment and perform withdrawals to pay off
         total_payment = sum_prev_year_tax + total_non_disc
-        
-        # withdraw from cash investment first
-        cash_investment_withdrawal = min(simulation.cash.value ,total_payment)
-        total_withdrawal = total_payment - cash_investment_withdrawal
-        simulation.cash.value -= cash_investment_withdrawal # update cash investment
-        
-        # perform expense withdrawals
-        for investment in simulation.expense_withdraw:
-            if total_withdrawal == 0:
-                break
-            if investment.value == 0:
-                continue
-            
-            # determine maximum amount to withdraw from investment
-            withdraw = min(investment.value, total_withdrawal)
+        amt_left,cg,inc,ew = simulation.perform_withdrawals(total_payment,user_age)
 
-            # determine if withdrawal is taxed
-            if investment.tax_status == "non-retirement":
-                fraction = withdraw/investment.value
-                cur_cg += fraction * (investment.value - investment.purchase)
-                investment.purchase *= (1-fraction)
-            elif investment.tax_status == "pre-tax":
-                cur_income += withdraw
-            
-            if user_age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
-                cur_ew += withdraw 
-
-            # update investment value and withdraw amounts
-            investment.value -= withdraw
-            total_withdrawal -= withdraw
-        
-        # could not pay all taxes and expenses, must end simulation
-        if total_withdrawal > 0:
-            inv_write(inv_writer,year,simulation.investments) # log all investment values
+        if amt_left > 0:
+            # could not pay all taxes and expenses, must end simulation
+            inv_write(inv_writer,year,simulation.investments) # log all investment values (debugging)
             return res
+        
+        # update totals
+        cur_cg += cg
+        cur_income += inc
+        cur_ew += ew
 
         # Step 7: Discretionary Expenses
-        # determine the total value of all investments
-        total_assets = 0
-        for inv in simulation.investments:
-            total_assets += inv.value
-
-        # pay as much discretionary expenses as possible
-        total_disc_paid = 0
-        withdraw_index = 0 # current investment to withdraw from
-        for disc_event in simulation.spending_strat:
-            # check if active
-            if year < disc_event.start or year >= disc_event.start + disc_event.duration:
-                continue
-
-            # check if financial goal violated
-            if total_assets <= simulation.fin_goal:
-                break
-
-            # omit spouse percentage from expense amount
-            expense_amt = disc_event.amt
-            if not spouse_alive:
-                expense_amt *= disc_event.user_split/100
-            
-            # get maximum amount that can be paid for current discretionary expense
-            amt = min(expense_amt, total_assets - simulation.fin_goal)
-            original_amt = amt # keep track for logging
-
-            # take money from cash investment first
-            cash_amt = min(simulation.cash.value,amt)
-            simulation.cash.value -= cash_amt
-            amt -= cash_amt
-            total_assets -= cash_amt
-
-            # sell investments to pay expenses
-            while amt > 0 and withdraw_index < len(simulation.expense_withdraw):
-                investment = simulation.expense_withdraw[withdraw_index]
-                if investment.value <= 0:
-                    withdraw_index += 1
-                    continue
-
-                # get the amount to withdraw from investment
-                w = min(amt, investment.value)
-
-                # determine tax
-                if investment.tax_status == "non-retirement":
-                    fraction = w / investment.value
-                    cur_cg += fraction * (investment.value - investment.purchase)
-                    investment.purchase *= (1-fraction)
-                elif investment.tax_status == "pre-tax":
-                    cur_income += w
-                
-                # pay early withdrawal tax
-                if user_age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
-                    cur_ew += w
-
-                # perform withdrawal
-                amt -= w
-                investment.value -= w
-                total_assets -= w
-            # calculate the amount actually paid
-            disc_paid = original_amt - amt
-            fin_write(fin_log,fin_format(year,"expense",disc_paid,f"{disc_event.name} disc"))
-            year_result.expenses.append((disc_event.name,round(disc_paid,DECIMAL_PLACES)))
-            total_disc_paid += disc_paid
+        total_disc_paid,cg,inc,ew = simulation.perform_spending(user_age,year,spouse_alive,fin_log,year_result)
         
         # total expenses = discretionary expenses paid + non-discretionary + taxes
         year_result.total_expenses = total_disc_paid + total_payment
