@@ -310,6 +310,16 @@ class Tax: # store tax rates and rmds
         self.standard_deductions.single_deduct *= inflation_rate
         self.standard_deductions.married_deduct *= inflation_rate
 
+    def calculate_tax(self,prev_income,prev_ss,prev_cg,prev_ew,is_married):
+        prev_fed_inc = prev_income - SOCIAL_SECURITY_RATE*prev_ss
+        tax_values = {}
+        tax_values["federal income"] = self.calculate_federal_tax(prev_fed_inc, is_married)
+        tax_values["state income"] = self.calculate_state_tax(prev_income, is_married)
+        tax_values["federal capital gains"] = self.calculate_capital_gains_tax(prev_income, prev_cg, is_married)
+        tax_values["state capital gains"] = self.calculate_state_tax(prev_cg, is_married)
+        tax_values["early withdrawal tax"] = self.early_withdrawal * prev_ew
+        return tax_values
+
     def calculate_federal_tax(self, income, is_married):
         if not self.federal_tax or income <= 0:
             return 0
@@ -422,6 +432,12 @@ class Simulation:
             self.spouse_birth = scenario.get("birth_year")[1]
             self.spouse_life = Vary(scenario.get("life_expectancy")[1])
         self.state = scenario.get("state")
+
+        # used during simulation for taxes
+        self.inc = 0
+        self.ss = 0
+        self.cg = 0
+        self.ew = 0
     
     # dfs to get a fixed year for event start times
     def resolve_event_time(self):
@@ -450,6 +466,12 @@ class Simulation:
 
         for es in self.event_series:
             dfs(es)
+
+    def reset_taxes(self):
+        self.inc = 0
+        self.ss = 0
+        self.cg = 0
+        self.ew = 0
 
     def perform_rmd(self,age,rmd_table,fin_log,year):
         income = 0
@@ -585,8 +607,9 @@ class Simulation:
             if investment.value <= 0:
                 continue
             
-            # determine maximum amount to withdraw from investment
-            withdraw = min(investment.value,amt)
+            withdraw = min(investment.value,amt) # max amt to withdraw
+            investment.value -= withdraw
+            amt -= withdraw
 
             # determine if withdrawal is taxed
             if investment.tax_status == "non-retirement":
@@ -595,13 +618,8 @@ class Simulation:
                 investment.purchase *= (1-fraction)
             elif investment.tax_status == "pre-tax":
                 income += withdraw
-            
             if age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
                 ew += withdraw 
-
-            # update investment value and withdraw amounts
-            investment.value -= withdraw
-            amt -= withdraw
 
         return amt,cg,income,ew
     
@@ -669,7 +687,6 @@ class YearlyResults:
         self.total_expenses = 0 # includes expense event series and taxes
         self.early_withdrawal_tax = 0 
         self.discretionary_percent = 0 # discretionary expenses paid / total discretionary
-
 
 # set of n simulations
 async def simulate_n(scenario,n,user):
@@ -795,15 +812,14 @@ def inv_write(inv_writer, year, investments):
 # returns a list of YearlyResults objects
 def simulate(simulation, tax_data, fin_log, inv_writer):
     res = [] # yearly data
-    # resolve event series durations and start times (in that order)
-    simulation.resolve_event_time()
 
-    # resolve life expectancy to determine main loop range
+    simulation.resolve_event_time() # resolve durations and start times
+
+    # resolve life expectancies
     simulation.user_life = math.floor(0.5+simulation.user_life.generate())
     if simulation.is_married:
         simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
 
-    # tax values from previous year
     prev_income = 0 # income
     prev_ss = 0 # social security
     prev_ew = 0 # early withdrawals
@@ -811,34 +827,24 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
     
     # main loop
     for year in range(START_YEAR,simulation.user_birth + simulation.user_life):
-        # create object to store results
-        year_result = YearlyResults(year)
+        year_result = YearlyResults(year) # stores results
 
-        # determine ages
-        user_age = year - simulation.user_birth
-        spouse_age = year - simulation.spouse_birth if simulation.is_married else None
+        user_age = year - simulation.user_birth # determine age
         spouse_alive = simulation.is_married and year < simulation.spouse_birth + simulation.spouse_life
 
-        # tax variables
-        cur_income = 0
+        cur_income = 0 # Income
         cur_ss = 0  # Social Security benefits
         cur_cg = 0  # Capital gains
         cur_ew = 0  # Early withdrawals from retirement accounts
 
         # Pre Step 6: Calculate prev years tax before tax bracket is updated
-        # for the first year, no tax is paid
-        prev_fed_inc = prev_income - SOCIAL_SECURITY_RATE*prev_ss
-        prev_fed_inc_tax = tax_data.calculate_federal_tax(prev_fed_inc, simulation.is_married)
-        prev_state_inc_tax = tax_data.calculate_state_tax(prev_income, simulation.is_married)
-        prev_fed_cg_tax = tax_data.calculate_capital_gains_tax(prev_income, prev_cg, simulation.is_married)
-        prev_state_cg_tax = tax_data.calculate_state_tax(prev_cg, simulation.is_married)
-        prev_ew_tax = tax_data.early_withdrawal * prev_ew
-        if year != START_YEAR:
-            year_result.taxes.append(("federal income",round(prev_fed_inc_tax,DECIMAL_PLACES)))
-            year_result.taxes.append(("state income",round(prev_state_inc_tax,DECIMAL_PLACES)))
-            year_result.taxes.append(("federal capital gains",round(prev_fed_cg_tax,DECIMAL_PLACES)))
-            year_result.taxes.append(("state capital gains",round(prev_state_cg_tax,DECIMAL_PLACES)))
-            year_result.taxes.append(("early_withdrawal_tax",round(prev_ew_tax,DECIMAL_PLACES)))
+        tax_values = tax_data.calculate_tax(prev_income,prev_ss,prev_cg,prev_ew,spouse_alive)
+
+        # record tax values
+        year_result.early_withdrawal_tax = round(tax_values["early withdrawal tax"],DECIMAL_PLACES)
+        if year != START_YEAR: # record tax values
+            for tax, value in tax_values.items():
+                year_result.taxes.append((tax,round(value,DECIMAL_PLACES)))
 
         # Step 1: Inflation
         inflation_rate = 1 + simulation.inflation.generate() / 100
@@ -878,7 +884,6 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         for expense in simulation.expenses:
             exp = expense.update(year,inflation_rate,not spouse_alive)
             if expense.is_discretionary:
-                # cannot record discretionary yet because not guarenteed to be paid
                 total_disc += exp
             elif exp != -1: # returned -1 if inactive
                 fin_write(fin_log,fin_format(year,"expense",exp,f"{expense.name} non-disc"))
@@ -886,23 +891,17 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
                 total_non_disc += exp
 
         # sum up previous year taxes and log them
-        sum_prev_year_tax = prev_fed_inc_tax+prev_state_inc_tax+prev_fed_cg_tax+prev_state_cg_tax+prev_ew_tax
-        fin_write(fin_log,fin_format(year,"tax",prev_fed_inc_tax,f"federal income tax"))
-        fin_write(fin_log,fin_format(year,"tax",prev_state_inc_tax,f"state income tax"))
-        fin_write(fin_log,fin_format(year,"tax",prev_fed_cg_tax,f"federal capital gains"))
-        fin_write(fin_log,fin_format(year,"tax",prev_state_cg_tax,f"state capital gains"))
-        fin_write(fin_log,fin_format(year,"tax",prev_ew_tax,f"early withdrawal tax"))
+        total_prev_tax = sum(tax_values.values())
+        for tax_type,value in tax_values.items():
+            fin_write(fin_log,fin_format(year,"tax",value,tax_type))
 
         # calculate total payment and perform withdrawals to pay off
-        total_payment = sum_prev_year_tax + total_non_disc
+        total_payment = total_prev_tax + total_non_disc
         amt_left,cg,inc,ew = simulation.perform_withdrawals(total_payment,user_age)
 
-        if amt_left > 0:
-            # could not pay all taxes and expenses, must end simulation
+        if amt_left > 0: # could not pay all taxes and expenses, end simulation
             inv_write(inv_writer,year,simulation.investments) # log all investment values (debugging)
             return res
-        
-        # update totals
         cur_cg += cg
         cur_income += inc
         cur_ew += ew
@@ -910,7 +909,7 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         # Step 7: Discretionary Expenses
         total_disc_paid,cg,inc,ew = simulation.perform_spending(user_age,year,spouse_alive,fin_log,year_result)
         
-        # total expenses = discretionary expenses paid + non-discretionary + taxes
+        # total expenses = discretionary paid + non-discretionary + taxes
         year_result.total_expenses = total_disc_paid + total_payment
         year_result.discretionary_percent = round(total_disc_paid / total_disc,DECIMAL_PLACES) if total_disc != 0 else 0
 
@@ -933,12 +932,8 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
         prev_ss = cur_ss
         prev_cg = cur_cg
         prev_ew = cur_ew
-
-        # record early withdrawal tax
-        year_result.early_withdrawal_tax = round(prev_ew_tax,DECIMAL_PLACES)
         
-        # write to csv log file the value of all investments
-        inv_write(inv_writer,year,simulation.investments)
+        inv_write(inv_writer,year,simulation.investments) # write investments to csv file
 
         # record individual investment values and total investments
         total_investments = 0
@@ -947,12 +942,8 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
             year_result.investments.append((f"{investment.name} {investment.tax_status}",round(investment.value,DECIMAL_PLACES)))
         year_result.total_investments = round(total_investments,DECIMAL_PLACES)
 
-        # determine if financial goal was met
-        year_result.success = total_investments >= simulation.fin_goal
-
-        # append data
-        res.append(year_result)
-
+        year_result.success = total_investments >= simulation.fin_goal # financial goal met
+        res.append(year_result) # append data
     return res
 
 # runs a simulation that will log results
