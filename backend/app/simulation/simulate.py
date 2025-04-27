@@ -115,7 +115,7 @@ class Income(EventSeries):
             
             inc = self.amt
             if omit_spouse:
-                inc *= self.user_split
+                inc *= self.user_split/100
             inc_ss = inc if self.social_security else 0
         else:
             # if event inactive, still update inflation
@@ -153,7 +153,7 @@ class Expense(EventSeries):
 
             exp = self.amt
             if omit_spouse:
-                exp *= self.user_split
+                exp *= self.user_split/100
             return exp
         else:
             # if event inactive, still update inflation
@@ -866,7 +866,7 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
             # omit spouse percentage from expense amount
             expense_amt = disc_event.amt
             if not spouse_alive:
-                expense_amt *= disc_event.user_split
+                expense_amt *= disc_event.user_split/100
             
             # get maximum amount that can be paid for current discretionary expense
             amt = min(expense_amt, total_assets - simulation.fin_goal)
