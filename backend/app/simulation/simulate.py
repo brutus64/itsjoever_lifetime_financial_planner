@@ -799,9 +799,8 @@ def inv_write(inv_writer, year, investments):
 def simulate(simulation, tax_data, fin_log, inv_writer):
     res = [] # yearly data
 
-    simulation.resolve_event_time() # resolve durations and start times
-
-    # resolve life expectancies
+    # resolve event times and user life spans
+    simulation.resolve_event_time()
     simulation.user_life = math.floor(0.5+simulation.user_life.generate())
     if simulation.is_married:
         simulation.spouse_life = math.floor(0.5+simulation.spouse_life.generate())
@@ -900,12 +899,11 @@ def simulate(simulation, tax_data, fin_log, inv_writer):
             simulation.ew += ew
 
         # Step 10: Results
-        inv_write(inv_writer,year,simulation.investments) # write investments to csv file
-
         # record income (including income from investments)
         year_result.total_income = round(simulation.inc,DECIMAL_PLACES)
 
         # record individual investment values and total investments
+        inv_write(inv_writer,year,simulation.investments) # write investments to csv file
         total_investments = 0
         for investment in simulation.investments:
             total_investments += investment.value
@@ -924,7 +922,6 @@ def simulate_log(simulation,tax_data,user):
     
     # create two log files
     cur_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    
     with open(f"{LOG_DIRECTORY}/{user}_{cur_time}.log","w") as fin_log, \
          open(f"{LOG_DIRECTORY}/{user}_{cur_time}.csv","w") as inv_log:
         # write the title row of the .csv file
