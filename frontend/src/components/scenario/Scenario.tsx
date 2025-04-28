@@ -8,7 +8,8 @@ const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState();
-    const [ open, setOpen ] = useState(false)
+    const [ open, setOpen ] = useState(false);
+    const [ openExplore, setOpenExplore ] = useState(false)
     const { isGuest, isLoggedIn, userInfo } = useAuth();
 
     //fetch the scenario data from backend
@@ -42,6 +43,10 @@ const Scenario = () => {
         catch(err) {
             console.error("Could not simulate scenario: ",err)
         }
+    }
+
+    const handleExplore = async () => {
+        
     }
 
     // just want the name
@@ -131,8 +136,6 @@ const Scenario = () => {
             if (scenario.roth_optimizer.start_year === null || scenario.roth_optimizer.end_year === null)
                 return false;
         }
-
-        
         return true;
     }
 
@@ -164,8 +167,24 @@ const Scenario = () => {
                     <h2 className="text-xl font-medium ">By {scenario.user.name}</h2>
                 </div>
                 <div className="flex gap-3 whitespace-pre-wrap">
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit} disabled={!canEdit()}>Edit</button>
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={() => setOpen(true)} disabled={!canSimulate()}>Simulate</button>
+                    <img 
+                    src="../menu_icons/edit.png" 
+                    alt="Edit" 
+                    className={"w-10 h-10 " + (canEdit() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canEdit() ? handleEdit : () => 0}
+                    />
+                    <img 
+                    src="../menu_icons/simulation.png" 
+                    alt="Simulate" 
+                    className={"w-10 h-10 " + (canSimulate() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canSimulate() ? () => setOpen(true) : () => 0}
+                    />
+                    <img 
+                    src="../menu_icons/explore.png" 
+                    alt="Explore" 
+                    className={"w-10 h-10 " + (canSimulate() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canSimulate() ? () => setOpenExplore(true) : () => 0}
+                    />
                 </div>
                 
             </div>
@@ -311,6 +330,7 @@ const Scenario = () => {
                 </div>
             </div>
             <SimulatePopup open={open} setOpen={setOpen} handleSimulate={handleSimulate} />
+            <ExplorePopup open={openExplore} setOpen={setOpenExplore} handleExplore={handleExplore} />
         </div>
     )
 }
