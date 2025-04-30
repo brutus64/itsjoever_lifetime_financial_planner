@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import axios from 'axios';
 import { useAuth } from './Navigation/AuthContext';
 import Popup from "reactjs-popup";
+import SimulatePopup from './scenario/SimuatePopup';
 
 type User = {
     age: number;
@@ -326,14 +327,3 @@ const SharePopup = ({ scenario, open, handleClose }) => {
 }
 
 export default ScenarioPage;
-
-// import  DebugUser  from './Navigation/DebugUser'
-
-// export default function ScenarioPage() {
-//   return (
-//     <div>
-//       <h1>Scenario Page</h1>
-//       <DebugUser />
-//     </div>
-//   );
-// }
