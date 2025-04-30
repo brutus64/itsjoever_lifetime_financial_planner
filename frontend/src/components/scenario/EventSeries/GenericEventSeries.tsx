@@ -620,14 +620,14 @@ const GenericEventItem = ({type, event_series, handleEdit, handleDelete, i}:{typ
             )}
             {type == 'invest' &&(
                 <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
-                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.max_cash}</p>
                     <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
                     <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
                 </div> 
             )}
             {type == 'rebalance' &&(
                 <div className="flex flex-1 flex-col cursor-pointer" onClick={() => handleEdit(i)}>
-                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.initial_amt}</p>
+                    <p className="text-ml overflow-ellipsis overflow-hidden">${event_series.details.max_cash}</p>
                     <h2 className="text-ml font-medium overflow-ellipsis overflow-hidden">{event_series.name}</h2>
                     <p className="text-sm overflow-ellipsis overflow-hidden">{event_series.description}</p>
                 </div> 
