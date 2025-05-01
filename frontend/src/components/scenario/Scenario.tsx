@@ -47,16 +47,36 @@ const Scenario = () => {
     }
 
     const handleExplore = async (exploreData) => {
-        console.log(`Exploring ${parameter}: ${paramType} with range ${range} ${numTimes} times!`)
+        let simulations = Math.floor((exploreData.param1.end-exploreData.param1.start)/exploreData.param1.step) + 1;
+        if (exploreData.numParams === 1) {
+            console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType}!`);
+        }
+        else {
+            console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType} and ${exploreData.param2.parameter}: ${exploreData.param2.paramType}`);
+            simulations *= Math.floor((exploreData.param2.end-exploreData.param2.start)/exploreData.param2.step) + 1;
+        }   
+        simulations *= exploreData.numTimes;
+        console.log(`Total simulations: ${simulations}`)
         try {
             const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
             console.log("Loading...")
             const res = await axios.post(`http://localhost:8000/api/exploration`,{
                 scenario:scenario,
-                paramter:parameter, // name of event series
-                param_type:paramType, // field within event series
-                range:range,
-                n:numTimes,
+                num_params:exploreData.numParams,
+                params: [{
+                    parameter:exploreData.param1.parameter,
+                    param_type:exploreData.param1.paramType,
+                    start:exploreData.param1.start,
+                    end:exploreData.param1.end,
+                    step:exploreData.param1.step,
+                },{
+                    parameter:exploreData.param2.parameter,
+                    param_type:exploreData.param2.paramType,
+                    start:exploreData.param2.start,
+                    end:exploreData.param2.end,
+                    step:exploreData.param2.step,
+                }],
+                n:exploreData.numTimes,
                 user:user
             });
             console.log(res)

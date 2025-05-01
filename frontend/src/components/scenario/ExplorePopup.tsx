@@ -1,5 +1,6 @@
 import Popup from "reactjs-popup";
 import { useState } from "react";
+import { setegid } from "process";
 const exploreModalStyling = { 
     "border": "none",
     "borderRadius":"8px",
@@ -77,23 +78,50 @@ const ExplorePopup = ({open,setOpen,handleExplore,eventSeries,rothOptimizer}) =>
         })
     }
 
-
     const validate = () => {
-        // const num = parseInt(numSimulations);
-        if (typeof num !== 'number' || isNaN(num)) {
-            setError("Please enter a number");
+        // Check if all fields filled out
+        if (Number.isNaN(exploreData.numTimes)) {
+            setError("Please fill out all fields")
             return;
         }
-        if (num <= 0) {
-            setError("Number must be non-negative")
+        if (exploreData.param1.parameter === "" || exploreData.param1.paramType === "" || (exploreData.param1.parameter !== "Roth Optimizer" && (exploreData.param1.start === "" || exploreData.param1.end === "" || exploreData.param1.step === ""))) {
+            setError("Please fill out all fields")
+            return;
+        }
+        if (exploreData.numParams === 2 && (exploreData.param2.parameter === "" || exploreData.param2.paramType === "" || (exploreData.param2.parameter !== "Roth Optimizer" && (exploreData.param2.start === "" || exploreData.param2.end === "" || exploreData.param2.step === "")))) {
+            setError("Please fill out all fields")
             return;
         }
 
-        const simulations = Math.floor((exploreData.range.end-exploreData.range.start)/exploreData.range.step) * exploreData.numTimes
+        // Check if numerics make sense
+        if (exploreData.param1.start > exploreData.param1.end || (exploreData.numParams === 2 && exploreData.param2.start > exploreData.param2.end)) {
+            setError("Invalid range")
+            return;
+        }
+        if ((exploreData.param1.parameter !== "Roth Optimizer" && exploreData.param1.step <= 0) || (exploreData.param1.parameter !== "Roth Optimizer" && exploreData.numParams === 2 && exploreData.param2.step <= 0)) {
+            setError("Step must be positive");
+            return;
+        }
+        if (exploreData.numTimes % 1 !== 0) {
+            setError("Number of simulations must be an integer")
+            return;
+        }
+        let simulations = Math.floor((exploreData.param1.end-exploreData.param1.start)/exploreData.param1.step) + 1;
+        if (exploreData.numParams === 2)
+            simulations *= Math.floor((exploreData.param2.end-exploreData.param2.start)/exploreData.param2.step) + 1;
+        simulations *= exploreData.numTimes;
+        
         if (simulations > MAX_SIMULATIONS) {
             setError("Max simulations: " + MAX_SIMULATIONS)
             return;
         }
+
+        // Check if different parameter values being used
+        if (exploreData.numParams === 2 && exploreData.param1.parameter === exploreData.param2.parameter && exploreData.param1.paramType === exploreData.param2.paramType) {
+            setError("Parameters must be different")
+            return;
+        }
+        setError("")
         handleExplore(exploreData);
     }
     
@@ -173,15 +201,15 @@ const Parameter = ({param,exploreData,handleChange,rothOptimizer,eventSeries,ena
                 <div className="">Range:</div>
                 <div className="flex gap-2 align-middle">
                     <div className="w-10">Start:</div>
-                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="start" value={exploreData[param].start} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || !enabled}/> 
+                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="start" value={exploreData[param].start} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || exploreData[param].parameter === "Roth Optimizer" || !enabled}/> 
                 </div>
                 <div className="flex gap-2 align-middle">
                     <div className="w-10">End:</div>
-                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="end" value={exploreData[param].end} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || !enabled}/> 
+                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="end" value={exploreData[param].end} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || exploreData[param].parameter === "Roth Optimizer" || !enabled}/> 
                 </div>
                 <div className="flex gap-2 align-middle">
                     <div className="w-10">Step:</div>
-                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="step" value={exploreData[param].step} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || !enabled}/> 
+                    <input className="text-md px-1 border-2 border-gray-200 rounded-md w-24" type="number" name="step" value={exploreData[param].step} onChange={(event) => handleChange(event,param)} disabled={exploreData[param].parameter === "" || exploreData[param].parameter === "Roth Optimizer" || !enabled}/> 
                 </div>
             </div>
         </div>
