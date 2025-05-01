@@ -1,10 +1,10 @@
 import React from 'react';
-import AppLayout from './Navigation/AppLayout';
+import AppLayout from './navigation/AppLayout';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Cookies from "js-cookie";
 import axios from 'axios';
-import { useAuth } from './Navigation/AuthContext';
+import { useAuth } from './navigation/AuthContext';
 import Popup from "reactjs-popup";
 
 type User = {
