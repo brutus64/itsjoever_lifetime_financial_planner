@@ -1,6 +1,6 @@
 import Plot from 'react-plotly.js';
 
-const LineChartProbability = ({data}:{data: any}) => {
+const ProbabilityLineChart = ({data}:{data: any}) => {
   return (
     <Plot
       data={[
@@ -8,7 +8,7 @@ const LineChartProbability = ({data}:{data: any}) => {
           x: Object.keys(data.success),
           y: Object.values(data.success),
           type: 'scatter',
-          mode: 'lines+markers',
+          mode: 'lines',
           hovertemplate: 'Year: %{x}<br>Percent of Success: %{y}<extra></extra>',
         },
       ]}
@@ -34,4 +34,4 @@ const LineChartProbability = ({data}:{data: any}) => {
   );
 }
 
-export default LineChartProbability
+export default ProbabilityLineChart

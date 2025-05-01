@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
-import LineChartProbability from './Charts/LineChartProbability';
+import ProbabilityLineChart from './charts/ProbabilityLineChart';
+import ShadedLineChartContainer from './charts/ShadedLineChart';
 import { useEffect, useState } from 'react';
 
 const SimulationResultPage = () => {
@@ -17,8 +18,9 @@ const SimulationResultPage = () => {
   }
 
   return (
-    <div>
-        <LineChartProbability data={data} />
+    <div className="">
+        <ProbabilityLineChart data={data} />
+        <ShadedLineChartContainer data={data} />
     </div>
   );
 };
