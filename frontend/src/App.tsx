@@ -7,6 +7,7 @@ import ExplorationPage from './components/ExplorationPage';
 import SimulationLogPage from './components/SimulationLogPage';
 import AppLayout from './components/Navigation/AppLayout';
 import ScenarioForm from './components/scenario/ScenarioForm';
+import SimulationResultPage from './components/SimulationResultPage';
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import { AuthProvider } from './components/Navigation/AuthContext';
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/shared" element={<SharedPage/>}/>
           <Route path="/profile" element={<ProfilePage/>}/>
           <Route path="/scenario/:id/:page" element={<ScenarioForm/>}/>
+          <Route path="/simulation_result" element={<SimulationResultPage/>}/>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>

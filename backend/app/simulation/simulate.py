@@ -709,7 +709,7 @@ def aggregate(results):
             if yearly_result.success:
                 success_totals[yearly_result.year][0] += 1
             success_totals[yearly_result.year][1] += 1
-    agg_results["success"] = {year:(successes/total) for year,(successes,total) in success_totals.items()}
+    agg_results["success"] = {year: round((successes/total)*100, 2) for year,(successes,total) in success_totals.items()}
 
     # Chart 4.2: Percentiles
     # 4.2a: Total investments

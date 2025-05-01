@@ -37,6 +37,7 @@ const Scenario = () => {
             console.log("Loading...")
             const res = await axios.post(`http://localhost:8000/api/simulation`,{scenario:scenario,n:numSimulations,user:user});
             console.log(res)
+            navigate(`/simulation_result`,{state:{data: res.data}})
             setOpen(false)
         }
         catch(err) {
