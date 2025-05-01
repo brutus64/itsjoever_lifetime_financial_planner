@@ -1,8 +1,10 @@
 import Plot from 'react-plotly.js';
 import { useEffect, useState } from 'react';
 
-// TODO: Possibly change colors of the lines to be more distinct
+// TODO: 
+// Possibly change colors of the lines to be more distinct
 // Styling for dropdown menu/chart
+// ***ADD IN FINANCIAL GOAL LINE, y={financial_goal}, financial_goal doesnt exist in {data} yet***
 
 const ShadedLineChartContainer = ({data}:{data: any}) => {
     const [selected, setSelected] = useState('total_investments')
