@@ -16,7 +16,7 @@ const ShadedLineChartContainer = ({data}:{data: any}) => {
 
     return (
         <div className="">
-            <select onChange={changeSelected} value={selected}>
+            <select onChange={changeSelected} value={selected} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
                 <option value="total_investments">Total Investments</option>
                 <option value="total_income">Total Income</option>
                 <option value="total_expenses">Total Expenses</option>
@@ -60,7 +60,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
           mode: 'lines',
           line: { color: 'transparent'},
           name: '10th Percentile',
-          hovertemplate: 'Year: %{x}<br>10%: %{y:.2f}<extra></extra>',
+          hovertemplate: 'Year: %{x}<br>10%: $%{y:,.2f}<extra></extra>',
         },
         // 90th percentile line
         {
@@ -70,7 +70,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
           mode: 'lines',
           line: { color: 'transparent'},
           name: '90th Percentile',
-          hovertemplate: 'Year: %{x}<br>90%: %{y:.2f}<extra></extra>',
+          hovertemplate: 'Year: %{x}<br>90%: $%{y:,.2f}<extra></extra>',
         },
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,7 +100,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent'},
             name: '20th Percentile',
-            hovertemplate: 'Year: %{x}<br>20%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>20%: $%{y:,.2f}<extra></extra>',
         },
         // 80th percentile line
         {
@@ -110,7 +110,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent' },
             name: '90th Percentile',
-            hovertemplate: 'Year: %{x}<br>80%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>80%: $%{y:,.2f}<extra></extra>',
         },
 
 
@@ -141,7 +141,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent'},
             name: '30th Percentile',
-            hovertemplate: 'Year: %{x}<br>30%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>30%: $%{y:,.2f}<extra></extra>',
         },
         // 70th percentile line
         {
@@ -151,7 +151,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent'},
             name: '70th Percentile',
-            hovertemplate: 'Year: %{x}<br>70%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>70%: $%{y:,.2f}<extra></extra>',
         },
         
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -182,7 +182,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent'},
             name: '40th Percentile',
-            hovertemplate: 'Year: %{x}<br>40%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>40%: $%{y:,.2f}<extra></extra>',
           },
           // 90th percentile line
           {
@@ -192,7 +192,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             mode: 'lines',
             line: { color: 'transparent'},
             name: '60th Percentile',
-            hovertemplate: 'Year: %{x}<br>60%: %{y:.2f}<extra></extra>',
+            hovertemplate: 'Year: %{x}<br>60%: $%{y:,.2f}<extra></extra>',
           },
       ]}
       layout={{
@@ -207,7 +207,8 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
         yaxis: { 
           title: 'Percent of Success',
           automargin: true,
-          font: { size: 14, color: '#000' },
+          font: { size: 14, color: '#000'},
+          tickformat: ',.0f'
         }
       }}
       style={{ width: '100%', height: '100%' }}
