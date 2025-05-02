@@ -48,19 +48,22 @@ const Scenario = () => {
 
     const handleExplore = async (exploreData) => {
         let simulations = Math.floor((exploreData.param1.end-exploreData.param1.start)/exploreData.param1.step) + 1;
+        if (isNaN(simulations))
+            simulations = 2
         if (exploreData.numParams === 1) {
             console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType}!`);
         }
         else {
             console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType} and ${exploreData.param2.parameter}: ${exploreData.param2.paramType}`);
-            simulations *= Math.floor((exploreData.param2.end-exploreData.param2.start)/exploreData.param2.step) + 1;
+            const sim2 = Math.floor((exploreData.param2.end-exploreData.param2.start)/exploreData.param2.step) + 1;
+            simulations *= isNaN(sim2) ? 2 : sim2;
         }   
         simulations *= exploreData.numTimes;
         console.log(`Total simulations: ${simulations}`)
         try {
             const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
             console.log("Loading...")
-            const res = await axios.post(`http://localhost:8000/api/exploration`,{
+            const res = await axios.post(`http://localhost:8000/api/simulation/exploration`,{
                 scenario:scenario,
                 num_params:exploreData.numParams,
                 params: [{
