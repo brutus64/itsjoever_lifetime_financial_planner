@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import MultiLine from './Charts/MultiLine1D';
-// import LineChart from './Charts/LineChart1D';
-// import SurfacePlot from './Charts/SurfacePlot2D';
-// import ContourPlot from './Charts/ContourPlot2D';
+import LineChart from './Charts/LineChart1D';
+import SurfacePlot from './Charts/SurfacePlot2D';
+import ContourPlot from './Charts/ContourPlot2D';
 
 const ExplorationPage: React.FC = () => {
     const location = useLocation();
@@ -32,14 +32,11 @@ const ExplorationPage: React.FC = () => {
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
                 <p className="text-5xl">Exploration</p>
-                <div className='flex '>
-                    hi 
-                </div>
             </div>
             {exploreType == '1D' && 
                 <>
                     <MultiLine data={data} />
-                    {/* <LineChart data={data} /> */}
+                    <LineChart data={data} />
                 </>
             }
             {exploreType == '2D' && 

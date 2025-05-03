@@ -27,7 +27,7 @@ const MultiLinePlot = ({data, selected}: {data:any, selected:string}) => {
             x: Object.keys(yearlyResults),
             y: Object.values(yearlyResults),
             type: "scatter",
-            mode: "lines+marker",
+            mode: "lines+markers",
             name: paramValue,
             hovertemplate: `Year: %{x}<br>` + `${word}: %{y}<br>` + `Parameter: ${paramValue}`,
         }
@@ -52,7 +52,6 @@ const MultiLinePlot = ({data, selected}: {data:any, selected:string}) => {
                 }
               }}
               style={{ width: '100%', height: '100%' }}
-              config={{ displayModeBar: false, staticPlot: false }}
         />
     )
 }
