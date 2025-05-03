@@ -85,7 +85,7 @@ const Scenario = () => {
             });
             console.log(res)
             setOpenExplore(false)
-            navigate('exploration_result',{state: {data: res.data}})
+            navigate('/exploration_result',{state: {data: res.data}})
         }
         catch(err) {
             console.error("Could not explore scenario: ",err)
