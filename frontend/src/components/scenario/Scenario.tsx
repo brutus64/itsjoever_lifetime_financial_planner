@@ -83,7 +83,7 @@ const Scenario = () => {
                 user:user
             });
             console.log(res)
-            setOpen(false)
+            setOpenExplore(false)
         }
         catch(err) {
             console.error("Could not explore scenario: ",err)
