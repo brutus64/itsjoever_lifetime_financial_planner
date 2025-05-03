@@ -12,22 +12,26 @@ const ExplorationPage: React.FC = () => {
     useEffect(() => {
         if (location.state?.data){
             setData(location.state.data);
-            const is2D = 'param1' in location.state.data && 'param2' in location.state.data;
-            if (is2D)
+            console.log("PARAM2", location.state.data.param2)
+            console.log("PARAM1", location.state.data.param1)
+            if (location.state.data.param1 && location.state.data.param2 !== null)
                 setExploreType('2D');
-            else
+            else if (location.state.data.param1)
                 setExploreType('1D');
+            else
+                console.log("how is param1 and param2 non-existent at all")
         }
     },[location.state])
     console.log(data)
     
+    if (!data) {
+        return <div>Loading...</div>;
+    }
+    console.log(exploreType)
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
                 <p className="text-5xl">Exploration</p>
-                <div className='flex '>
-
-                </div>
             </div>
             {exploreType == '1D' && 
                 <>
@@ -37,8 +41,13 @@ const ExplorationPage: React.FC = () => {
             }
             {exploreType == '2D' && 
                 <>
+<<<<<<< HEAD
                     <SurfacePlotContainer data={data} />
                     <ContourPlotContainer data={data}/>
+=======
+                    {/* <SurfacePlot data={data}/>
+                    <ContourPlot data={data}/> */}
+>>>>>>> 9b764575ea06fb9ee2f498d94284f85c6e8fa3f4
                 </>
             }
         </div>
