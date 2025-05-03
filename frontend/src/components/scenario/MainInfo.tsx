@@ -222,6 +222,8 @@ const MainInfo = ({scenario_id}:any) => {
 
     if (mainData === null)
         return <div>Loading</div>
+
+    console.log(mainData)
     
     return (
         <div className="flex flex-col gap-4 m-10">

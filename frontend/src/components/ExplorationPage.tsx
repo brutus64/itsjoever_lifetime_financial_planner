@@ -2,9 +2,16 @@ import React from 'react';
 
 const ExplorationPage: React.FC = () => {
     return (
-        <div>
-            <h1>Exploration Page</h1>
-            <p>Welcome to the Exploration Page!</p>
+        <div className='flex flex-col gap-6'>
+            <div className='flex item justify-between'>
+                <p className="text-5xl">Exploration</p>
+                <div className='flex '>
+
+                </div>
+            </div>
+            <div className='flex flex-col gap-4'>
+                
+            </div>
         </div>
     );
 };

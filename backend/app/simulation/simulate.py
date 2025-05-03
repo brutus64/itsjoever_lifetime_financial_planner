@@ -674,29 +674,35 @@ class YearlyResults:
         self.early_withdrawal_tax = 0 
         self.discretionary_percent = 0 # discretionary expenses paid / total discretionary
 
-# set of n simulations
-async def simulate_n(scenario,n,user):
+# prepare simulation
+async def simulate_start(scenario,n,user):
     # create simulation object and get tax from db
     simulation_state = Simulation(scenario)
     tax_data = Tax(simulation_state.state)
     await tax_data.fetch_tax()
 
-    # spawn processes
-    results = []
+    # spawn processes to handle tasks
     with Pool() as pool:
-        log_result = pool.apply_async(simulate_log,args=(simulation_state,tax_data,user,))
-        results.append(log_result)
-        for _ in range(n-1):
-            result = pool.apply_async(simulate,args=(simulation_state,tax_data,None,None,))
-            results.append(result)
+        results = await simulate_n(simulation_state,n,user,tax_data,True,pool)
         # get all simulation results
         print("Getting results...")
         results = [result.get() for result in results]
-    
-    # aggregate results for displaying on graphs
+        # aggregate results for displaying on graphs
     aggregated = aggregate(results)
     return aggregated
 
+# set of n simulations, must be used inside pool context, and must await results
+async def simulate_n(sim,n,user,tax,logging,pool):
+    results = []
+    if logging:
+        log_result = pool.apply_async(simulate_log,args=(sim,tax,user,))
+        results.append(log_result)
+        n -= 1
+    for _ in range(n):
+        result = pool.apply_async(simulate,args=(sim,tax,None,None,))
+        results.append(result)
+    return results
+    
 # aggregate data across all n simulations
 def aggregate(results):
     agg_results = {}

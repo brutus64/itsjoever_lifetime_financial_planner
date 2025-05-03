@@ -2,13 +2,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
 import { useAuth } from '../navigation/AuthContext';
 import axios from "axios";
-import Popup from "reactjs-popup";
+import SimulatePopup from "./SimuatePopup";
+import ExplorePopup from "./ExplorePopup";
 
 const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
     const [ scenario, setScenario ] = useState();
-    const [ open, setOpen ] = useState(false)
+    const [ open, setOpen ] = useState(false);
+    const [ openExplore, setOpenExplore ] = useState(false)
     const { isGuest, isLoggedIn, userInfo } = useAuth();
 
     //fetch the scenario data from backend
@@ -42,6 +44,50 @@ const Scenario = () => {
         }
         catch(err) {
             console.error("Could not simulate scenario: ",err)
+        }
+    }
+
+    const handleExplore = async (exploreData) => {
+        let simulations = Math.floor((exploreData.param1.end-exploreData.param1.start)/exploreData.param1.step) + 1;
+        if (isNaN(simulations))
+            simulations = 2
+        if (exploreData.numParams === 1) {
+            console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType}!`);
+        }
+        else {
+            console.log(`Exploring ${exploreData.param1.parameter}: ${exploreData.param1.paramType} and ${exploreData.param2.parameter}: ${exploreData.param2.paramType}`);
+            const sim2 = Math.floor((exploreData.param2.end-exploreData.param2.start)/exploreData.param2.step) + 1;
+            simulations *= isNaN(sim2) ? 2 : sim2;
+        }   
+        simulations *= exploreData.numTimes;
+        console.log(`Total simulations: ${simulations}`)
+        try {
+            const user = (isLoggedIn && isGuest) ? "Guest" : userInfo?.name.replaceAll(" ", "_");
+            console.log("Loading...")
+            const res = await axios.post(`http://localhost:8000/api/simulation/exploration`,{
+                scenario:scenario,
+                num_params:exploreData.numParams,
+                params: [{
+                    parameter:exploreData.param1.parameter,
+                    param_type:exploreData.param1.paramType,
+                    start:exploreData.param1.start,
+                    end:exploreData.param1.end,
+                    step:exploreData.param1.step,
+                },{
+                    parameter:exploreData.param2.parameter,
+                    param_type:exploreData.param2.paramType,
+                    start:exploreData.param2.start,
+                    end:exploreData.param2.end,
+                    step:exploreData.param2.step,
+                }],
+                n:exploreData.numTimes,
+                user:user
+            });
+            console.log(res)
+            setOpenExplore(false)
+        }
+        catch(err) {
+            console.error("Could not explore scenario: ",err)
         }
     }
 
@@ -132,8 +178,6 @@ const Scenario = () => {
             if (scenario.roth_optimizer.start_year === null || scenario.roth_optimizer.end_year === null)
                 return false;
         }
-
-        
         return true;
     }
 
@@ -165,8 +209,24 @@ const Scenario = () => {
                     <h2 className="text-xl font-medium ">By {scenario.user.name}</h2>
                 </div>
                 <div className="flex gap-3 whitespace-pre-wrap">
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-black w-40 h-10" onClick={handleEdit} disabled={!canEdit()}>Edit</button>
-                    <button className="text-white font-bold text-xl rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-700 w-40 h-10" onClick={() => setOpen(true)} disabled={!canSimulate()}>Simulate</button>
+                    <img 
+                    src="../menu_icons/edit.png" 
+                    alt="Edit" 
+                    className={"w-10 h-10 " + (canEdit() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canEdit() ? handleEdit : () => 0}
+                    />
+                    <img 
+                    src="../menu_icons/simulation.png" 
+                    alt="Simulate" 
+                    className={"w-10 h-10 " + (canSimulate() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canSimulate() ? () => setOpen(true) : () => 0}
+                    />
+                    <img 
+                    src="../menu_icons/explore.png" 
+                    alt="Explore" 
+                    className={"w-10 h-10 " + (canSimulate() ? "cursor-pointer hover:opacity-80 " : "opacity-20 cursor-default")}
+                    onClick={canSimulate() ? () => setOpenExplore(true) : () => 0}
+                    />
                 </div>
                 
             </div>
@@ -312,6 +372,7 @@ const Scenario = () => {
                 </div>
             </div>
             <SimulatePopup open={open} setOpen={setOpen} handleSimulate={handleSimulate} />
+            <ExplorePopup open={openExplore} setOpen={setOpenExplore} handleExplore={handleExplore} eventSeries={scenario.event_series} rothOptimizer={scenario.roth_optimizer}/>
         </div>
     )
 }
@@ -333,51 +394,5 @@ const Collapse = ({children,base}) => {
     )
 }
 
-const simulateModalStyling = { 
-    "border": "none",
-    "borderRadius":"8px",
-    "width":"300px",
-    "height":"200px"
-};
-const MAX_SIMULATIONS = 1000000;
-const SimulatePopup = ({open,setOpen,handleSimulate}) => {
-    const [ numSimulations, setNumSimulations] = useState();
-    const [ error, setError ] = useState("")
 
-    const handleChange = (event) => {
-        setNumSimulations(event.target.value);
-    };
-
-    const validate = () => {
-        const num = parseInt(numSimulations);
-        if (typeof num !== 'number' || isNaN(num)) {
-            setError("Please enter a number");
-            return;
-        }
-        if (num <= 0) {
-            setError("Number must be non-negative")
-            return;
-        }
-        if (num > MAX_SIMULATIONS) {
-            setError("Max simulations: " + MAX_SIMULATIONS)
-            return;
-        }
-        handleSimulate(num);
-    }
-
-    return (
-        <Popup open={open} position="right center" closeOnDocumentClick modal contentStyle={simulateModalStyling} onClose={() => setOpen(false)}>
-            <div className="rounded-lg m-10 flex flex-col gap-3 items-center">
-                <div className="flex flex-col gap-1">
-                    <h2 className="font-medium">Simulations:</h2>
-                    <input className="text-lg px-1 border-2 border-gray-200 rounded-md w-30" type="number" min="0" name="value" value={numSimulations} onChange={handleChange}/>
-                </div>
-                <div className="flex justify-between">
-                    <button className="text-white px-4 py-1 rounded-md hover:opacity-80 cursor-pointer disabled:opacity-20 disabled:cursor-default bg-blue-600 w-50" onClick={validate}>Run</button>
-                </div>
-                <div className="text-red-600 font-bold">{error}</div>
-            </div>
-        </Popup>
-    )
-}
 export default Scenario;
