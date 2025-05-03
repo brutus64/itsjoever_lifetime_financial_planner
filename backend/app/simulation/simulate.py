@@ -689,6 +689,7 @@ async def simulate_start(scenario,n,user):
         results = [result.get() for result in results]
         # aggregate results for displaying on graphs
     aggregated = aggregate(results)
+    aggregated["fin_goal"] = simulation_state.fin_goal
     return aggregated
 
 # set of n simulations, must be used inside pool context, and must await results

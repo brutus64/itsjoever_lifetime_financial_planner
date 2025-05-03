@@ -34,6 +34,7 @@ async def one_param(explore_data):
         print("Getting results...")
         for val in values:
             results[val] = aggregate([result.get() for result in results[val]])
+            results[val]["fin_goal"] = simulation_state.fin_goal
     
     # aggregate exploration results
     explore_agg = aggregate_one(results)
@@ -67,6 +68,7 @@ async def two_params(explore_data):
         for val in values_1:
             for val2 in values_2:
                 results[val][val2] = aggregate([result.get() for result in results[val][val2]])
+                results[val][val2]["fin_goal"] = simulation_state.fin_goal
 
     # aggregate exploration results
     explore_agg = aggregate_two(results)
