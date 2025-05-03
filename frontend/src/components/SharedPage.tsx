@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Cookies from "js-cookie";
 import axios from 'axios';
-import { useAuth } from './navigation/AuthContext';
+import { useAuth } from './Navigation/AuthContext';
 import Popup from "reactjs-popup";
 
 type User = {

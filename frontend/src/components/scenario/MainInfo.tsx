@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useAuth } from "../navigation/AuthContext";
+import { useAuth } from "../Navigation/AuthContext";
 
 const MainInfo = ({scenario_id}:any) => {
     const { userInfo } = useAuth();

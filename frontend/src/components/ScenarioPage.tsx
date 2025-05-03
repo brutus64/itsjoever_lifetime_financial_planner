@@ -1,10 +1,10 @@
 import React from 'react';
-import AppLayout from './navigation/AppLayout';
+import AppLayout from './Navigation/AppLayout';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Cookies from "js-cookie";
 import axios from 'axios';
-import { useAuth } from './navigation/AuthContext';
+import { useAuth } from './Navigation/AuthContext';
 import Popup from "reactjs-popup";
 import SimulatePopup from './scenario/SimuatePopup';
 

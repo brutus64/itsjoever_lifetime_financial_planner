@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState,useEffect } from "react";
-import { useAuth } from '../navigation/AuthContext';
+import { useAuth } from '../Navigation/AuthContext';
 import axios from "axios";
 import SimulatePopup from "./SimuatePopup";
 import ExplorePopup from "./ExplorePopup";

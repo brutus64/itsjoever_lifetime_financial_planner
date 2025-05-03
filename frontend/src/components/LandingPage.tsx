@@ -1,6 +1,6 @@
 import React from 'react';
-import Login from './navigation/Login'
-import { useAuth } from './navigation/AuthContext';
+import Login from './Navigation/Login'
+import { useAuth } from './Navigation/AuthContext';
 
 // basic react component for the landing page
 const LandingPage: React.FC = () => {    
