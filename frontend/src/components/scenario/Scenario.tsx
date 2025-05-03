@@ -8,7 +8,7 @@ import ExplorePopup from "./ExplorePopup";
 const Scenario = () => {
     const params = useParams();
     const navigate = useNavigate();
-    const [ scenario, setScenario ] = useState();
+    const [ scenario, setScenario ] = useState(null);
     const [ open, setOpen ] = useState(false);
     const [ openExplore, setOpenExplore ] = useState(false)
     const { isGuest, isLoggedIn, userInfo } = useAuth();
@@ -249,7 +249,7 @@ const Scenario = () => {
                 <h1 className="text-3xl font-medium">Investment Types</h1>
                 <div className="flex flex-col gap-2">
                     {scenario.investment_types.map((investment,i) =>
-                        <Collapse base={<div className="text-xl font-medium">{investment.name}</div>}>
+                        <Collapse key={i} base={<div className="text-xl font-medium">{investment.name}</div>}>
                             <div className="p-4 gap-3 w-140 box-border">
                                 <div className="overflow-ellipsis overflow-hidden text-wrap break-words"><b>Description:</b> {investment.description}</div>
                                 <div><b>Expected Annual Return:</b> {handlePercent(investment.exp_annual_return)}</div>
