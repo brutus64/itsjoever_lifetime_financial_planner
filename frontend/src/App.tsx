@@ -22,13 +22,13 @@ function App() {
         <Route path="/" element={<AppLayout />}>
           <Route path="scenario" element={<ScenarioPage />} />
           <Route path="/scenario/:id" element={<Scenario />} />
-          <Route path="/exploration" element={<ExplorationPage/>}/>
           <Route path="/simulation" element={<SimulationLogPage/>}/>
           <Route path="/shared" element={<SharedPage/>}/>
           <Route path="/profile" element={<ProfilePage/>}/>
           <Route path="/scenario/:id/:page" element={<ScenarioForm/>}/>
           <Route path="/simulation_result" element={<SimulationResultPage/>}/>
-          <Route path="/exploration_result" element={<ExplorationPage/>}></Route>
+          <Route path="/exploration_result" element={<ExplorationPage/>}>
+        </Route>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>
