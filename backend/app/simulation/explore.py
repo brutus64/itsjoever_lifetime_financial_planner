@@ -159,3 +159,13 @@ def aggregate_two(results):
     agg_results = {}
 
     # Chart 6.1 and 6.2: Two Param vs Quantity
+    for val_1,outer_result in results.items():
+        agg_results[val_1] = {}
+        for val_2,result in outer_result.items():
+            final_year = max(result["success"].keys())
+            agg_results[val_1][val_2] = {}
+            # record final prob
+            agg_results[val_1][val_2]["final_success"] = results[val_1][val_2]["success"][final_year]
+            # record final total investments median
+            agg_results[val_1][val_2]["final_investments"] = results[val_1][val_2]["percentiles"]["total_investments"][final_year][5]
+    return agg_results

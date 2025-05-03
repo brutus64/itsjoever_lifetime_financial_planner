@@ -239,6 +239,9 @@ def parse_life_expectancy(life_expect):
     res = []
     
     for life in life_expect:
+        if not life:
+            res.append(LifeExpectancy())
+            continue
         life_type = life.get('type')
         if life_type == 'fixed':
             res.append(LifeExpectancy(
