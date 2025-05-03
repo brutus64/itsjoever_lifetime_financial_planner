@@ -33,6 +33,28 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
   return (
     <Plot
     data={[
+        // y = Financial Goal Line
+        {
+          x: Object.keys(data.percentiles[selected]),
+          y: Object.keys(data.percentiles[selected]).map(() => data.fin_goal),
+          type: 'scatter',
+          mode: 'lines',
+          line: { color: 'rgb(81, 255, 0)'},
+          name: 'Financial Goal',
+          hovertemplate: 'Financial Goal: $%{y:,.2f}<extra></extra>',
+        },
+
+        // Median (50th percentile) line
+        {
+          x: Object.keys(data.percentiles[selected]),
+          y: Object.values(data.percentiles[selected]).map(yearData => yearData[5]),
+          type: 'scatter',
+          mode: 'lines',
+          line: { color: 'rgb(0, 0, 0)'},
+          name: 'Median',
+          hovertemplate: 'Year: %{x}<br>Median%: $%{y:,.2f}<extra></extra>',
+        },
+      
         // Shaded area between 10th and 90th percentiles
         {
           x: [
