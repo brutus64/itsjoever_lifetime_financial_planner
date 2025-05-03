@@ -51,8 +51,7 @@ const LineChartPlot = ({data, selected} : {data:any, selected: string}) => {
                   tickformat: ',.0f'
                 }
               }}
-              style={{ width: '100%', height: '100%' }}
-        
+            style={{ width: '100%', height: '100%' }}
         />
 
     )

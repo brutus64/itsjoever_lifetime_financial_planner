@@ -1,59 +1,71 @@
 import Plot from 'react-plotly.js';
+import { useState } from 'react';
 
-const SurfacePlot2DContainer = ({ data }: { data: any }) => {
-  return <SurfacePlot2D data={data} type={'final_investments'} />;
+const SurfacePlot = ({ data }: { data: any }) => {
+    const [selected, setSelected] = useState('final_success');
+    const handleChange = (e) => {
+        setSelected(e.target.value);
+        console.log(`swapped to ${e.target.value}`)
+    }
+    return (
+        <>
+            <select onChange={handleChange} value={selected}>
+                <option value="final_success">Final Success</option>
+                <option value="final_investments">Final Median Investment</option>
+            </select>
+            <SurfacePlotChart data={data} selected={selected}/>
+        </>
+    )
 };
 
-const SurfacePlot2D = ({ data, type }: { data: any; type: string }) => {
-  const param1_vals = Object.keys(data.explore_results)
-    .map(Number)
-    .sort((a, b) => a - b); // e.g., [60000, 70000, 80000, ...]
+const SurfacePlotChart = ({data, selected} : {data:any, selected:string}) => {
+    const word = selected.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const param1 = Object.keys(data.explore_results)
+    const param2 = Object.keys(data.explore_results[param1[0]]) //to get the y value variations since its the same nxm array across all n values
+    const z = [];
+    for (const paramTwo of param2) {
+        const row = [];
+        for (const paramOne of param1) {
+            const value = data.explore_results[paramOne][paramTwo][selected];
+            row.push(value);
+        }
+        z.push(row);
+    }
 
-  const param2_vals = Object.keys(data.explore_results[param1_vals[0]])
-    .map(Number)
-    .sort((a, b) => a - b); // e.g., [500, 800, 1100, ...]
+    console.log("PARAM1", param1)
+    console.log("PARAM2", param2)
+    console.log("Z", z)
 
-  let x:number[]  = [];
-  let y:number[] = [];
-  param1_vals.forEach(param1 => {
-    param2_vals.forEach(param2 => {
-        x.push(param1);
-        y.push(param2);
-    })
-  })
-
-  const z = x.map((xVal) => {
-    return y.map((yVal) => {
-      const entry = data.explore_results[xVal][yVal];
-      return entry ? entry[type] : null;
-    });
-  });
-
-  return (
-    <Plot
-      data={[
-        {
-          x: x,
-          y: y,
-          z: z,
-          type: 'surface',
-          colorscale: 'Viridis',
-        },
-      ]}
-      layout={{
-        title: { text: `Surface Plot of ${type}`, xanchor: 'center' },
-        autosize: true,
-        scene: {
-          xaxis: { title: data.param1 },
-          yaxis: { title: data.param2 },
-          zaxis: { title: type },
-        },
-        hovermode: 'closest',
-      }}
-      style={{ width: '100%', height: '100%' }}
-      config={{ displayModeBar: false, staticPlot: false }}
+    const trace = {
+        type: 'surface',
+        z: z,
+        x: param1,
+        y: param2,
+        colorscale: 'Viridis',
+        hovertemplate:
+            `${data.param1}: %{x}<br>` +
+            `${data.param2}: %{y}<br>` + 
+            `${word}: ` + (selected.includes('success') ? '%{z:,.2f}%' : '$%{z:,.2f}') +
+            '<extra></extra>'
+    }
+    return (
+        <Plot
+            data={[trace]}
+            layout={{
+                title: { text: `Surface Plot of ${word}`, xanchor: 'center' },
+                autosize: true,
+                scene: {
+                xaxis: { title: data.param1 },
+                yaxis: { title: data.param2 },
+                zaxis: { title: word },
+                },
+                hovermode: 'closest',
+            }}
+            style={{ width: '100%', height: '100%' }}
+            config={{ displayModeBar: false, staticPlot: false }}
     />
   );
-};
+}
+    
 
-export default SurfacePlot2DContainer;
+export default SurfacePlot;

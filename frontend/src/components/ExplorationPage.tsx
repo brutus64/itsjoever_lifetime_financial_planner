@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import MultiLine from './Charts/MultiLine1D';
 import LineChart from './Charts/LineChart1D';
-import SurfacePlotContainer from './Charts/SurfacePlot2D';
-import ContourPlotContainer from './Charts/ContourPlot2D';
 import Section4Chart1DContainer from './Charts/Section4Chart1D';
 import Section4Chart2DContainer from './Charts/Section4Chart2D';
+import SurfacePlot from './Charts/SurfacePlot2D';
+import ContourPlot from './Charts/ContourPlot2D';
 
 const ExplorationPage: React.FC = () => {
     const location = useLocation();
@@ -45,8 +45,8 @@ const ExplorationPage: React.FC = () => {
             {exploreType == '2D' && 
                 <>
                     <Section4Chart2DContainer data={data} />
-                    <SurfacePlotContainer data={data} />
-                    <ContourPlotContainer data={data}/>
+                    <SurfacePlot data={data} />
+                    <ContourPlot data={data}/>
                 </>
             }
         </div>
