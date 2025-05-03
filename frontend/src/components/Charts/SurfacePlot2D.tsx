@@ -29,11 +29,6 @@ const SurfacePlot2D = ({ data, type }: { data: any; type: string }) => {
     });
   });
 
-  console.log(data);
-  console.log(x);
-  console.log(y);
-  console.log(z);
-
   return (
     <Plot
       data={[

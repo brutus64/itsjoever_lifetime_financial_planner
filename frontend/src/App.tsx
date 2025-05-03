@@ -28,7 +28,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage/>}/>
           <Route path="/scenario/:id/:page" element={<ScenarioForm/>}/>
           <Route path="/simulation_result" element={<SimulationResultPage/>}/>
-          <Route path="/scenario/:id/exploration_result" element={<ExplorationPage/>}></Route>
+          <Route path="/exploration_result" element={<ExplorationPage/>}></Route>
           {/* ADD YOUR NEW ROUTES HERE - HEADER/MENU WILL BE AUTOMATICALLY SHOWN */}
         </Route>
       </Routes>
