@@ -17,14 +17,24 @@ const ProbabilityLineChart = ({data}:{data: any}) => {
           text: 'Probability of Success Over Time',
           xanchor: 'center'},
         xaxis: { 
-          title: 'Year',
+          title: {
+            text:'Year',
+            font: {
+              size: 14,
+              color: '#000' 
+            }
+          },
           automargin: true,
-          font: { size: 14, color: '#000' },
         },
         yaxis: { 
-          title: 'Percent of Success',
+          title: {
+            text:'Percent',
+            font: {
+              size: 14,
+              color: '#000' 
+            }
+          },
           automargin: true,
-          font: { size: 14, color: '#000' },
         },
         hovermode: 'x unified', // optional: makes hovering over multiple lines easier
       }}

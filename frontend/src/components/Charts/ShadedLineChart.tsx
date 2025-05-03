@@ -222,14 +222,24 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
           text: `${selected.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Over Time`,
           xanchor: 'center'},
         xaxis: { 
-          title: 'Year',
+          title: {
+            text:'Year',
+            font: {
+              size: 14,
+              color: '#000' 
+            }
+          },
           automargin: true,
-          font: { size: 14, color: '#000' },
         },
         yaxis: { 
-          title: 'Percent of Success',
+          title: {
+            text:'Dollars',
+            font: {
+              size: 14,
+              color: '#000' 
+            }
+          },
           automargin: true,
-          font: { size: 14, color: '#000'},
           tickformat: ',.0f'
         }
       }}

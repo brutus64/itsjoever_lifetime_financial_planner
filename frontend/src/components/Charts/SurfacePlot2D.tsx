@@ -55,9 +55,33 @@ const SurfacePlotChart = ({data, selected} : {data:any, selected:string}) => {
                 title: { text: `Surface Plot of ${word}`, xanchor: 'center' },
                 autosize: true,
                 scene: {
-                xaxis: { title: data.param1 },
-                yaxis: { title: data.param2 },
-                zaxis: { title: word },
+                    xaxis: { 
+                        title: {
+                            text: data.param1, 
+                            font: {
+                                size: 8,
+                            }
+                        },
+                        automargin: true,
+                    },
+                    yaxis: { 
+                        title: {
+                            text: data.param2,
+                            font: {
+                                size: 8,
+                            }
+                        },
+                        automargin: true,
+                    },
+                    zaxis: { 
+                        title: {
+                            text: word,
+                            font: {
+                                size: 8,
+                            }
+                        },
+                        automargin: true,
+                    },
                 },
                 hovermode: 'closest',
             }}

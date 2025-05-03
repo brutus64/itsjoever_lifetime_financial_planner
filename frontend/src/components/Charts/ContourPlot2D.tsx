@@ -76,12 +76,22 @@ const ContourPlotChart = ({data, selected} : {data:any, selected:string}) => {
                 xanchor: 'center'
                 },
                 xaxis: { 
-                title: data.param1,
-                automargin: true,
+                    title: {
+                        text: data.param1, 
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
                 },
                 yaxis: { 
-                title: data.param2,
-                automargin: true,
+                    title: {
+                        text: data.param2,
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
                 },
                 width: 800,
                 height: 600,

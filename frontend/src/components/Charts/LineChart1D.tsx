@@ -37,18 +37,26 @@ const LineChartPlot = ({data, selected} : {data:any, selected: string}) => {
             data={[traces]}
             layout={{
                 title: {
-                  text: `${word}`,
-                  xanchor: 'center'},
+                    text: `${word}`,
+                    xanchor: 'center'},
                 xaxis: { 
-                  title: `${data.param1}`,
-                  automargin: true,
-                  font: { size: 14, color: '#000' },
+                    title: {
+                        text: data.param1,
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
                 },
                 yaxis: { 
-                  title: `${word}`,
-                  automargin: true,
-                  font: { size: 14, color: '#000'},
-                  tickformat: ',.0f'
+                    title: {
+                        text: word,
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
+                    tickformat: ',.0f'
                 }
               }}
             style={{ width: '100%', height: '100%' }}

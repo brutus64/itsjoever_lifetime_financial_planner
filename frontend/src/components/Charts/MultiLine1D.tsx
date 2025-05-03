@@ -37,18 +37,26 @@ const MultiLinePlot = ({data, selected}: {data:any, selected:string}) => {
             data={traces}
             layout={{
                 title: {
-                  text: `${selected.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Over Time`,
-                  xanchor: 'center'},
+                    text: `${selected.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Over Time`,
+                    xanchor: 'center'},
                 xaxis: { 
-                  title: 'Year',
-                  automargin: true,
-                  font: { size: 14, color: '#000' },
+                    title: {
+                        text: 'Year',
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
                 },
                 yaxis: { 
-                  title: selected === 'success' ? 'Percent of Success' : 'Value',
-                  automargin: true,
-                  font: { size: 14, color: '#000'},
-                  tickformat: ',.0f'
+                    title: {
+                        text: selected === 'success' ? 'Percent of Success' : 'Value',
+                        font: {
+                            size: 18,
+                        }
+                    },
+                    automargin: true,
+                    tickformat: ',.0f'
                 }
               }}
               style={{ width: '100%', height: '100%' }}

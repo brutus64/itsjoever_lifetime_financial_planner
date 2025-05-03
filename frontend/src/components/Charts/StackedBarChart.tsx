@@ -115,8 +115,27 @@ const StackedBarChart = ({data, type, mean_or_median, aggregation}:{data: any, t
                 xanchor: 'center'
             },
             barmode: 'stack',
-            xaxis: { title: 'Year' },
-            yaxis: { title: 'Value', tickformat: ',.0f'},
+            xaxis: {
+              title: {
+                text:'Year',
+                font: {
+                  size: 14,
+                  color: '#000' 
+                }
+              },
+              automargin: true
+            },
+            yaxis: { 
+              title: {
+                text:'Dollars',
+                font: {
+                  size: 14,
+                  color: '#000' 
+                }
+              },
+              automargin: true,
+              tickformat: ',.0f'
+            },
         }}
         style={{ width: '100%', height: '100%' }}
         config={{ displayModeBar: false, staticPlot: false }}
