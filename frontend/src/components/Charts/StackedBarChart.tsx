@@ -31,8 +31,8 @@ const StackedBarChartContainer = ({data}:{data: any}) => {
             <div className="flex gap-10">
                 <select onChange={changeType} value={type} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
                     <option value="investments">Investments</option>
-                    <option value="income">Income Event Series</option>
-                    <option value="expenses">Expense Event Series</option>
+                    <option value="income">Income</option>
+                    <option value="expenses">Expenses</option>
                 </select>
                 <select onChange={changeSelected} value={selected == 0 ? "average" : "median"} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
                     <option value="average">Average</option>
@@ -110,7 +110,10 @@ const StackedBarChart = ({data, type, mean_or_median, aggregation}:{data: any, t
             hovertemplate: '%{fullData.name}<br>Year: %{x}<br>Value: $%{y:,.2f}<extra></extra>',
         }))}
         layout={{
-            title: 'Stacked Bar Chart',
+            title: {
+                text: `${type.charAt(0).toUpperCase() + type.slice(1)} Over Time`,
+                xanchor: 'center'
+            },
             barmode: 'stack',
             xaxis: { title: 'Year' },
             yaxis: { title: 'Value', tickformat: ',.0f'},

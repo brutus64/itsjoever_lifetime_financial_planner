@@ -63,7 +63,6 @@ const ScenarioPage: React.FC = () => {
                         },
                     });
                     googleData = await googleResponse.json();
-                    googleData.email = 'ethan.b.chan@stonybrook.edu'
                 }
                 // fetch user from your backend using email
                 const userResponse = await fetch(`http://localhost:8000/api/get_user?email=${googleData.email}`);
