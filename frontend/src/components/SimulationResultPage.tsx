@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
-import ProbabilityLineChart from './charts/ProbabilityLineChart';
-import ShadedLineChartContainer from './charts/ShadedLineChart';
-import StackedBarChartContainer from './charts/StackedBarChart';
+import ProbabilityLineChart from './Charts/ProbabilityLineChart';
+import ShadedLineChartContainer from './Charts/ShadedLineChart';
+import StackedBarChartContainer from './Charts/StackedBarChart';
 import { useEffect, useState } from 'react';
 
 const SimulationResultPage = () => {
@@ -20,7 +20,7 @@ const SimulationResultPage = () => {
 
   return (
     <div className="">
-        {/* <ProbabilityLineChart data={data} /> */}
+        <ProbabilityLineChart data={data} />
         <ShadedLineChartContainer data={data} />
         <StackedBarChartContainer data={data} />
     </div>
