@@ -408,9 +408,21 @@ class Simulation:
         for es in self.rebalance:
             for asset in es.assets:
                 asset[0] = id_to_obj[asset[0]]
+        ex_with_ids = set([investment["id"] for investment in scenario.get("expense_withdraw")])
+        rmd_ids = set([investment["id"] for investment in scenario.get("rmd_strat")])
         self.expense_withdraw = [id_to_obj[investment["id"]] for investment in scenario.get("expense_withdraw")]
         self.rmd_strat = [id_to_obj[investment["id"]] for investment in scenario.get("rmd_strat")]
-        
+
+        # append any absent investments to the withdrawal strategy
+        # append any absent pre-tax investments to the rmd strategy
+        for investment in self.investments:
+            if investment.name == "cash":
+                continue
+            if investment.id not in ex_with_ids:
+                self.expense_withdraw.append(investment)
+            if investment.tax_status == "pre-tax" and investment.id not in rmd_ids:
+                self.rmd_strat.append(investment)
+
         self.roth_strat = [id_to_obj[investment["id"]] for investment in scenario.get("roth_conversion_strat")]
         self.roth_enable = scenario.get("roth_optimizer").get("is_enable")
         if self.roth_enable:
@@ -418,8 +430,16 @@ class Simulation:
             self.roth_end = scenario.get("roth_optimizer").get("end_year")
         
         # places that require Event series objects: spending strategy
+        disc_ids = set([es["id"] for es in scenario.get("spending_strat") if es["details"]["is_discretionary"]])
         id_to_obj = {es.id:es for es in self.expenses if es.is_discretionary}
         self.spending_strat = [id_to_obj[es["id"]] for es in scenario.get("spending_strat")]
+
+        # append any absent discretionary expense events to spending strategy
+        for es in self.expenses:
+            if es.is_discretionary and es.id not in disc_ids:
+                self.spending_strat.append(es)
+
+
         # other important data
         self.name = scenario.get("name") # needed?
         self.fin_goal = scenario.get("fin_goal")
@@ -509,6 +529,7 @@ class Simulation:
                     target.value = 0
                     target.purchase = 0
                     self.investments.append(target)
+                    self.expense_withdraw.append(target)
                 
                 # transfer amounts
                 withdraw_amt = min(rmd,investment.value)
@@ -568,6 +589,7 @@ class Simulation:
                     target.value = 0
                     target.purchase = 0
                     self.investments.append(target)
+                    self.expense_withdraw.append(target)
                 
                 # transfer amounts
                 transfer_amt = min(roth_conversion,investment.value)
