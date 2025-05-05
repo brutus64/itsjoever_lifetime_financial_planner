@@ -424,9 +424,16 @@ async def delete_event_series(scenario_id: str, event_series_id: str):
     try:
         scen_id = PydanticObjectId(scenario_id)
         event_id = PydanticObjectId(event_series_id)
-        scenario = await Scenario.get(scen_id)
+        scenario = await Scenario.get(scen_id, fetch_links=True)
         if not scenario:
             raise HTTPException(status_code=400, detail="DELETE event series scenario does not exist")
+        
+        # check to see if there are any sevent series that are uing this event series
+        for es in scenario.event_series:
+            if es.start.event_series == event_series_id:
+                print("Event series is being used in another event series")
+                raise HTTPException(status_code=400, detail="DELETE event series in use first")
+
         event_series = await EventSeries.get(event_id)
         print(event_series)
         delete_res = await event_series.delete()
