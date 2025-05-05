@@ -33,16 +33,16 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
   return (
     <Plot
     data={[
-        // y = Financial Goal Line
-        {
+        // y = Financial Goal Line (only for "total_investments")
+        ...(selected === "total_investments" ? [{
           x: Object.keys(data.percentiles[selected]),
           y: Object.keys(data.percentiles[selected]).map(() => data.fin_goal),
           type: 'scatter',
           mode: 'lines',
-          line: { color: 'rgb(81, 255, 0)'},
+          line: { color: 'rgb(81, 255, 0)' },
           name: 'Financial Goal',
           hovertemplate: 'Financial Goal: $%{y:,.2f}<extra></extra>',
-        },
+        }] : []),
 
         // Median (50th percentile) line
         {
