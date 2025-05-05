@@ -13,9 +13,6 @@ const Header: React.FC<{ toggleMenu: () => void }> = ({ toggleMenu }) => {
                     <span>{(isLoggedIn && isGuest) ? "Guest" : userInfo?.name}</span>
                 </div>
             </div>
-            <div className='bg-black px-4  m-4 text-lg text-white rounded-md hover:bg-gray-800'>
-                Share
-            </div>
         </div>
     );
 };
