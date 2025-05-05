@@ -10,14 +10,17 @@ const ShadedLineChartContainer = ({data}:{data: any}) => {
     }
 
     return (
-        <div className="">
-            <select onChange={changeSelected} value={selected} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
-                <option value="total_investments">Total Investments</option>
-                <option value="total_income">Total Income</option>
-                <option value="total_expenses">Total Expenses</option>
-                <option value="early_withdrawal_tax">Early Withdrawal Tax</option>
-                <option value="discretionary_percent">Percentage of Total Discretionary Expenses Incurred</option>
-            </select>
+        <div className="mt-4">
+            <div className="flex items-center gap-4 mb-4 bg-white shadow-md rounded-lg p-4 w-fit">
+              <label className="text-md font-semibold">Selected Quantity</label>
+              <select onChange={changeSelected} value={selected} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
+                  <option value="total_investments">Total Investments</option>
+                  <option value="total_income">Total Income</option>
+                  <option value="total_expenses">Total Expenses</option>
+                  <option value="early_withdrawal_tax">Early Withdrawal Tax</option>
+                  <option value="discretionary_percent">Percentage of Total Discretionary Expenses Incurred</option>
+              </select>
+            </div>
             <ShadedLineChart data={data} selected={selected}/>
         </div>
         
@@ -26,7 +29,7 @@ const ShadedLineChartContainer = ({data}:{data: any}) => {
 
 const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
   return (
-    <Plot
+    <Plot className="w-full"
     data={[
         // y = Financial Goal Line (only for "total_investments")
         ...(selected === "total_investments" ? [{

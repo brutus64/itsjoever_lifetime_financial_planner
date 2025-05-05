@@ -33,7 +33,7 @@ const ExplorationPage: React.FC = () => {
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex item justify-between'>
-                <p className="text-5xl">Exploration</p>
+                <p className="text-5xl">Exploration Results</p>
             </div>
             {exploreType == '1D' && 
                 <>

@@ -27,19 +27,25 @@ const StackedBarChartContainer = ({data}:{data: any}) => {
     }
 
     return (
-        <div className="">
-            <div className="flex gap-10">
-                <select onChange={changeType} value={type} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
-                    <option value="investments">Investments</option>
-                    <option value="income">Income</option>
-                    <option value="expenses">Expenses</option>
-                </select>
-                <select onChange={changeSelected} value={selected == 0 ? "average" : "median"} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
-                    <option value="average">Average</option>
-                    <option value="median">Median</option>
-                </select>
-                <div className="flex gap-2 items-center">
-                    <label>Aggregation Threshold</label>
+        <div className="mt-4">
+            <div className="flex gap-10 mb-4">
+                <div className="flex gap-2 items-center bg-white shadow-md rounded-lg p-4">
+                    <label className="text-md font-semibold">Selected Quantity</label>
+                    <select onChange={changeType} value={type} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
+                        <option value="investments">Investments</option>
+                        <option value="income">Income</option>
+                        <option value="expenses">Expenses</option>
+                    </select>
+                </div>
+                <div className="flex gap-2 items-center bg-white shadow-md rounded-lg p-4">
+                  <label className="text-md font-semibold">Data Type</label>
+                  <select onChange={changeSelected} value={selected == 0 ? "average" : "median"} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
+                      <option value="average">Average</option>
+                      <option value="median">Median</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 items-center bg-white shadow-md rounded-lg p-4">
+                    <label className="text-md font-semibold">Aggregation Threshold</label>
                     <input className="border border-gray-300 rounded px-2 py-1 w-30" type="number" onChange={changeAggregation} value={aggregation} min="0"/>
                 </div>
             </div>
@@ -104,7 +110,7 @@ const StackedBarChart = ({data, type, mean_or_median, aggregation}:{data: any, t
   
 
   return (
-    <Plot
+    <Plot className="w-full h-full"
         data={plot_data.map(trace => ({
             ...trace,
             hovertemplate: '%{fullData.name}<br>Year: %{x}<br>Value: $%{y:,.2f}<extra></extra>',
