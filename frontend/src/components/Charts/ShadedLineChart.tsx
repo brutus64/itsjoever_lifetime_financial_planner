@@ -1,11 +1,6 @@
 import Plot from 'react-plotly.js';
 import { useEffect, useState } from 'react';
 
-// TODO: 
-// Possibly change colors of the lines to be more distinct
-// Styling for dropdown menu/chart
-// ***ADD IN FINANCIAL GOAL LINE, y={financial_goal}, financial_goal doesnt exist in {data} yet***
-
 const ShadedLineChartContainer = ({data}:{data: any}) => {
     const [selected, setSelected] = useState('total_investments')
 
@@ -15,14 +10,17 @@ const ShadedLineChartContainer = ({data}:{data: any}) => {
     }
 
     return (
-        <div className="">
-            <select onChange={changeSelected} value={selected} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
-                <option value="total_investments">Total Investments</option>
-                <option value="total_income">Total Income</option>
-                <option value="total_expenses">Total Expenses</option>
-                <option value="early_withdrawal_tax">Early Withdrawal Tax</option>
-                <option value="discretionary_percent">Percentage of Total Discretionary Expenses Incurred</option>
-            </select>
+        <div className="mt-4">
+            <div className="flex items-center gap-4 mb-4 bg-white shadow-md rounded-lg p-4 w-fit">
+              <label className="text-md font-semibold">Selected Quantity</label>
+              <select onChange={changeSelected} value={selected} className="text-md px-2 border-2 border-gray-200 rounded-md w-fit">
+                  <option value="total_investments">Total Investments</option>
+                  <option value="total_income">Total Income</option>
+                  <option value="total_expenses">Total Expenses</option>
+                  <option value="early_withdrawal_tax">Early Withdrawal Tax</option>
+                  <option value="discretionary_percent">Percentage of Total Discretionary Expenses Incurred</option>
+              </select>
+            </div>
             <ShadedLineChart data={data} selected={selected}/>
         </div>
         
@@ -31,18 +29,18 @@ const ShadedLineChartContainer = ({data}:{data: any}) => {
 
 const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
   return (
-    <Plot
+    <Plot className="w-full"
     data={[
-        // y = Financial Goal Line
-        {
+        // y = Financial Goal Line (only for "total_investments")
+        ...(selected === "total_investments" ? [{
           x: Object.keys(data.percentiles[selected]),
           y: Object.keys(data.percentiles[selected]).map(() => data.fin_goal),
           type: 'scatter',
           mode: 'lines',
-          line: { color: 'rgb(81, 255, 0)'},
+          line: { color: 'rgb(77, 175, 74)' },
           name: 'Financial Goal',
           hovertemplate: 'Financial Goal: $%{y:,.2f}<extra></extra>',
-        },
+        }] : []),
 
         // Median (50th percentile) line
         {
@@ -66,7 +64,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
             ...Object.values(data.percentiles[selected]).map(yearData => yearData[9]).reverse()
           ],
           fill: 'toself',
-          fillcolor: 'rgba(5, 182, 138, 0.3)',
+          fillcolor: 'rgba(31, 119, 180, 0.25)',
           line: { color: 'transparent' },
           type: 'scatter',
           mode: 'lines',
@@ -107,7 +105,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
               ...Object.values(data.percentiles[selected]).map(yearData => yearData[8]).reverse()
             ],
             fill: 'toself',
-            fillcolor: 'rgba(126, 23, 136, 0.3)',
+            fillcolor: 'rgba(255, 127, 14, 0.25)',
             line: { color: 'transparent' },
             type: 'scatter',
             mode: 'lines',
@@ -148,7 +146,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
               ...Object.values(data.percentiles[selected]).map(yearData => yearData[7]).reverse()
             ],
             fill: 'toself',
-            fillcolor: 'rgba(208, 218, 70, 0.3)',
+            fillcolor: 'rgba(44, 160, 44, 0.25)',
             line: { color: 'transparent' },
             type: 'scatter',
             mode: 'lines',
@@ -188,7 +186,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
               ...Object.values(data.percentiles[selected]).map(yearData => yearData[6]).reverse()
             ],
             fill: 'toself',
-            fillcolor: 'rgba(181, 49, 207, 0.3)',
+            fillcolor: 'rgba(148, 103, 189, 0.25)',
             line: { color: 'transparent' },
             type: 'scatter',
             mode: 'lines',

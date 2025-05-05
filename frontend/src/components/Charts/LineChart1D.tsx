@@ -9,11 +9,14 @@ const LineChart = ({data} : {data:any}) => {
         console.log(`swapped to ${e.target.value}`)
     }
     return (
-        <div>
-            <select onChange={handleChange} value={selected} className='text-md px-2 border-2 border-gray-200 rounded-md w-fit'>
-                <option value="final_success">Final Success</option>
-                <option value="final_investments">Final Median Investment</option>
-            </select>
+        <div className="w-full mt-6">
+            <div className="flex items-center gap-4 mb-4 bg-white shadow-md rounded-lg p-4 w-fit">
+                <label className="text-md font-semibold">Selected Quantity</label>
+                <select onChange={handleChange} value={selected} className='text-md px-2 border-2 border-gray-200 rounded-md w-fit'>
+                    <option value="final_success">Final Success</option>
+                    <option value="final_investments">Final Median Investment</option>
+                </select>
+            </div>
             <LineChartPlot data={data} selected={selected}/> 
         </div>
     )

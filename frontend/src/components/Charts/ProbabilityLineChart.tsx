@@ -2,7 +2,7 @@ import Plot from 'react-plotly.js';
 
 const ProbabilityLineChart = ({data}:{data: any}) => {
   return (
-    <Plot
+    <Plot className="w-full"
       data={[
         {
           x: Object.keys(data.success),

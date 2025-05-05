@@ -8,13 +8,16 @@ const SurfacePlot = ({ data }: { data: any }) => {
         console.log(`swapped to ${e.target.value}`)
     }
     return (
-        <>
-            <select onChange={handleChange} value={selected}>
-                <option value="final_success">Final Success</option>
-                <option value="final_investments">Final Median Investment</option>
-            </select>
+        <div className="w-full mt-6">
+            <div className="flex items-center gap-4 mb-4 bg-white shadow-md rounded-lg p-4 w-fit">
+                <label className="text-md font-semibold">Selected Quantity</label>
+                <select onChange={handleChange} value={selected}>
+                    <option value="final_success">Final Success</option>
+                    <option value="final_investments">Final Median Investment</option>
+                </select>
+            </div>
             <SurfacePlotChart data={data} selected={selected}/>
-        </>
+        </div>
     )
 };
 
