@@ -733,12 +733,19 @@ def aggregate(results):
     # Chart 4.1: Probability of success
     # Chart 5.1 also needs this
     success_totals = defaultdict(lambda:[0,0]) # year -> [successes,total]
+    final_probs = 0
     for result in results:
         for yearly_result in result:
             if yearly_result.success:
                 success_totals[yearly_result.year][0] += 1
             success_totals[yearly_result.year][1] += 1
+        if result[-1].success:
+            final_probs += 1
     agg_results["success"] = {year: round((successes/total)*100, 2) for year,(successes,total) in success_totals.items()}
+    
+    # Chart 5.2: final probabilities
+    agg_results["final_probs"] = final_probs / len(results) if len(results) != 0 else 0
+
     # Chart 4.2: Percentiles
     # 4.2a: Total investments
     # 4.2b: Total income
