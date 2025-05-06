@@ -23,8 +23,7 @@ const SimulationResultPage = () => {
 
   const all_keys = Object.keys(data.success);
   const largest_year = Math.max(...all_keys.map(key => parseInt(key, 10)));
-  const final_success_value = data.success[largest_year];
-  const final_success = parseFloat(final_success_value);  
+  const final_prob = data.final_probs*100
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -32,12 +31,12 @@ const SimulationResultPage = () => {
             <p className="text-5xl">Simulation Results</p>
         </div>
         <div className="flex gap-3 bg-gray-100 rounded-lg p-6 shadow-md">
-          <SuccessRateCircle final_success={final_success} />
+          <SuccessRateCircle final_success={final_prob} />
             <div className="flex flex-col p-6 justify-between">
             <p className="text-xl">{`Financial Goal: $${Number(data.fin_goal).toLocaleString()}`}</p>
             <div className="flex flex-col gap-2">
-              <p className="text-xl">{`Final Year: ${largest_year}`}</p>
-              <p className="text-xl">{`Final Probability of Succcess: ${final_success}%`}</p>
+              <p className="text-xl">{`Highest Year: ${largest_year}`}</p>
+              <p className="text-xl">{`Final Probability of Succcess: ${final_prob.toFixed(2)}%`}</p>
             </div>
             </div>
         </div>
