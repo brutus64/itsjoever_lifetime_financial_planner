@@ -34,7 +34,7 @@ const SuccessRateCircle = ({ final_success }) => {
         backgroundPadding={6}
         styles={buildStyles({
           backgroundColor: "#f0f0f0", // full background fill
-          trailColor: "transparent",  // hide the default trail
+          trailColor: "red",  // hide the default trail
           pathColor: "#007940",
         })}
       />

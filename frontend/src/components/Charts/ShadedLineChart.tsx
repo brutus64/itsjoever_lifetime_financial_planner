@@ -231,7 +231,7 @@ const ShadedLineChart = ({data, selected}:{data: any, selected:string}) => {
         },
         yaxis: { 
           title: {
-            text:'Dollars',
+            text:`${selected == "discretionary_percent" ? "Percent": "Dollars"}`,
             font: {
               size: 14,
               color: '#000' 

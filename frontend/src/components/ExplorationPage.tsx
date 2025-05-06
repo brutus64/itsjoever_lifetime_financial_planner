@@ -32,28 +32,18 @@ const ExplorationPage: React.FC = () => {
         return <div>Loading...</div>;
     }
 
-    // const all_keys = Object.keys(data.success);
-    // const largest_year = Math.max(...all_keys.map(key => parseInt(key, 10)));
-    // const final_success_value = data.success[largest_year];
-    // const final_success = parseFloat(final_success_value); 
-    
-    const final_success = 100
-    const largest_year = 2025
-
     let success_1D = 0
-    let final_year1D = 0
+    let num_years1D = 0
     let success_2D = 0
-    let final_year2D = 0
+    let num_years2D = 0
 
     if (exploreType == '1D') {
         Object.keys(data.individual_results).forEach((key) => {
             let years = Object.keys(data.individual_results[key].success)
             const largest_year = Math.max(...years.map(key => parseInt(key, 10)));
             const final_success = data.individual_results[key].success[largest_year] 
-            if (success_1D < final_success) {
-                success_1D = final_success
-                final_year1D = largest_year
-            }
+            success_1D += final_success
+            num_years1D += 1
         })
     } else {
         Object.keys(data.individual_results).forEach((key) => {
@@ -61,13 +51,14 @@ const ExplorationPage: React.FC = () => {
                 let years = Object.keys(data.individual_results[key][key2].success)
                 const largest_year = Math.max(...years.map(key => parseInt(key, 10)));
                 const final_success = data.individual_results[key][key2].success[largest_year] 
-                if (success_2D < final_success) {
-                    success_2D = final_success
-                    final_year2D = largest_year
-                }
+                success_2D += final_success
+                num_years2D += 1
             })
         })
     }
+
+    let avg_success1D = success_1D/num_years1D
+    let avg_success2D = success_2D/num_years2D
     
     console.log(exploreType)
     return (
@@ -77,15 +68,14 @@ const ExplorationPage: React.FC = () => {
             </div>
             
             <div className="flex gap-3 bg-gray-100 rounded-lg p-6 shadow-md">
-                <SuccessRateCircle final_success={final_success} />
+                <SuccessRateCircle final_success={exploreType == '1D' ? avg_success1D : avg_success2D} />
                 <div className="flex flex-col p-6 justify-between">
                     <div className="flex flex-col gap-1">
                         <p className="text-xl">{`Parameter 1: ${data.param1}`}</p>
                         {data.param2 && <p className="text-xl">{`Parameter 2: ${data.param2}`}</p>}
                     </div>
                     <div className="flex flex-col gap-1">
-                        <p className="text-xl">{`Final Year: ${exploreType == '1D' ? final_year1D: final_year2D}`}</p>
-                        <p className="text-xl">{`Final Probability of Succcess: ${exploreType == '1D' ? success_1D : success_2D}%`}</p>
+                        <p className="text-xl">{`Average Final Probability of Succcess: ${exploreType == '1D' ? avg_success1D : avg_success2D}%`}</p>
                     </div>
                 </div>
             </div>
