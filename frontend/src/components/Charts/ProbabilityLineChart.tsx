@@ -9,7 +9,7 @@ const ProbabilityLineChart = ({data}:{data: any}) => {
           y: Object.values(data.success),
           type: 'scatter',
           mode: 'lines',
-          hovertemplate: 'Year: %{x}<br>Percent of Success: %{y}<extra></extra>',
+          hovertemplate: 'Year: %{x}<br>Percent of Success: %{y}%<extra></extra>',
         },
       ]}
       layout={{
