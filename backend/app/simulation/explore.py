@@ -147,7 +147,7 @@ def aggregate_one(results):
         final_year = max(result["success"].keys())
 
         # record final prob
-        param_function["final_success"][val] = result["success"][final_year]
+        param_function["final_success"][val] = result["final_probs"] * 100
 
         # record final median
         param_function["final_investments"][val] = result["percentiles"]["total_investments"][final_year][5]
@@ -167,7 +167,7 @@ def aggregate_two(results):
             final_year = max(result["success"].keys())
             agg_results[val_1][val_2] = {}
             # record final prob
-            agg_results[val_1][val_2]["final_success"] = results[val_1][val_2]["success"][final_year]
+            agg_results[val_1][val_2]["final_success"] = results[val_1][val_2]["final_probs"] * 100
             # record final total investments median
             agg_results[val_1][val_2]["final_investments"] = results[val_1][val_2]["percentiles"]["total_investments"][final_year][5]
     return agg_results
