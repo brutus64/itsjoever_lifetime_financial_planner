@@ -259,7 +259,7 @@ class Rebalance(EventSeries):
                 else: # sell
                     amt = investment.value - target
                     # pay capital gains if non-retirement, regular tax if pre-tax
-                    if investment.tax_status == "non-retirement":
+                    if investment.tax_status == "non-retirement" and investment.value > 0:
                         fraction = amt / investment.value
                         cg += max(0,fraction * (investment.value - investment.purchase))
                         investment.purchase *= (1-fraction)
@@ -505,7 +505,7 @@ class Simulation:
                 if investment.tax_status == "pre-tax" and investment.value > 0:
                     pre_value += investment.value
             
-            if dist_period != -1:
+            if dist_period != -1 and dist_period != 0:
                 rmd = pre_value / dist_period
             else:
                 rmd = 0
@@ -620,11 +620,8 @@ class Simulation:
                 break
             if investment.value <= 0:
                 continue
-            
             withdraw = min(investment.value,amt) # max amt to withdraw
-            investment.value -= withdraw
-            amt -= withdraw
-
+            
             # determine if withdrawal is taxed
             if investment.tax_status == "non-retirement":
                 fraction = withdraw/investment.value
@@ -634,6 +631,9 @@ class Simulation:
                 self.inc += withdraw
             if age < EARLY_WITHDRAW_AGE and investment.tax_status != "non-retirement":
                 self.ew += withdraw 
+            
+            investment.value -= withdraw
+            amt -= withdraw
         return amt # amount leftover
     
     def perform_spending(self,age,year,spouse_alive,fin_log,year_result):
@@ -739,7 +739,6 @@ def aggregate(results):
                 success_totals[yearly_result.year][0] += 1
             success_totals[yearly_result.year][1] += 1
     agg_results["success"] = {year: round((successes/total)*100, 2) for year,(successes,total) in success_totals.items()}
-
     # Chart 4.2: Percentiles
     # 4.2a: Total investments
     # 4.2b: Total income
