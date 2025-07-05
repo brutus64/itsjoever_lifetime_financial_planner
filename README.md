@@ -12,7 +12,7 @@ npm run dev
 
 create .env file in backend folder with the following as the data: 
 ```
-MONGODB_URL=mongodb+srv://dannywang723:lfp123haha@lfp.oyz0k.mongodb.net/?retryWrites=true&w=majority&appName=lfp
+MONGODB_URL=<Your mongoURL>
 FEDERAL_TAX_URL=https://www.irs.gov/filing/federal-income-tax-rates-and-brackets
 CAPITAL_GAINS_TAX_URL=https://www.irs.gov/taxtopics/tc409
 STANDARD_DEDUCTION_URL=https://www.irs.gov/publications/p17
